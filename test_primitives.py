@@ -154,8 +154,13 @@ INJECTED = [
 
 
 
-def build_config():
-    """The tiago_primitives config, with one load policy for every scene."""
+def build_config(search=False, camera_size=None):
+    """The tiago_primitives config, with one load policy for every scene.
+
+    `search` adds `seg_instance`, which names the object each pixel belongs to and is
+    what decides whether an object has genuinely been seen. It is off by default because
+    it costs render time on every step of every drive.
+    """
     path = os.path.join(og.example_config_path, "tiago_primitives.yaml")
     with open(path) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
@@ -187,6 +192,15 @@ def build_config():
     ]
 
     for robot_cfg in config.get("robots", []):
+        if search:
+            mods = list(robot_cfg.get("obs_modalities") or ["rgb"])
+            # No depth: occlusion now comes from the traversability map, because the
+            # head's default downward pitch made every depth ray end on the floor at
+            # ~2.5 m. One render pass fewer on every step of every drive.
+            for m in ("rgb", "seg_instance"):
+                if m not in mods:
+                    mods.append(m)
+            robot_cfg["obs_modalities"] = mods
         # On, so a symbolically welded object is not torn loose by the per-step
         # assisted-grasp logic during settling. RELEASE turns it off for its own duration
         # (see primitive_patches._execute_release), since that same logic is what lets go
@@ -196,8 +210,9 @@ def build_config():
         # useless to watch. Override it here, in the config: resizing a live VisionSensor
         # rebuilds its render product and segfaults with no Python traceback.
         vision = robot_cfg.setdefault("sensor_config", {}).setdefault("VisionSensor", {})
+        height, width = camera_size or (720, 1280)
         vision.setdefault("sensor_kwargs", {}).update(
-            {"image_height": 720, "image_width": 1280})
+            {"image_height": height, "image_width": width})
 
     return config
 
@@ -227,12 +242,30 @@ def main():
                         help="record from the robot's own camera instead of the fixed "
                              "viewer camera, so the effect of each action is visible "
                              "from where the robot is looking")
+    parser.add_argument("--place-inside-trials", type=int, default=0,
+                        help="do not run the plan. Navigate to the oven, open it, and "
+                             "repeat PLACE_INSIDE/GRASP this many times, reporting the "
+                             "pass rate. One simulator start instead of one per trial.")
+    parser.add_argument("--trace", default=None,
+                        help="with --search, record map and graph snapshots to this "
+                             "json for world_trace.py to animate")
+    parser.add_argument("--search", action="store_true",
+                        help="do not look objects up in the scene registry. Route every "
+                             "NAVIGATE_TO through the low-level navigation controller, "
+                             "which drives to the object's room and frontier-searches it, "
+                             "and build the world graph from what the camera actually "
+                             "sees. Then check the plan offline against that graph.")
     args = parser.parse_args()
 
     global SCENE
     SCENE = args.scene
 
-    env = og.Environment(configs=build_config())
+    # Searching adds two render passes - segmentation and depth - to every step of every
+    # drive, and the search reads them at walking pace rather than needing detail. Drop the
+    # robot camera unless it is what is being recorded.
+    camera_size = (360, 640) if (args.search and not args.robot_camera) else None
+    env = og.Environment(configs=build_config(search=args.search,
+                                              camera_size=camera_size))
 
     # Open the grippers to match cuRobo's default state, then re-baseline the scene.
     # Straight from OmniGibson's own examples/wip/rs_int_primitives_example.py, which is
@@ -262,6 +295,42 @@ def main():
 
     PSet = primitive_patches.primitive_set()
     controller = primitive_patches.build(env, robot)
+
+    # The low-level navigation controller and the world graph it feeds. The graph starts
+    # as the room graph and nothing else - which rooms exist and which connect - so every
+    # object edge in it at the end was written by something the camera saw.
+    navctl = world = None
+    if args.search:
+        from graph_machine import GraphMachine, check as graph_check
+        from world_trace import Trace
+        from nav_controller import NavigationController
+        from world_graph import EDGE_TYPES, WorldGraph, room_of_object
+
+        world = WorldGraph.from_scene_file(SCENE)
+        print(f"\n[graph] seeded from the room graph: {world.summary()}")
+        navctl = NavigationController(env, robot, controller, world)
+        # The same effect model the offline checker uses, but editing the live graph as
+        # each primitive succeeds. Observation says what the robot found; this says what
+        # the robot did, which is why the graph knows the plate is on the table without
+        # the robot having to stand there looking at it afterwards.
+        live = GraphMachine(world, copy=False)
+        # Snapshots for the side-by-side animation. Recording is cheap - a grid copy and
+        # an edge list - and rendering happens offline, so a drawing bug cannot kill a
+        # seventeen-minute run.
+        trace = Trace(args.trace or "figures/world_trace.json")
+
+        def snapshot(event):
+            # The scene-wide map, not the current room's. The room maps are masked and
+            # swap as the robot walks between rooms, so drawing them makes the picture
+            # jump and hides everything discovered elsewhere. The scene map accumulates.
+            room_map = navctl.scene_map
+            if room_map is None:
+                room = navctl.room_here()
+                room_map = navctl.maps.get(room) if room else None
+            here = robot.get_position_orientation()[0][:2].tolist()
+            trace.add(event, world, omap=room_map, robot_xy=here, held=live.held)
+
+        navctl.on_observe = snapshot
 
     writer = grab_frame = None
     if args.video:
@@ -463,6 +532,13 @@ def main():
     potato = scene.object_registry("name", "potato")
     plate = scene.object_registry("name", "plate")
 
+    if world is not None:
+        # The task's own objects. Everything the robot finds is still recorded; this only
+        # decides what the animation draws, since a kitchen search turns up eight
+        # countertops and drawing all eight buries the four the task is about. Set here
+        # rather than where the trace is built, because these are not bound until now.
+        trace.focus = [o.name for o in (potato, plate, oven, table) if o is not None]
+
     missing = [n for n, o in (("oven", oven), ("table", table),
                               ("potato", potato), ("plate", plate)) if o is None]
     if missing:
@@ -509,9 +585,69 @@ def main():
             pos, quat = T.pose_transform(p_pos, p_quat, rel_pos, rel_quat)
             child.set_position_orientation(position=pos, orientation=quat)
 
+    # How often to map while moving, in simulation steps. Every step would mean a render
+    # and a segmentation transfer for each step of a five-thousand-step plan; every tenth
+    # is about 0.2 s of robot motion, fine enough that the map fills in smoothly rather
+    # than in jumps.
+    OBSERVE_EVERY = 10
+    ticks = [0]
+
+    def refresh_moved():
+        """Re-read the position of whatever the robot is carrying, and its riders.
+
+        The static-world rule says an object's position is recorded once, when it is first
+        seen, and not re-read - the world does not move on its own. A carried object is the
+        exception the rule is built around: the robot is the thing moving it, and it knows
+        where it has taken it. Without this the graph keeps drawing the plate on the
+        kitchen counter while the simulator has it in the living room, which makes the
+        animation disagree with the run it is supposed to depict.
+        """
+        if navctl is None or live.held is None:
+            return
+        for name in live._carried_with(live.held):
+            obj = scene.object_registry("name", name)
+            if obj is None or name not in world.objects:
+                continue
+            world.objects[name]["position"] = obj.get_position_orientation()[0].tolist()
+
+    def tick():
+        """Called once per simulation step, whichever path is driving."""
+        ticks[0] += 1
+        carry_stuck()
+        if writer is not None and ticks[0] % args.every == 0:
+            frame = grab_frame()
+            if frame is not None:
+                writer.append_data(frame)
+        if navctl is not None and ticks[0] % OBSERVE_EVERY == 0:
+            navctl.observe_here()
+            refresh_moved()
+            snapshot("moving")
+
     def run(primitive, *a):
         """Execute one primitive; return (ok, error_string, sim_steps)."""
         n = 0
+        if primitive == "NAVIGATE_TO" and navctl is not None:
+            # The high-level action says where to end up. The low-level controller turns
+            # it into the drives that get there, searching the room when the object has
+            # never been seen. Only the *room* is ground truth; the object itself has to
+            # come into frame before anything drives to it.
+            target = a[0]
+            counter = [0]
+
+            def on_step():
+                counter[0] += 1
+                tick()
+
+            navctl.step_cb = on_step
+            try:
+                result = navctl.navigate_to(target.name, room=room_of_object(target, scene))
+            except Exception as e:
+                return False, f"{type(e).__name__}: {str(e).replace(chr(10), ' ')[:500]}", counter[0]
+            path = " -> ".join(kind for kind, _ in result.subgoals)
+            print(f"    [search] {result.status} via {len(result.subgoals)} sub-goals: {path}")
+            if not result.ok:
+                return False, f"search ended {result.status}", counter[0]
+            return True, None, counter[0]
         try:
             if primitive == "NAVIGATE_TO":
                 gen = controller._navigate_near(*a)
@@ -532,12 +668,8 @@ def main():
             # do with the potato.
             for action in gen:
                 env.step(action)
-                carry_stuck()
                 n += 1
-                if writer is not None and n % args.every == 0:
-                    frame = grab_frame()
-                    if frame is not None:
-                        writer.append_data(frame)
+                tick()
             return True, None, n
         except Exception as e:
             # Unwrap ActionPrimitiveErrorGroup: its own message says nothing useful, the
@@ -557,6 +689,77 @@ def main():
     # ("Cannot open or close an object while holding an object"); Tiago has two arms and
     # the alternative is putting the plate on the floor mid-task, so
     # `_hand_allowed_full` lets them through.
+    if args.place_inside_trials:
+        # PLACE_INSIDE failed 2 runs in 5 with the plate landing within 0.001 m of its
+        # target, which is a marginal check rather than a near miss. One full plan per
+        # sample would be seventeen minutes each; this exercises the one action in a loop
+        # against the same geometry, which is what a flaky check needs to be judged on.
+        print("\n" + "=" * 82)
+        print(f"PLACE_INSIDE trial: {args.place_inside_trials} repeats on {oven.name}")
+        print("=" * 82)
+
+        # Fetch the plate first. It starts on the counter, 3.49 m from where the robot
+        # stands at the oven, which is past `_require_near`'s limit - so a loop that
+        # grasps before placing fails on its first step every time and never reaches the
+        # action under test. Carry it over, and let each iteration end holding it again by
+        # taking it back out of the oven.
+        for label, prim, target in (("NAVIGATE_TO(plate)", "NAVIGATE_TO", plate),
+                                    ("GRASP(plate)", "GRASP", plate),
+                                    ("NAVIGATE_TO(oven)", "NAVIGATE_TO", oven),
+                                    ("OPEN(oven)", "OPEN", oven)):
+            ok, err, _ = run(prim, target)
+            print(f"  {label:18s} {'ok' if ok else 'FAILED ' + str(err)[:120]}")
+            if not ok:
+                break
+
+        passed = 0
+        for trial in range(args.place_inside_trials):
+            got, err, _ = run("PLACE_INSIDE", oven)
+            inside = False
+            if got:
+                try:
+                    # Both readings: the object-state one is what the simulator reports,
+                    # and it is unreliable for an object that was `visual_only` through
+                    # the placement; the geometric one is BEHAVIOR's own definition of
+                    # Inside computed from prim poses. Printing both is what showed they
+                    # disagree.
+                    # Three readings, because they answer different questions:
+                    #   inside   geometry now, after the plate has been released and has
+                    #            settled - does it still sit in the cavity?
+                    #   reported what the simulator's own object state says
+                    # If `inside` is False the plate physically left the cavity and a
+                    # failure is correct; if `inside` is True while `reported` is False,
+                    # the predicate is misreading a plate that is genuinely in there.
+                    inside = bool(controller._inside_now(plate, oven))
+                    reported = bool(plate.states[object_states.Inside].get_value(oven))
+                    if reported != inside:
+                        err = f"(states[Inside]={reported}, settled geometry={inside})"
+                except Exception as e:
+                    err = f"{type(e).__name__}: {e}"
+            passed += 1 if inside else 0
+            pos = plate.get_position_orientation()[0]
+            lo, hi = plate.aabb
+            centre = (lo + hi) / 2.0
+            print(f"  trial {trial + 1:2d}: Inside={inside!s:5s}  "
+                  f"pos ({float(pos[0]):+.3f}, {float(pos[1]):+.3f}, {float(pos[2]):+.3f})  "
+                  f"aabb centre z {float(centre[2]):+.3f}"
+                  + (f"  {err}" if err else ""))
+            # Take it back out so the next iteration starts holding it again.
+            if trial + 1 < args.place_inside_trials:
+                back = run("GRASP", plate)
+                if not back[0]:
+                    print(f"  trial {trial + 1:2d}: could not retrieve the plate - "
+                          f"{str(back[1])[:120]}")
+                    break
+
+        n = args.place_inside_trials
+        print("=" * 82)
+        print(f"{passed}/{n} PLACE_INSIDE trials satisfied Inside "
+              f"({passed / max(1, n):.0%})")
+        print("=" * 82)
+        og.shutdown()
+        return
+
     if args.probe:
         # Why is the floor directly in front of an object rejected?
         #
@@ -645,6 +848,13 @@ def main():
     # picked up again.
     STICK_AFTER = {"PLACE_ON_TOP (plate)": (lambda: stick(potato, plate))}
 
+    # Observations taken mid-plan, because some edges only exist for a few steps.
+    # `object_inside(plate, oven)` is true from the moment the plate is placed until the
+    # plate comes back out, but the oven is only *open* - and the plate only visible -
+    # between PLACE_INSIDE and CLOSE. Without a look in that window the run never
+    # exercises the one edge type the final graph can never show.
+    LOOK_AFTER = {"PLACE_INSIDE (oven)"}
+
     print("\n" + "=" * 82)
     print(f"plan: {len(checks)} atomic actions in {SCENE}")
     print(f"{'action':28s} {'result':8s} {'steps':>6s}  detail")
@@ -665,8 +875,37 @@ def main():
                     ok, detail = False, "ran without error but post-state is wrong"
             except Exception as e:
                 ok, detail = False, f"state check raised {type(e).__name__}: {e}"
+        if ok and world is not None:
+            # The simulator has already accepted this action, so its effects are fact.
+            # A precondition the model rejects is worth printing - it means the model and
+            # the world disagree about what was legal - but the edits still apply, because
+            # the world is the authority on what happened.
+            moving = live._carried_with(live.held) if live.held else set()
+            step_result = live.step(len(results), primitive,
+                                    prim_args[0].name if prim_args else None)
+            # After a placement `held` is None, so the set has to be taken beforehand.
+            for name in moving:
+                obj = scene.object_registry("name", name)
+                if obj is not None and name in world.objects:
+                    world.objects[name]["position"] = \
+                        obj.get_position_orientation()[0].tolist()
+            if not step_result.ok:
+                print(f"    [graph] model disagreed: {step_result.reason}")
+            elif step_result.edits:
+                print(f"    [graph] {', '.join(step_result.edits)}")
+            snapshot(label)
         if ok and label in STICK_AFTER:
             STICK_AFTER[label]()
+        if ok and world is not None and label in LOOK_AFTER:
+            # No scan: the oven door is open and swung out into the room, and turning the
+            # base here would drive it into the door.
+            room_map = next(iter(reversed(list(navctl.maps.values()))), None)
+            if room_map is not None:
+                looked = navctl._look(room_map, scan=False)
+                held_edges = world.edges_of("object_inside")
+                print(f"    [graph] mid-plan look after {label}: saw {len(looked)} "
+                      f"objects, plate in frame = {'plate' in looked}; "
+                      f"object_inside = {held_edges or 'none'}")
         carry_stuck()
         results.append((label, ok))
         print(f"{label:28s} {'PASS' if ok else 'FAIL':8s} {n:6d}  {detail}")
@@ -688,6 +927,121 @@ def main():
     print("=" * 82)
     print(f"{n_pass}/{len(results)} plan actions succeeded")
     print("=" * 82)
+
+    if world is not None:
+        # One last look, so the graph reflects what the plan actually did rather than
+        # what it looked like before the final placement. Without it the graph's last
+        # word on the plate is wherever it was when the robot last had it in frame.
+        last_map = next(iter(reversed(list(navctl.maps.values()))), None)
+        if last_map is not None:
+            # Deliberately without the turn-in-place scan. During a search the robot scans
+            # from frontier cells, which are free floor on the eroded map by construction;
+            # here it is parked 0.20 m from the table it just placed on, and turning a
+            # 0.72 x 0.61 m base against furniture risks moving the very thing being
+            # audited. One view, honestly reported, beats a refresh that disturbs the
+            # world it is measuring.
+            # Pitched down, and no scan. The plate ends at 0.28 m on the coffee table and
+            # the robot stands 0.89 m from its centre; at the head's default -0.45 rad the
+            # frame spans about 0.43-1.11 m, so the plate is below its bottom edge from
+            # every heading. -0.80 rad drops the frame far enough to include it.
+            navctl._look(last_map, scan=False, head_tilt=-0.80)
+
+        # Does the picture match the world it claims to depict? Compare every recorded
+        # position and room against the simulator. A mismatch here means the animation is
+        # drawing a fiction, which is worse than not drawing it at all.
+        print("\n" + "=" * 82)
+        print("graph against the simulator")
+        print("=" * 82)
+        worst, bad_rooms = 0.0, 0
+        for name, rec in sorted(world.objects.items()):
+            obj = scene.object_registry("name", name)
+            if obj is None or rec.get("position") is None:
+                continue
+            actual = obj.get_position_orientation()[0].tolist()
+            drift = max(abs(a - b) for a, b in zip(actual, rec["position"]))
+            true_room = room_of_object(obj, scene)
+            graph_room = world.room_of(name)
+            flag = ""
+            if drift > 0.05:
+                flag += f"  POSITION off by {drift:.2f} m"
+                worst = max(worst, drift)
+            if true_room and graph_room and true_room != graph_room:
+                flag += f"  ROOM says {graph_room}, actually {true_room}"
+                bad_rooms += 1
+            if flag:
+                print(f"  {name:26s}{flag}")
+        print(f"  {len(world.objects)} objects checked; worst position drift "
+              f"{worst:.3f} m, {bad_rooms} room mismatches")
+
+        snapshot("final")
+        print(f"\n[graph] wrote {trace.save()} ({len(trace.frames)} snapshots)")
+
+        print("\n" + "=" * 82)
+        print("world graph, built entirely from what the camera saw")
+        print("=" * 82)
+        print(f"  {world.summary()}")
+        for edge_type in EDGE_TYPES:
+            found = world.edges_of(edge_type)
+            if edge_type == "room_connect":
+                print(f"  {edge_type:14s} {len(found)} (from the room graph)")
+                continue
+            print(f"  {edge_type:14s} {len(found)}")
+            for a, b in found[:12]:
+                print(f"       {a} -> {b}")
+            if len(found) > 12:
+                print(f"       ... and {len(found) - 12} more")
+
+        for room, omap in navctl.maps.items():
+            print(f"  searched {omap.summary()}")
+
+        # The graph edit state machine, offline, from what the robot knew before it
+        # started: the room graph and nothing else.
+        print("\n" + "=" * 82)
+        print("graph edit state machine: the same plan, checked without a simulator")
+        print("=" * 82)
+        plan_pairs = [(primitive, prim_args[0].name if prim_args else None)
+                      for _, primitive, prim_args, _ in checks]
+        goal = [("on_top", potato.name, plate.name),
+                ("on_top", plate.name, table.name)]
+        outcome = graph_check(WorldGraph.from_scene_file(SCENE), plan_pairs, goal)
+        print(outcome.report())
+
+        # Does the model agree with the world? The machine predicted a final graph from
+        # the room graph alone; the simulator produced one from observation. Comparing
+        # the goal edges is what says whether the edit model is right.
+        print("\n" + "=" * 82)
+        print("predicted vs observed")
+        print("=" * 82)
+        for edge_type, a, b in goal:
+            predicted = outcome.graph.has_edge(edge_type, a, b)
+            observed = world.has_edge(edge_type, a, b)
+            # What the simulator itself says, independent of whether the robot looked.
+            # Without this a disagreement is ambiguous: the graph being wrong and the
+            # world having changed look identical from the graph alone.
+            truth = None
+            sa = scene.object_registry("name", a)
+            sb = scene.object_registry("name", b)
+            state_cls = {"on_top": object_states.OnTop,
+                         "object_inside": object_states.Inside}.get(edge_type)
+            if sa is not None and sb is not None and state_cls is not None:
+                try:
+                    truth = bool(sa.states[state_cls].get_value(sb))
+                except Exception:
+                    truth = None
+            mark = "agree" if predicted == observed else "DISAGREE"
+            note = ""
+            if predicted != observed:
+                # One disagreement is not a modelling error. `OnTop` is contact-based, and
+                # an object stuck to another is deliberately `visual_only` - no collisions,
+                # so it touches nothing and the predicate must read False however squarely
+                # it is sitting there. The edge is unobservable by construction, not wrong.
+                subject = scene.object_registry("name", a)
+                if subject is not None and getattr(subject, "visual_only", False):
+                    note = ("  (unobservable: " + a + " is out of the physics, and "
+                            "OnTop needs contact)")
+                    mark = "expected"
+            print(f"  {edge_type}({a}, {b}): predicted {predicted}, "
+                  f"observed {observed}, simulator says {truth}  <- {mark}{note}")
 
     if writer is not None:
         writer.close()

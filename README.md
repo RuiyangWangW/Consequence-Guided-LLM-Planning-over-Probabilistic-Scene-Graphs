@@ -22,12 +22,19 @@ scene floor plan ──> room graph ──────┘        (RSN)          
 | 3 | `scene_graph.py` | RSN places those objects in rooms |
 | 4 | `planner.py` | LLM proposes primitives; validator checks them |
 | 5 | `execute_plan.py` | grounds onto scene objects, runs in OmniGibson, records video |
+| 5' | `floor_world.py` + `sim2d.py` | the same nine primitives on a 2-D grid, in a second, with no Isaac |
+
+Where the plan does not know where an object is, three more modules close the gap:
+`nav_controller.py` turns one `NAVIGATE_TO` into a room drive plus a frontier search,
+`object_map.py` records what the camera has actually seen, and `world_graph.py` accumulates
+it as typed edges that `graph_machine.py` can then check a plan against offline.
 
 ```bash
 source ~/safety_filter/setup_behavior_env.sh   # behavior env, CUDA 12.8, GPU 1
 
 python pipeline.py --scene Beechwood_0_int --task "open the fridge in the kitchen" --json plan.json
-python execute_plan.py --plan plan.json --video figures/run.mp4
+python execute_plan.py --plan plan.json --video figures/run.mp4    # OmniGibson, ~17 min
+python sim2d.py --plan plan.json --scene Beechwood_0_int --gif figures/run.gif   # 2-D, ~1 s
 ```
 
 ```
@@ -159,6 +166,8 @@ Five offline entry points and one simulator run, split by cost:
 
 ```bash
 python check_names.py primitive_patches.py test_primitives.py   # <1s - undefined names
+python test_graph_machine.py               # ~1s - world graph and the plan checker
+python test_sim2d.py                       # ~15s - the 2-D world, camera, search and actions
 python test_stance_order.py                # ~2s - which stance the map picks
 python test_pipeline.py                    # ~1s - parser and validator
 python scene_setup.py Beechwood_0_int      # ~2s - furniture selection
@@ -250,6 +259,248 @@ object really is `OnTop`,
 established by teleporting it there, not that an arm reached for it — which is why every
 manipulation lands on a flat 100–150 steps while the navigation legs run with the distance
 actually driven.
+
+## The 2-D simulator
+
+Everything above needs Isaac, a GPU and about seventeen minutes to answer a question that
+is usually settled in the first thirty seconds — did the robot get there, and did it find
+the thing. `floor_world.py` and `sim2d.py` run the same nine primitives on a grid instead,
+in **about a second**, so the parts of the pipeline worth iterating on can be iterated on.
+
+```bash
+python floor_world.py --scene Beechwood_0_int                    # an empty house
+python floor_world.py --scene Beechwood_0_int --categories oven countertop
+python sim2d.py --scene Beechwood_0_int --demo                   # 16 actions, ~1 s
+python sim2d.py --scene Beechwood_0_int --plan plan.json --gif figures/sim2d.gif
+python test_sim2d.py                                             # 54 checks, ~15 s
+```
+
+It is the same 16-step potato/plate/oven plan the simulator run above executes:
+
+```
+ 1. NAVIGATE_TO(potato)    ok  drove 9.9 m, at 1.14 m, saw 81 new, robot -> kitchen_0
+ 2. GRASP(potato)          ok  at 1.14 m, -kinematic(potato), held = potato
+ ...
+16. PLACE_ON_TOP(counter)  ok  at 1.14 m, on_top(plate, countertop_jveutp_0), held = none
+
+16/16 actions succeeded, 15.8 m driven
+audit: saw 17 of 22 objects; 12 edges agree, 0 believed but not true
+```
+
+### The world is the floor plan
+
+`FloorWorld` is built from the same three files the room graph in `figures/` is built
+from, at 10 cm per cell:
+
+| source | gives |
+| --- | --- |
+| `layout/floor_trav_no_door_0.png` | which cells are floor |
+| `layout/floor_insseg_0.png` | which room each cell belongs to, named as `room_graph.py` names it |
+| `room_graph.py` | which rooms adjoin — the `room_connect` edges |
+| `json/<scene>_best.json` | the furniture: category, position, switch state |
+
+**Everything is two-dimensional.** A position is `[x, y]`; there is no height, no extent
+and no support surface, because none of the nine primitives is decided by one. An object
+on a counter *is at* the counter, and the `on_top` edge is what says it is on it.
+
+**The house starts empty and you load what the task needs**, the load policy
+`execute_plan.py` and `test_primitives.py` apply before starting Isaac — restrict
+`load_object_categories` to the structure plus the categories the plan names, and inject
+the small objects. Here the default is stricter still: no furniture at all.
+
+```python
+world = FloorWorld.load("Rs_int", categories=["countertop", "oven"])   # like the real one
+world = FloorWorld.load("Rs_int")                                      # an empty house
+world = FloorWorld.load("Rs_int", categories=None)                     # everything
+```
+
+Structure — walls, floors, ceilings, doors, windows — is never loaded as objects whatever
+is asked for. A plan cannot act on a wall, and 60 wall panels in the world graph bury the
+handful of objects the run is about: on `Beechwood_0_int` the demo's graph went from **123
+objects seen to 17**, and the graph panel from a hairball of 281 `next_to` edges to the
+four things the plan touches.
+
+**Objects go wherever you want them**, which is the point — BEHAVIOR scenes are
+furniture-only, so anything to pick up has to be injected:
+
+```python
+world.add_object("potato", "potato", on_top="countertop_jveutp_0")   # on a support
+world.add_object("mug", "mug", cell=(27, 80))                        # in a grid cell
+world.add_object("spoon", "spoon", room="kitchen_0")                 # on free floor there
+```
+
+**The furniture stays in the floor raster even when it is not loaded as objects**, which
+is what OmniGibson does — `load_object_categories` decides which objects exist, and the
+traversability map is read from the file regardless. Keeping it is also what makes the
+camera worth simulating. Running on the bare floor (`no_obj`) was tried: nothing occludes,
+so `kitchen_0` reads **98% covered without the potato ever being seen**, and nothing
+blocks, so the stance lands **0.00 m** from the potato — in the middle of the counter.
+
+**Ground truth is a `WorldGraph`,** the same class the robot's belief uses. That is not
+thrift: `sim.audit()` is then a set difference between two objects of the same type rather
+than a translation between two representations.
+
+### The doorways the raster leaves shut
+
+A scene ships with its rooms in several regions of standable floor, and a plan that
+crosses the house cannot run. Two causes, measured across all 51 scenes:
+
+**The doors.** There is no door-opening primitive, so a shut interior door is not an
+obstacle the robot could do anything about — it is one that silently partitions the house.
+With the doors in, `house_single_floor` breaks into 10 pieces and `Beechwood_0_int` into
+4. `floor_trav_no_door_0.png` is the default for that reason, and it is what "10 pieces"
+meant.
+
+**The thresholds.** That leaves **24 of the 51 scenes** still in pieces, and at every
+broken doorway the gap in the *un-eroded* floor map is **0.2 m to 0.3 m** — two or three
+cells. That is not a wall. It is the strip of non-floor where the door frame sits, and the
+room graph, built from dilated floor-plan adjacency, calls those rooms adjacent and is
+right to. `open_doorways` reconciles the two, and opens nothing anywhere else:
+
+| | |
+| --- | --- |
+| a **sill** | the two rooms' floors do not join, and the gap is at most `MAX_SILL` (0.5 m) |
+| a **pinch** | the floor joins them but the footprint erosion took the doorway |
+
+Both are opened to `2 · radius + 0.2 m`, the width that survives the erosion that follows.
+Nothing is opened where the room graph has no edge, where the sill is wider than 0.5 m, or
+where the route would need more than 40 cells — those are walls, and they stay up. Each
+pair gets at most 5 attempts, because carving changes the map: unbounded,
+`Wainscott_0_int` cut 34 openings over ten passes and ended in the two regions it started
+in.
+
+```
+Rs_int: 5 rooms, 7 connections, 4224 free cells (3188 standable)
+opened 2 doorways the raster had shut:
+  bathroom_0  <-> bedroom_0   0.30 m sill
+  bathroom_0  <-> kitchen_0   0.20 m sill
+```
+
+**27 of 51 scenes → 47 of 51.** What is left is honest and is reported rather than carved
+through: `Wainscott_0_int`, `hall_train_station`, `hotel_gym_spa` and `restaurant_brunch`
+still have a wing behind a gap of 0.8 m or more, and two rooms across the dataset are too
+small for the robot to stand in at all. Both entry points say so before a run:
+
+```
+warning: from living_room_0 the robot can reach kitchen_0, corridor_0, …
+         but not sauna_0, locker_room_0
+```
+
+`open_doorways=False` gets the raster exactly as the dataset ships it.
+
+### What is kept, and what is dropped
+
+Dropped: the arm, contact, dynamics. `GRASP` welds a name to the hand, `PLACE` teleports it
+onto a support, `OPEN` flips a flag. Kept, because dropping them makes the answers
+meaningless:
+
+**Navigation is A\* on the eroded grid.** Free floor eroded by the robot's footprint,
+8-connected, no corner-cutting — a diagonal needs both of the orthogonal cells it passes
+between, because the base would clip both. (`open_doorways` is the one caller that allows
+it, to recognise two floors meeting at a single diagonal cell as the doorway it is.) A stance is the nearest standable cell to the object that
+is in the robot's own connected region — the same funnel `nav_controller.py` runs, minus
+CuRobo's 3-D check. The erosion radius is **0.35 m, not Tiago's 0.892 m**: the real map is
+eroded harder because CuRobo checks the whole body against a counter lip the base would
+drive under, and there is no body here. At 0.892 m in `Rs_int` the kitchen keeps 4
+standable cells and the bathroom none — a house no plan can run in.
+
+**The camera is a wedge.** 1.2 rad, 5 m, 121 rays, each stopped at the first wall, exactly
+`object_map.observe_fov`. An object is revealed when the camera *reached the floor beside
+it* — within 0.8 m, on the cells this look actually covered. Testing the object's own cell
+would reveal nothing ever: an object sits inside its own footprint, which is precisely what
+makes that cell untraversable.
+
+**The search is `nav_controller`'s search**, with its constants: drive into the room, scan
+`SCAN_HEADINGS = 4` headings, walk to the nearest frontier at least 0.6 m away, scan again,
+stop at 95% coverage or 10 moves or no frontier left. One heading instead of four is not a
+smaller version of this — it stalls at 21% coverage in `Rs_int`, shuffling between two cells
+half a metre apart, because a 1.2 rad look never moves the frontier it is standing on.
+
+**An action needs the robot to have driven to it.** Within 1.5 m, and the distance it acted
+at is in every result line.
+
+### One effect model, two graphs
+
+The primitives' preconditions and effects are not reimplemented — `GraphMachine` already
+knows them, so the simulator drives **two** of them:
+
+```
+physical gate      can the robot get there, is it close enough, does the thing open at all
+    -> truth machine     GraphMachine over world.truth      what actually happens
+    -> belief machine    GraphMachine over sim.graph        what the robot thinks happened
+```
+
+A disagreement between the two is reported rather than patched, because it is a real
+divergence. The physical layer supplies exactly what the graph machine has to assume, and
+two affordance checks the graph model cannot make: `OPEN` on a countertop and `TOGGLE_ON`
+on a fridge are refused here, where `GraphMachine` sets a flag on any node it is given.
+
+`sim2d_render.py` draws the run as the two panels `world_trace.py` renders for a simulator
+run: the **object semantic map** on the left and the **world graph** on the right. The map
+is the robot's, not the floor plan — cells the camera never reached stay grey, what it saw
+is drawn in its room's colour, and a room it has not entered is a grey hole in the middle
+of the picture. Coverage is replayed from the recorded poses rather than stored, so a
+frame in the trace is a dozen numbers instead of a grid; the frames therefore have to
+record every heading a stop scanned, not just the one the robot ended up facing, or three
+quarters of each scan goes missing and objects appear on unmapped floor.
+
+**Both panels are drawn about the task, not about everything the robot knows.** The robot
+records every object it sees — that is what makes "I searched the kitchen" mean something
+— but searching a kitchen for a potato turns up eight countertops, and drawing all eight
+buries the four objects the task is about. `focus` is the plan's own objects; the pictures
+show those plus whatever the graph relates **directly** to one of them, so an object joins
+the figure at the moment the robot relates it to the task. One hop, deliberately:
+following the relations transitively walks the whole counter run back in, because each
+countertop is `next_to` the next one. On the run above that is **6 of 12 objects** drawn,
+and the audit still covers all 12.
+
+### A task, end to end
+
+`Beechwood_0_int`, *"take the potato from the countertop, heat it in the oven, then put it
+on the breakfast table"*, all five stages and no Isaac:
+
+```
+stage 1  task text -> potato, countertop, oven, breakfast_table
+stage 3  RSN       -> kitchen_0: countertop 0.99, oven 0.77, breakfast_table 0.56
+                      potato is on top of the countertop (certain, from the task)
+stage 4  Qwen2.5-7B proposes 9 steps; the validator REJECTS them:
+             step 5 PLACE_INSIDE(potato): cannot place 'potato' onto itself
+stage 5' the 2-D simulator runs that plan anyway and stops at the same step
+```
+
+The corrected 13-step plan, on the same world:
+
+```
+ 1. NAVIGATE_TO(countertop_jveutp_0)  ok  drove 9.9 m, at 1.14 m, saw 11 new
+ 2. GRASP(potato)                     ok  at 1.14 m, -kinematic(potato), held = potato
+ 3. NAVIGATE_TO(oven_wuinhm_0)        ok  drove 3.0 m, at 0.59 m, carried potato
+ 4-11 OPEN / PLACE_INSIDE / CLOSE / TOGGLE_ON / TOGGLE_OFF / OPEN / GRASP / CLOSE   ok
+12. NAVIGATE_TO(breakfast_table_uhrsex_0)  ok  drove 4.4 m, at 0.89 m, carried potato
+13. PLACE_ON_TOP(breakfast_table_uhrsex_0) ok  on_top(potato, breakfast_table_uhrsex_0)
+
+13/13 actions succeeded, 17.2 m driven
+audit: saw 12 of 14 objects; 6 edges agree, 0 believed but not true
+```
+
+`graph_machine.check` and the simulator agree on both plans — inapplicable at the same
+step for the LLM's, applicable and goal-met for the corrected one — which is the point of
+having both: the millisecond check is trustworthy because the two-second one confirms it.
+`figures/sim2d_potato_oven.gif` is the run.
+
+**Grounding is a real step, not bookkeeping.** The planner names categories because that is
+what the RSN predicts, and `Beechwood_0_int` has **eight countertops and four breakfast
+tables**; `stage_plan` picks the instance in the room the graph predicts, exactly as
+`execute_plan.ground_plan` does. So is honouring the graph's relations: the RSN graph says
+`potato ON_TOP countertop`, and dropping the potato on the floor of the right room instead
+put it 2.56 m from the counter the plan drives to, so `GRASP` failed on reach for a plan
+whose real fault was three steps later.
+
+### What it does not answer
+
+Whether the arm can reach, whether CuRobo can route, whether an object sampled against the
+back wall of a counter is graspable. Those need the real thing. What it does answer is
+whether the plan is drivable, whether the search finds what the plan assumes, and whether
+the graph the robot ends up with matches the world — which is what fails first.
 
 ## Choosing a scene, and setting it up
 
@@ -673,6 +924,143 @@ by 1.04 m, its own position stops resolving to a valid floor region, and **every
 problems and are neither. Checking position alone once reported PASS for a robot at
 roll=+172°, upside down. Every route now arrives at ±0.0° roll and pitch, including the
 tight fridge–stove gap and an 8.1 m run.
+
+## Searching for an object the robot has not seen
+
+Everything above assumes the plan knows where things are. It does not. `NAVIGATE_TO(potato)`
+says where the robot should end up, and the executor could only obey it by looking the
+potato up in the scene registry — information the robot could not have. Three modules close
+that gap, and they sit at three different levels.
+
+| module | level | what it owns |
+| --- | --- | --- |
+| `nav_controller.py` | below the primitive | turns one `NAVIGATE_TO` into a series of drives |
+| `object_map.py` | below that | what the camera has actually seen, per room |
+| `world_graph.py` | beside them | what is known, as typed edges |
+| `graph_machine.py` | above the plan | whether a plan works, checked without a simulator |
+
+**The search is a lower layer, not a tenth primitive.** The nine primitives stay high-level
+and the action space does not change. `NavigationController.navigate_to` decides *where to
+drive next*; the existing drive layer still does the A\* and the rotate-drive-rotate, so the
+navigation guarantees above hold unchanged.
+
+```
+NAVIGATE_TO(potato)                     high-level, from the plan
+    -> NavigationController             room sub-goal -> frontier -> frontier -> approach
+    -> controller._drive_to             the simulator's navigation, untouched
+```
+
+Two paths. An object already in the world graph gets one approach sub-goal — the old
+behaviour exactly. An object never seen gets driven to its room and frontier-searched until
+it appears. Finding it writes it into the graph, so the *next* navigation to it is direct.
+Measured on the 16-step plan: the first `NAVIGATE_TO(potato)` took 11 sub-goals and 2057
+steps, and the three that followed took one sub-goal each, because the plate, oven and
+coffee table had all been seen during that first sweep — the table through a doorway.
+
+### The object semantic map
+
+Starts entirely UNKNOWN and fills from the robot's own camera. `seg_instance` decides what
+was genuinely seen; `depth_linear` stops each coverage ray at the first surface, so space
+behind a counter stays unknown rather than being claimed as searched. **Masked to one room**,
+because the bounding box of `kitchen_0` includes corridor and living room, and without the
+mask "fully explored" is a claim about floor nobody searched and frontier selection walks the
+robot out of the room it was told to look in.
+
+Three things about the camera that cost a run each, all of them the seam between this layer
+and the existing machinery rather than the search logic itself:
+
+| symptom | cause |
+| --- | --- |
+| `no room was given` for the potato and plate | `in_rooms` is the scene file's annotation, and objects spawned at runtime have none — the two objects the search exists to find were the two it could not place. The room now comes from the segmentation under the object's own position. |
+| `no reachable floor inside kitchen_0` | the footprint is measured once by whoever touches the navigation map first, and cached for the run. Querying it before tucking pinned it at the untucked **0.99 m** instead of 0.77 m, eroding the kitchen away entirely. Tuck first — `_navigate_near` always did, and so must this. |
+| coverage climbing to 76% with **zero objects seen** | `robot.get_obs()` is keyed by *sensor*, and each entry is itself a dict of modalities. Matching modality names against the top-level keys finds nothing, and finds it silently — an empty result is indistinguishable from "the camera looked and there was nothing there". |
+
+**The camera already looks down, and a second look adds nothing.** Tiago's
+`reset_joint_pos` puts the head at **−0.45 rad**, about 26° below horizontal, so the obvious
+worry — that a level camera misses everything on a low surface — is not the problem. Four
+runs were spent on head control before that was measured, and the numbers are worth keeping
+so nobody repeats them:
+
+| change | objects seen | potato found |
+| --- | --- | --- |
+| leave the head alone (default −0.45) | **55** | yes, frontier 9 |
+| force an absolute 0.0 rad "level" | 39 | no |
+| pitch to −0.6 rad | 34 | no |
+| two looks, −0.45 and −0.95 | 37 | no |
+
+The last row settles it: instrumented per-look, the two looks returned **23 and 9 objects
+with a union of 23** — the down-look's objects are a strict subset of what the default pose
+already sees. Head aiming was removed.
+
+Two things learned on the way, both still true and both cheap to fall into again:
+
+- A down-look is not a floor measurement. `observe_fov` reads any depth return shorter than
+  its max range as a surface, which is right for a level camera and wrong for a tilted one:
+  pitched down, rays terminate on the *floor* and paint reachable cells as OCCUPIED,
+  destroying the frontiers that would have led the robot on.
+- Aiming the head is not a matter of setting the joint. `_hold_pose` returns only the trunk
+  and arm indices, so the primitives leave the head alone — but the camera has its own
+  position `JointController`, so the head has a persistent **drive target** and the motor
+  pulls a teleported joint straight back. And `quat2euler(...)[1]` is not a USD camera's
+  pitch; it read +0° for a head that had moved, which is what made the first diagnosis wrong.
+
+**What this leaves.** The plate ends at 0.28 m on the coffee table and the robot does not
+re-observe it after placing it, so the final graph still records it on the counter and the
+predicted-vs-observed audit disagrees on that edge. That is a limitation of *when* the robot
+looks, not of what it can see — the fix is a scan after the last placement, not a camera
+angle.
+
+### The world graph
+
+Six edge types. `room_connect` is seeded from `room_graph.py` and is all the robot knows
+before it moves; the other five are written **only once the robot has seen the objects they
+connect**, which is what makes the graph a belief rather than a copy of the scene registry.
+
+| edge | source |
+| --- | --- |
+| `room_connect` | the room graph, known up front |
+| `room_inside` | ground truth, when the object is seen |
+| `object_inside`, `on_top`, `under`, `next_to` | simulator predicates, when both objects are seen |
+
+**Carried objects move, and so does whatever rides on them.** Grasping the plate carries the
+potato resting on it, and anything resting on the potato — `_carried_with` walks `on_top` and
+`object_inside` transitively, so one `NAVIGATE_TO` rewrites `room_inside` for the whole stack.
+Lifting an object also ends the relations in which it was the *supported* thing while keeping
+those in which it was the support, which is exactly the edge that makes a later `GRASP(plate)`
+known to carry the potato to the oven.
+
+### The graph edit state machine
+
+Offline. Takes the room graph and a plan, applies each action as a **temporal graph edit** —
+preconditions read the graph as it stands after every earlier action, effects rewrite it — and
+checks the goal against the final graph. It runs in about a millisecond, so a plan can be
+rejected before a seventeen-minute simulator run is spent proving it wrong. Two failures,
+reported separately because they mean different things:
+
+    inapplicable   some action's preconditions do not hold. The plan is wrong.
+    goal not met   every action ran, and the required edges are absent. The plan is
+                   executable and does not do the task.
+
+What the graph catches that `planner.py:validate`'s flat model cannot:
+
+| plan | flat model | graph |
+| --- | --- | --- |
+| `GRASP(plate)` with the plate in a closed oven | legal, the robot is at the oven | rejected: `object_inside(plate, oven)` and the oven is shut |
+| the plate put back on the counter instead of the table | legal, every step applies | applicable, **goal not met**, names the missing `on_top(plate, coffee_table)` |
+| `GRASP(plate)` after `PLACE_ON_TOP(plate)` | something is held | warns that the potato rides along, and keeps the edge |
+
+`python test_graph_machine.py` covers all of this offline in about a second — 25 checks, no
+simulator.
+
+**One goal edge is unobservable by construction.** `OnTop` is contact-based, and an object
+stuck to another is deliberately `visual_only`, so it touches nothing and the predicate reads
+False however squarely it is sitting there. The predicted-vs-observed audit says so rather
+than reporting it as a disagreement.
+
+```bash
+python test_graph_machine.py                    # ~1s, no simulator - graph and machine
+python test_primitives.py --scene house_single_floor --search --bev --video out.mp4
+```
 
 ## The RSN
 

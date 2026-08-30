@@ -549,13 +549,58 @@ def build(env, robot, curobo_batch_size=3, joint_tolerance=JOINT_TOLERANCE):
                       f"satisfied by placing alone")
                 return None
 
-            lo, hi = fillable[0].aabb
-            centre = (lo + hi) / 2.0
-            pos = th.tensor([float(centre[0]), float(centre[1]), float(centre[2])],
-                            dtype=th.float32)
+            # Search for a point the predicate actually accepts, rather than computing one
+            # and hoping. Two things went wrong with computing it:
+            #
+            #   the target was the fillable link's AABB centre, and that AABB is
+            #   degenerate - `z spanning 1.15..1.15` on this oven - so nothing guaranteed
+            #   the point was inside the mesh volume `check_points_in_volume` tests.
+            #
+            #   `Inside` tests the object's *AABB centre*, while the placement sets its
+            #   *position*. For anything whose origin is not its centre those are
+            #   different points, so the aim was off by that offset.
+            #
+            # Measured, that combination failed 2 runs in 5 with the plate landing within
+            # 0.001 m of its target - a knife-edge, not a near miss.
+            lo, hi = obj.aabb
+            steps = 11
+            axes = [th.linspace(float(lo[i]), float(hi[i]), steps) for i in range(3)]
+            grid = th.stack(th.meshgrid(*axes, indexing="ij"), dim=-1).reshape(-1, 3)
+
+            accepted = th.zeros(grid.shape[0], dtype=th.bool)
+            for link in fillable:
+                try:
+                    accepted |= link.check_points_in_volume(grid)
+                except Exception:
+                    continue
+            if not bool(accepted.any()):
+                print(f"    [place] no point inside {obj.name}'s fillable volume out of "
+                      f"{grid.shape[0]} sampled; Inside cannot be satisfied by placing")
+                return None
+
+            # Take the point furthest from the cavity's boundary, horizontally and
+            # vertically. Which point is chosen turns out not to decide the outcome here -
+            # see the note below - but the deepest one is the least bad aim.
+            inside_pts, outside_pts = grid[accepted], grid[~accepted]
+            if outside_pts.shape[0]:
+                margin = th.cdist(inside_pts, outside_pts).min(dim=1).values
+                target = inside_pts[int(margin.argmax())]
+                best = float(margin.max())
+            else:
+                target = inside_pts.mean(dim=0)
+                best = float("inf")
+            span = (float(inside_pts[:, 2].min()), float(inside_pts[:, 2].max()))
+
+            # Aim the object's AABB centre, not its origin - that is what Inside reads.
+            centre_offset = held.aabb_center - held.get_position_orientation()[0]
+            pos = (target - centre_offset).to(th.float32)
             print(f"    [place] aiming at {obj.name}'s fillable volume "
-                  f"({float(pos[0]):+.2f}, {float(pos[1]):+.2f}, {float(pos[2]):+.2f}), "
-                  f"z spanning {float(lo[2]):.2f}..{float(hi[2]):.2f}")
+                  f"({float(target[0]):+.2f}, {float(target[1]):+.2f}, "
+                  f"{float(target[2]):+.2f}), {int(accepted.sum())}/{grid.shape[0]} "
+                  f"sampled points inside, volume z {span[0]:.3f}..{span[1]:.3f}, "
+                  f"horizontal clearance {best:.3f} m; object origin offset "
+                  f"({float(centre_offset[0]):+.3f}, {float(centre_offset[1]):+.3f}, "
+                  f"{float(centre_offset[2]):+.3f})")
             return pos, held.get_position_orientation()[1]
 
         def _near_pose(self, held, obj, predicate, near_poses=None,
@@ -617,6 +662,234 @@ def build(env, robot, curobo_batch_size=3, joint_tolerance=JOINT_TOLERANCE):
                   f"robot; taking the nearest")
             return best
 
+        def _inside_now(self, held, obj):
+            """`Inside`, evaluated from prim geometry rather than through object states.
+
+            BEHAVIOR defines `Inside(a, b)` as two tests: a's AABB *centre* within b's
+            AABB, and that same point inside a `fillable` meta-link volume of b. This
+            computes exactly that, and differs from `held.states[Inside]` only in where the
+            AABB comes from - `held.aabb_center`, read straight from the prim, instead of
+            `states[AABB]`, which derives from the physics view.
+
+            That difference is the whole bug. A placed object is `visual_only` so that
+            gravity cannot pull it out of the cavity before anything looks, and a
+            `visual_only` object has been removed from the physics view - so `states[AABB]`
+            reports wherever it was *before* the teleport. Measured over 32 trials with the
+            plate at an identical (+8.31, -1.66, +1.03) and `moved 0.000 m`: this test said
+            True every time, while `states[Inside]` alternated True/False, giving a 38-58%
+            pass rate on placements that were all equally correct.
+
+            Restoring physics first does not help, because the view syncs on a simulation
+            step and stepping is exactly what makes the plate fall out.
+            """
+            from omnigibson import object_states
+
+            centre = held.aabb_center
+            lo, hi = obj.aabb
+            if not (bool((lo <= centre).all()) and bool((centre <= hi).all())):
+                return False
+            point = centre.reshape(1, 3)
+            for link in obj.links.values():
+                if not getattr(link, "is_meta_link", False):
+                    continue
+                if link.meta_link_type not in ("fillable", "openfillable"):
+                    continue
+                try:
+                    if bool(link.check_points_in_volume(point)[0]):
+                        return True
+                except Exception:
+                    continue
+            return False
+
+        def _rest_pose(self, held, obj):
+            """Rest `held` on whatever surface is inside `obj`, wherever that turns out to be.
+
+            The general form of "put it in the oven". An object released in mid-cavity
+            falls to whatever is beneath it, so the placement has to be chosen at the
+            surface it will end up on, not in the air above it. Measured on `oven/ffitak`:
+            aiming at the fillable volume's centroid put the plate between the two racks,
+            where it caught rack2 by luck about half the time and otherwise slid off to
+            the oven floor - which sits below the volume - for a 38% pass rate. Resting it
+            deliberately on a rack is 100%.
+
+            Finding the surface by *ray cast* rather than by link geometry is what makes
+            this general. Only the oven has shelf links to aim at; `fridge/dszchb`,
+            `microwave/vuezel` and `dishwasher/xlmier` have none at all, and their objects
+            come to rest on an interior floor that is part of `base_link` - whose AABB top
+            is the appliance's outer top, several tens of centimetres above the surface
+            that matters. A downward ray finds a rack, a shelf, a fridge floor or a
+            microwave floor without knowing which it is.
+
+            Candidates are drawn from inside the fillable volume, since that is the region
+            `Inside` actually tests, and kept only if the object *resting* there would
+            still be in it. The highest surviving surface wins: it is what a person would
+            use, and it leaves the object furthest from the floor it would otherwise slide
+            to.
+            """
+            import torch as th
+
+            from omnigibson.utils.sampling_utils import raytest_batch
+
+            fillable = [link for link in obj.links.values()
+                        if getattr(link, "is_meta_link", False)
+                        and link.meta_link_type in ("fillable", "openfillable")]
+            if not fillable:
+                return None
+
+            # Where the cavity is, in world coordinates. Sampling the container's own
+            # AABB and keeping what the volume accepts avoids trusting the meta-link's
+            # AABB, which on this oven is degenerate (z 1.152..1.152).
+            #
+            # Sampled finely in x and y, coarsely in z: the z levels only have to find the
+            # top of the cavity at each column, while x and y decide where the object ends
+            # up standing. At 11 x 11 only 14 columns survived and the best of them sat at
+            # the cavity's edge, where the object slid off - the horizontal resolution is
+            # what matters.
+            lo, hi = obj.aabb
+            xs = th.linspace(float(lo[0]), float(hi[0]), 21)
+            ys = th.linspace(float(lo[1]), float(hi[1]), 21)
+            zs = th.linspace(float(lo[2]), float(hi[2]), 15)
+            gx, gy, gz = th.meshgrid(xs, ys, zs, indexing="ij")
+            grid = th.stack([gx.reshape(-1), gy.reshape(-1), gz.reshape(-1)], dim=-1)
+            accepted = th.zeros(grid.shape[0], dtype=th.bool)
+            for link in fillable:
+                try:
+                    accepted |= link.check_points_in_volume(grid)
+                except Exception:
+                    continue
+            if not bool(accepted.any()):
+                return None
+            cavity = grid[accepted]
+
+            # One column per distinct (x, y) in the cavity, cast from its top downwards.
+            columns = {}
+            for p in cavity:
+                columns.setdefault((round(float(p[0]), 4), round(float(p[1]), 4)), []) \
+                    .append(float(p[2]))
+            tops = [(x, y, max(zs_)) for (x, y), zs_ in columns.items()]
+            starts = [[x, y, z + 0.01] for x, y, z in tops]
+            ends = [[x, y, float(lo[2]) - 0.05] for x, y, _ in tops]
+
+            try:
+                hits = raytest_batch(starts, ends, only_closest=True)
+            except Exception as exc:
+                print(f"    [place] ray cast into {obj.name} failed "
+                      f"({type(exc).__name__}); using the cavity")
+                return None
+
+            half_height = float(held.aabb_extent[2]) / 2.0
+            centre_offset = held.aabb_center - held.get_position_orientation()[0]
+
+            # Every surface the object could rest on and still satisfy the predicate.
+            resting = []
+            for (x, y, _), hit in zip(tops, hits):
+                if not hit or not hit.get("hit"):
+                    continue
+                surface_z = float(hit["position"][2])
+                centre = th.tensor([x, y, surface_z + half_height + 0.005],
+                                   dtype=th.float32)
+                ok = False
+                for link in fillable:
+                    try:
+                        ok |= bool(link.check_points_in_volume(centre.reshape(1, 3))[0])
+                    except Exception:
+                        continue
+                if ok:
+                    resting.append((surface_z, centre))
+
+            best = None
+            if resting:
+                # Highest surface first - what a person would use, and furthest from the
+                # floor the object would otherwise slide to. Then, among the columns on
+                # that same surface, the most central one. Taking the highest column alone
+                # put the plate at the cavity's edge, where it slid off and out: measured,
+                # that scored 1/6 against 12/12 for a centred placement on the same shelf.
+                top_z = max(z for z, _ in resting)
+                level = [c for z, c in resting if abs(z - top_z) < 0.02]
+                mid = th.stack(level)[:, :2].mean(dim=0)
+                best = min(level, key=lambda c: float(th.norm(c[:2] - mid)))
+
+            if best is None:
+                print(f"    [place] no surface inside {obj.name} would hold {held.name} "
+                      f"within its fillable volume ({len(tops)} columns cast); "
+                      f"using the cavity")
+                return None
+
+            print(f"    [place] resting {held.name} inside {obj.name} on the surface at "
+                  f"({float(best[0]):+.2f}, {float(best[1]):+.2f}, "
+                  f"{float(best[2]) - half_height - 0.005:+.3f}), object centre "
+                  f"{float(best[2]):+.3f}, from {len(tops)} columns cast, "
+                  f"{len(resting)} of them usable")
+            return (best - centre_offset).to(th.float32), \
+                held.get_position_orientation()[1]
+
+        def _cavity_pose(self, held, obj):
+            """Where to put `held` inside `obj`: sampled, filtered to the cavity, nearest.
+
+            The same shape as `_near_pose` does for `OnTop` - draw several poses from
+            upstream's ray-casting sampler and keep the one closest to the robot - with one
+            filter that `OnTop` does not need.
+
+            An open door is a *link of the object*, so the sampler will happily return a
+            pose above it: measured previously, that put the plate 0.24 m in front of the
+            oven's face. And "closest to the robot" actively prefers the door, since the
+            door is the nearest part of the oven. So a sampled pose is kept only if its
+            AABB centre lands in a `fillable` meta-link volume, which is the cavity and is
+            what `Inside` actually tests.
+
+            Sampling rather than computing a point earns two things the geometric search
+            could not: the sampler works from the held object's real bounding box, so the
+            object *fits* rather than merely its centre being somewhere legal, and it
+            ray-casts against the true geometry rather than trusting a meta-link's AABB.
+            """
+            import torch as th
+
+            from omnigibson import object_states
+            from omnigibson.action_primitives.action_primitive_set_base import (
+                ActionPrimitiveError,
+            )
+
+            fillable = [link for link in obj.links.values()
+                        if getattr(link, "is_meta_link", False)
+                        and link.meta_link_type in ("fillable", "openfillable")]
+            if not fillable:
+                return None
+
+            robot_xy = self.robot.get_position_orientation()[0][:2]
+            centre_offset = held.aabb_center - held.get_position_orientation()[0]
+
+            best, best_distance, kept, drawn = None, None, 0, 0
+            for _ in range(PLACE_CANDIDATES):
+                try:
+                    pose = self._sample_pose_with_object_and_predicate(
+                        object_states.Inside, held, obj)
+                except ActionPrimitiveError:
+                    continue
+                drawn += 1
+                # Where the object's AABB centre would land - the point Inside tests.
+                point = (pose[0] + centre_offset).reshape(1, 3)
+                inside = False
+                for link in fillable:
+                    try:
+                        inside |= bool(link.check_points_in_volume(point)[0])
+                    except Exception:
+                        continue
+                if not inside:
+                    continue
+                kept += 1
+                distance = float(th.norm(pose[0][:2] - robot_xy))
+                if best_distance is None or distance < best_distance:
+                    best, best_distance = pose, distance
+
+            if best is None:
+                print(f"    [place] {drawn}/{PLACE_CANDIDATES} sampled poses for "
+                      f"{obj.name}, none inside a fillable volume; falling back")
+                return None
+
+            print(f"    [place] {kept}/{drawn} sampled poses land in {obj.name}'s cavity; "
+                  f"taking the nearest at {best_distance:.2f} m from the robot")
+            return best
+
         def _place_with_predicate(self, obj, predicate, near_poses=None,
                                   near_poses_threshold=None):
             """Place, giving the object back to the physics the moment it has arrived.
@@ -649,7 +922,15 @@ def build(env, robot, curobo_batch_size=3, joint_tolerance=JOINT_TOLERANCE):
                     "You need to be grasping an object first to place it somewhere.",
                 )
 
-            obj_pose = self._shelf_pose(held, obj, predicate)
+            obj_pose = None
+            if predicate is object_states.Inside:
+                # A shelf first: an object resting on one stays put, where an object
+                # aimed at mid-cavity falls to the floor and out of the volume.
+                obj_pose = self._rest_pose(held, obj)
+            if obj_pose is None and predicate is object_states.Inside:
+                obj_pose = self._cavity_pose(held, obj)
+            if obj_pose is None:
+                obj_pose = self._shelf_pose(held, obj, predicate)
             if obj_pose is None:
                 obj_pose = self._near_pose(
                     held, obj, predicate, near_poses=near_poses,
@@ -686,9 +967,60 @@ def build(env, robot, curobo_batch_size=3, joint_tolerance=JOINT_TOLERANCE):
                   f"{float(rested_at[2]):+.2f}); moved "
                   f"{float(th.norm(rested_at - placed_at)):.3f} m")
 
-            settled = held.states[predicate].get_value(obj)
+            # Why did it pass or fail? `Inside` is two tests - the object's AABB *centre*
+            # inside the container's AABB, then that same point inside a fillable
+            # meta-link volume - and knowing which one flipped is the difference between
+            # a placement bug and a predicate that does not see what we think it sees.
             if positional:
+                try:
+                    centre = held.aabb_center
+                    lo_o, hi_o = obj.aabb
+                    in_box = bool((lo_o <= centre).all() and (centre <= hi_o).all())
+                    pts = centre.reshape(1, 3)
+                    hits = []
+                    for link in obj.links.values():
+                        if not getattr(link, "is_meta_link", False):
+                            continue
+                        if link.meta_link_type not in ("fillable", "openfillable"):
+                            continue
+                        try:
+                            hits.append((link.meta_link_type,
+                                         bool(link.check_points_in_volume(pts)[0])))
+                        except Exception as exc:
+                            hits.append((link.meta_link_type, f"raised {type(exc).__name__}"))
+                    print(f"    [place] check: aabb centre "
+                          f"({float(centre[0]):+.3f}, {float(centre[1]):+.3f}, "
+                          f"{float(centre[2]):+.3f}), inside container aabb={in_box}, "
+                          f"volume tests {hits}")
+                except Exception as exc:
+                    print(f"    [place] check diagnostic failed: {type(exc).__name__}: {exc}")
+
+            # Clear the cache before asking. Object states cache per timestep, and
+            # `KinematicsMixin._cache_is_valid` skips its "has anything moved?" test for
+            # objects that are asleep - which a `visual_only` object always is, having no
+            # physics. `Inside` therefore returned whatever it last evaluated to *before*
+            # the teleport, and whether a stale entry existed decided the verdict:
+            # measured, identical placements at (+8.31, -1.66, +1.03) with `moved 0.000 m`
+            # returned True, False, True, False, False, while a fresh evaluation of both
+            # halves of the predicate said True every time.
+            # Hand the object back to the physics *before* asking, then put it back on
+            # its mark. `Inside` reads `states[AABB]`, which derives from the physics
+            # view - and a `visual_only` object has been removed from that view, so the
+            # AABB it reports is wherever the object was before the teleport. Measured,
+            # the fresh `aabb_center` property and both halves of the predicate said True
+            # while `states[Inside]` said False, for identical placements at
+            # (+8.31, -1.66, +1.03) with `moved 0.000 m`.
+            #
+            # Restoring physics first would normally let it fall 0.219 m out of the cavity
+            # before anything looked - which is why it was held out in the first place -
+            # so it is re-placed on the same pose immediately afterwards and checked
+            # without stepping. It falls after the check, which is fine: the check has its
+            # answer, and `Inside` has no contact term to spoil.
+            if positional:
+                settled = self._inside_now(held, obj)
                 held.visual_only = False
+            else:
+                settled = held.states[predicate].get_value(obj)
             if not settled:
                 raise ActionPrimitiveError(
                     ActionPrimitiveError.Reason.EXECUTION_ERROR,
