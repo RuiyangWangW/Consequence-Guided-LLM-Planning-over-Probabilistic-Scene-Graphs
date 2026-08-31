@@ -21,6 +21,7 @@ scene floor plan ──> room graph ──────┘        (RSN)          
 | 2 | `room_graph.py` | floor plans -> room adjacency graph |
 | 3 | `scene_graph.py` | RSN places those objects in rooms |
 | 4 | `planner.py` | LLM proposes primitives; validator checks them |
+| 4' | `replan.py` | checks the plan with the graph machine and hands its complaint back to the LLM, up to 5 times |
 | 5 | `execute_plan.py` | grounds onto scene objects, runs in OmniGibson, records video |
 | 5' | `floor_world.py` + `sim2d.py` | the same nine primitives on a 2-D grid, in a second, with no Isaac |
 
@@ -139,6 +140,101 @@ holds, where it is, and what is open. It rejects:
 
 Warnings cover the non-fatal cases: placing inside a closed container, closing something
 never opened, navigating between non-adjacent rooms.
+
+## Stage 4' — replanning from the checker's complaint
+
+`planner.generate` asks once and surfaces the raw failure, deliberately. `replan.py` closes
+the loop around it: ask, check with `GraphMachine`, quote the step it refused back to the
+model, ask again, up to five times.
+
+One scene graph serves both halves — `WorldGraph.from_scene_graph` over the RSN's output is
+what the LLM is shown *and* what the plan is checked against — so the checker can only
+complain about things the planner was told, which is what makes its complaints repairable.
+
+```bash
+python replan.py --scene Beechwood_0_int --task "take the potato from the countertop, \
+    heat it in the oven, then put it on the breakfast table" --json plan.json
+```
+
+**The prompt has to state the rules the plan is judged by.** It did not, and that alone
+accounted for every failure in the first end-to-end run. The action space was nine
+one-liners — `GRASP(object) - Grasp an object` — with no preconditions in sight, so the
+model wrote `PLACE_INSIDE(potato)` (passing the object rather than the container),
+`PLACE_ON_TOP` with an empty hand, and `GRASP(potato)` while standing at the table. Every
+one is a rule the machine enforces and the prompt never mentioned. `PRIMITIVES` now carries
+`requires` and `effect` per action, rendered into the prompt:
+
+```
+  PLACE_INSIDE(object)  - Put down what is held, inside something
+      requires: the robot is standing at the destination, the destination is already
+                open, and the robot is holding something
+      then:     what was held is inside the destination; the hand is empty
+```
+
+With that, the 13-step potato/oven plan came back **valid on the first attempt**, and ran
+13/13 in the 2-D simulator.
+
+**Retries must sample.** Decoding is greedy, so a rejected plan came back byte-identical on
+all five attempts — the model had already given its best answer to a prompt it was not
+persuaded by, and three attempts were spent re-reading it. Attempt 1 stays greedy; retries
+step through 0.5, 0.7, 0.9, 1.0.
+
+**The complaint has three parts**, and the third is what the precondition specification
+buys — a refusal the model can act on rather than a rejection:
+
+```
+Your previous attempt:
+
+   1. NAVIGATE_TO(countertop)   ok
+   2. GRASP(potato)   ok
+   3. NAVIGATE_TO(breakfast_table)   ok
+   4. GRASP(oven)   <-- REJECTED: already holding 'potato'; place or release it first
+
+The plan was rejected at the marked step. Everything before it is fine; fix that step
+and anything after it that depended on it.
+
+Remember what GRASP(object) needs:
+  requires: the hand is empty; the robot is standing at the object; if the object is
+            inside a container, that container is open
+  then:     the robot is holding it, and it travels with the robot
+```
+
+The whole plan is quoted back with the line marked, not just the error: a model handed
+"step 4 was wrong" has to reconstruct what step 4 was. The `requires`/`effect` block is the
+same specification the machine enforced, so the complaint and the rule are never out of
+step. Quoting only the one-line doc was tried first and is much weaker — "Remember: GRASP -
+Pick an object up" says nothing about why this GRASP failed.
+
+There is a second branch for a plan that applies but does not do the task, which lists the
+goal edges still missing at the end.
+
+Four tasks, five attempts each:
+
+| task | outcome |
+| --- | --- |
+| heat the potato in the oven, then put it on the breakfast table | accepted, attempt 1 |
+| move the book from the coffee table to the bookcase | accepted, attempt 1 |
+| put the apple inside the fridge | accepted, attempt 2 |
+| put the plate in the dishwasher and turn it on | accepted, attempt 3 |
+| take the bowl out of the fridge and leave it on the table | **no valid plan in 5** |
+
+The bowl task turned out not to be a planning failure at all. Chasing its refusal led to
+**stage 1**: `task_objects.extract` read "take the bowl **out of** the fridge and leave it
+on the breakfast table" as `bowl ON_TOP breakfast_table` — the task's *goal* rather than
+the bowl's *current* location. The scene graph then asserted the bowl already sat on the
+table, so a plan that opens the fridge to get it was refused, correctly, against a world in
+which the task was already done. The extraction prompt distinguishes the two carefully and
+even has an "off the shelf" example, but its phrase list did not cover "out of". With that
+added the task is accepted on attempt 2:
+
+    NAVIGATE_TO(fridge) OPEN(fridge) GRASP(bowl) NAVIGATE_TO(breakfast_table)
+    PLACE_ON_TOP(breakfast_table) RELEASE()
+
+It is not fixed in general — "get the mug **out of** the dishwasher" is still read as
+`mug ON_TOP counter` — and that failure is worth understanding: the resulting plan is
+*accepted*, because against a graph that says the mug is already on the counter it is
+internally valid. **The filter can only be as sound as the graph it is given**, and a
+stage-1 error is invisible to every stage after it.
 
 ## Stage 5 — execution in the simulator
 

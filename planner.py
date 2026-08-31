@@ -16,16 +16,54 @@ import re
 
 # The nine primitives, mirroring StarterSemanticActionPrimitiveSet. `takes_object` is
 # read off the controller method signatures, not guessed.
+#
+# `requires` and `effect` are the specification `graph_machine.GraphMachine` enforces,
+# written out for the LLM. They are here rather than only in the machine because a planner
+# judged against rules it was never shown will keep breaking them: measured, a 7B model
+# given only the one-line docs wrote `PLACE_INSIDE(potato)` - passing the object being
+# placed rather than the container - and reproduced it on every retry, because nothing in
+# the prompt said the argument is the destination. Keep these in step with
+# `GraphMachine.step`; `test_graph_machine.py` pins the machine's half.
 PRIMITIVES = {
-    "GRASP": {"takes_object": True, "doc": "Grasp an object"},
-    "PLACE_ON_TOP": {"takes_object": True, "doc": "Place the held object on top of another"},
-    "PLACE_INSIDE": {"takes_object": True, "doc": "Place the held object inside another"},
-    "OPEN": {"takes_object": True, "doc": "Open an object"},
-    "CLOSE": {"takes_object": True, "doc": "Close an object"},
-    "NAVIGATE_TO": {"takes_object": True, "doc": "Navigate to an object"},
-    "RELEASE": {"takes_object": False, "doc": "Release the held object, letting it fall"},
-    "TOGGLE_ON": {"takes_object": True, "doc": "Toggle an object on"},
-    "TOGGLE_OFF": {"takes_object": True, "doc": "Toggle an object off"},
+    "GRASP": {
+        "takes_object": True, "doc": "Pick an object up",
+        "requires": "the hand is empty; the robot is standing at the object; if the "
+                    "object is inside a container, that container is open",
+        "effect": "the robot is holding it, and it travels with the robot"},
+    "PLACE_ON_TOP": {
+        "takes_object": True, "doc": "Put down what is held, on top of something",
+        "requires": "the robot is standing at the destination and is holding something",
+        "effect": "what was held is on top of the destination; the hand is empty"},
+    "PLACE_INSIDE": {
+        "takes_object": True, "doc": "Put down what is held, inside something",
+        "requires": "the robot is standing at the destination, the destination is "
+                    "already open, and the robot is holding something",
+        "effect": "what was held is inside the destination; the hand is empty"},
+    "OPEN": {
+        "takes_object": True, "doc": "Open a door, lid or drawer",
+        "requires": "the robot is standing at the object, and the object has a door",
+        "effect": "it is open"},
+    "CLOSE": {
+        "takes_object": True, "doc": "Shut a door, lid or drawer",
+        "requires": "the robot is standing at the object, and the object has a door",
+        "effect": "it is shut"},
+    "NAVIGATE_TO": {
+        "takes_object": True, "doc": "Drive to an object",
+        "requires": "nothing",
+        "effect": "the robot is then standing at that object, and at whatever is on or "
+                  "inside it. It is no longer standing at what it drove away from"},
+    "RELEASE": {
+        "takes_object": False, "doc": "Let go of what is held",
+        "requires": "nothing",
+        "effect": "the hand is empty; what it held is left on the floor of this room"},
+    "TOGGLE_ON": {
+        "takes_object": True, "doc": "Switch an object on",
+        "requires": "the robot is standing at the object, and the object has a switch",
+        "effect": "it is on"},
+    "TOGGLE_OFF": {
+        "takes_object": True, "doc": "Switch an object off",
+        "requires": "the robot is standing at the object, and the object has a switch",
+        "effect": "it is off"},
 }
 
 # Containers a robot must open before placing inside. Used only for warnings: the real
@@ -236,8 +274,10 @@ def build_prompt(task, graph):
     """The planning prompt: action space, scene graph, rules, and output format."""
     from scene_graph import format_for_llm
 
-    actions = "\n".join(
-        f"  {name}({'object' if s['takes_object'] else ''})  - {s['doc']}"
+    actions = "\n\n".join(
+        f"  {name}({'object' if s['takes_object'] else ''})  - {s['doc']}\n"
+        f"      requires: {s['requires']}\n"
+        f"      then:     {s['effect']}"
         for name, s in PRIMITIVES.items()
     )
     prompt = f"""You are a task planner for a household robot in a simulated home.
@@ -249,18 +289,26 @@ actions, exactly as written:
 
 {format_for_llm(graph)}
 
+Every action above is checked against its `requires` before it runs. If one fails, the
+whole plan is rejected.
+
 Rules:
 - Use only the objects listed above. Do not invent objects.
 - The number after each object is how confident we are that it is really there. A low
   number means the object may not exist in this house; plan for it only if the task
   requires it.
-- NAVIGATE_TO(object) before acting on an object in a different room.
-- GRASP before any PLACE. The robot has one hand: it cannot hold two objects.
-- After PLACE_ON_TOP or PLACE_INSIDE the hand is empty again.
-- OPEN a closed container before placing something inside it, and CLOSE it after.
+- **NAVIGATE_TO the object you are about to act on, every time.** Being in the same room
+  is not enough, and having driven there earlier is not enough - if the robot has driven
+  somewhere else since, drive back.
+- For PLACE_ON_TOP and PLACE_INSIDE the argument is the **destination**: the surface or
+  container being put onto or into. What is being put down is whatever the robot is
+  holding, and is never named.
+- The robot has one hand. GRASP before any PLACE, and after a PLACE the hand is empty
+  again - to move something a second time, GRASP it again.
 - OPEN and CLOSE act on the object directly. Do NOT grasp a door, appliance or cabinet
   in order to open it: write OPEN(fridge), never GRASP(fridge).
-- GRASP is only for objects the robot will carry somewhere.
+- To get something back out of a container, NAVIGATE_TO the container, OPEN it, then
+  GRASP the object.
 - RELEASE takes no argument: write exactly RELEASE().
 
 Examples of correct sequences:
@@ -279,6 +327,21 @@ Examples of correct sequences:
   GRASP(book)
   NAVIGATE_TO(table)
   PLACE_ON_TOP(table)
+
+  Task: heat the pie in the oven, then put it on the counter
+  NAVIGATE_TO(pie)
+  GRASP(pie)
+  NAVIGATE_TO(oven)
+  OPEN(oven)
+  PLACE_INSIDE(oven)
+  CLOSE(oven)
+  TOGGLE_ON(oven)
+  TOGGLE_OFF(oven)
+  OPEN(oven)
+  GRASP(pie)
+  CLOSE(oven)
+  NAVIGATE_TO(counter)
+  PLACE_ON_TOP(counter)
 
 Task: {task}
 
@@ -336,7 +399,14 @@ def _local_generator(model_name):
         model = model.to("cuda" if torch.cuda.is_available() else "cpu")
     model.eval()
 
-    def run(prompt, max_new_tokens):
+    def run(prompt, max_new_tokens, temperature=0.0):
+        """`temperature` 0 is greedy, which is the right default: one question, one answer.
+
+        Anything above it samples, which is what a *retry* needs. Greedy decoding makes a
+        repair loop pointless past the second attempt - measured, a rejected plan came back
+        byte-identical five times running, because the model had already given its best
+        answer to a prompt it was not persuaded by.
+        """
         messages = [{"role": "user", "content": prompt}]
         # Depending on the transformers version this returns either a bare tensor or a
         # BatchEncoding; normalize to a tensor of ids so both work.
@@ -347,7 +417,9 @@ def _local_generator(model_name):
         ids = ids.to(model.device)
         with torch.no_grad():
             out = model.generate(
-                ids, max_new_tokens=max_new_tokens, do_sample=False,
+                ids, max_new_tokens=max_new_tokens,
+                do_sample=temperature > 0,
+                **({"temperature": temperature, "top_p": 0.9} if temperature > 0 else {}),
                 pad_token_id=tok.eos_token_id,
             )
         return tok.decode(out[0][ids.shape[-1]:], skip_special_tokens=True)
