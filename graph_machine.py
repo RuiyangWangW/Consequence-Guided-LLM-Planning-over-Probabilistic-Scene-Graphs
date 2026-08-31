@@ -110,12 +110,15 @@ class Outcome:
 class GraphMachine:
     """Applies atomic actions to a `WorldGraph` and checks each one's preconditions.
 
-    The specification, in full. `near(x)` is "the robot is beside x" - checked here as
-    `room_inside(robot) == room_inside(x)`, and in `sim2d` as a real distance, which is
-    the stronger test and the reason the two exist. `open(x)` and `toggled(x)` are node
-    properties the machine tracks; `openable(x)` and `switchable(x)` are affordances, read
-    from the tracked state where it exists and from the category lists in `planner.py`
-    otherwise.
+    The specification, in full. `near(x)` is "the robot is standing at x", and it is a
+    graph fact: the `nearby(robot, x)` edge `NAVIGATE_TO` writes. It used to be
+    `room_inside(robot) == room_inside(x)`, and a room turned out to be far too coarse -
+    measured against the 2-D simulator, a fifth of the plans this model accepted were
+    undrivable and every one of them was a plan that drove to one thing in the kitchen and
+    then acted on another thing three metres away in the same kitchen. With the edge, that
+    whole class is gone. `open(x)` and `toggled(x)` are node properties the machine tracks;
+    `openable(x)` and `switchable(x)` are affordances, read from the tracked state where it
+    exists and from the category lists in `planner.py` otherwise.
 
     | action              | preconditions                                    |
     | ------------------- | ------------------------------------------------ |
@@ -127,17 +130,26 @@ class GraphMachine:
     | `PLACE_INSIDE(x)`   | `near(x)`; `open(x)` if `openable(x)`; holding something |
     | `PLACE_ON_TOP(x)`   | `near(x)`; holding something                     |
 
-    And what each one does to the graph:
+And what each one does. "The stack" is the held object plus everything riding on it,
+    which `carried_with` walks over `on_top` and `object_inside`.
 
-    | action              | effects                                          |
-    | ------------------- | ------------------------------------------------ |
-    | `NAVIGATE_TO(x)`    | `room_inside(robot)` := room of x                |
-    | `GRASP(x)`          | `+holding(robot, x)`; drop x's kinematic edges, keeping its riders; drop `room_inside` for x and everything riding on it |
-    | `PLACE_ON_TOP(x)`   | `+on_top(held, x)`, `+under(x, held)`; `-holding`; restore `room_inside` for the stack from x's room |
-    | `PLACE_INSIDE(x)`   | `+object_inside(held, x)`; `-holding`; restore `room_inside` as above |
-    | `RELEASE()`         | `-holding`; restore `room_inside` for the stack from the robot's room |
-    | `OPEN/CLOSE(x)`     | `open(x)` := True / False                        |
-    | `TOGGLE_ON/OFF(x)`  | `toggled(x)` := True / False                     |
+    | action | in words | in edges |
+    | --- | --- | --- |
+    | `NAVIGATE_TO(x)` | the robot is now standing at x, and at whatever is on or inside it | `room_inside(robot)` := room of x; `nearby(robot)` := x and its contents, plus whatever is in the hand |
+    | `GRASP(x)` | the robot is holding x, and x travels with it | `+holding(robot, x)`; drop x's kinematic edges but keep its riders; drop `room_inside` for the whole stack, so its room derives from the robot's |
+    | `RELEASE()` | the hand is empty; what it held stays in the room the robot released it in, resting on nothing | `-holding`; `room_inside(stack)` := the robot's room |
+    | `PLACE_ON_TOP(x)` | what was held is now on top of x, and is no longer held | `+on_top(held, x)`, `+under(x, held)`; `-holding`; `room_inside(stack)` := room of x |
+    | `PLACE_INSIDE(x)` | what was held is now inside x, and is no longer held | `+object_inside(held, x)`; `-holding`; `room_inside(stack)` := room of x |
+    | `OPEN/CLOSE(x)` | x is now open / shut | `open(x)` := True / False |
+    | `TOGGLE_ON/OFF(x)` | x is now on / off | `toggled(x)` := True / False |
+
+    Three of those are worth a sentence. `GRASP` keeps the riders - lifting a plate does
+    not put down the potato on it - and that surviving `on_top(potato, plate)` is what
+    makes a later `GRASP(plate)` known to carry the potato with it. It also *drops*
+    `room_inside` rather than rewriting it, because a carried object has no room of its
+    own; the placements write it back. And `PLACE_INSIDE` writes only `object_inside`,
+    where `PLACE_ON_TOP` writes both directions: there is no "contains" edge, so one
+    direction is the whole record.
 
     Two things are checked that are not preconditions and are not in the table, because
     they are about the plan being well formed rather than about the world: an action's
@@ -267,18 +279,36 @@ class GraphMachine:
         return edits
 
     def _require_here(self, name):
-        """The robot has to be in the object's room to act on it."""
-        room = self._room_of(name)
-        if room is None:
-            return None            # room unknown; nothing to contradict
-        if self.location != room:
-            return (f"robot is in {self.location or 'no room yet'} but '{name}' is in "
-                    f"{room}; NAVIGATE_TO it first")
-        return None
+        """The robot has to be standing at the object to act on it.
+
+        Read off the `nearby` edges `NAVIGATE_TO` writes, not off room membership. The room
+        was the finest thing this model used to know about where the robot was, and a room
+        is not fine enough: measured against the 2-D simulator over 200 plans, a fifth of
+        the plans it accepted were undrivable, and **every one** was this - the plan drove
+        to one thing in the kitchen and then acted on another thing in the same kitchen,
+        three metres away, without driving to it. Same room, so the check passed.
+        """
+        if self.graph.is_near(name):
+            return None
+        standing_at = self.graph.near_objects()
+        where = f"standing at {', '.join(standing_at)}" if standing_at else "not at anything"
+        return f"robot is {where}, not at '{name}'; NAVIGATE_TO it first"
+
+    def _within_reach_of(self, name):
+        """`name` and whatever is on or inside it - all of it is within arm's reach.
+
+        Driving to a counter puts what is on the counter in reach; driving to an open oven
+        puts what is in the oven in reach. Without this the robot would have to navigate to
+        the potato *and* to the counter it is on, which is not how reaching works and would
+        reject plans that are fine.
+        """
+        return self.graph.carried_with(name)
 
     # ------------------------------------------------------------------ the actions
 
-    def step(self, index, action, arg):
+    def step(self, index, action, arg=None):
+        # `arg` defaults because RELEASE genuinely has none, and making every caller pass
+        # an explicit None for the one action that takes no object is a wart.
         edits, warnings = [], []
 
         def fail(reason):
@@ -319,12 +349,15 @@ class GraphMachine:
             if room is not None:
                 self.location = room
                 edits.append(f"robot -> {room}")
-                # Whatever is in the hand travels with the robot, and so does anything
-                # riding on it - carrying the plate carries the potato on the plate. None
-                # of them has a room edge to rewrite: they have the robot's room until
-                # they are put down.
-                if self.held is not None:
-                    edits.append(f"carrying {', '.join(sorted(self._carried_with(self.held)))}")
+            # Standing at the object, and at whatever is on or inside it. Whatever is in
+            # the hand stays in reach too - it is in the hand. The set is *replaced*: the
+            # robot is no longer beside what it drove away from.
+            reach = set(self._within_reach_of(name))
+            if self.held is not None:
+                reach |= self._carried_with(self.held)
+                edits.append(f"carrying {', '.join(sorted(self._carried_with(self.held)))}")
+            self.graph.set_nearby(reach, note="navigated")
+            edits.append(f"nearby({', '.join(sorted(reach))})")
             return ok()
 
         # RELEASE is exempt: it takes no argument, so `name` is None by construction and
@@ -361,6 +394,9 @@ class GraphMachine:
                 warnings.append(f"'{', '.join(carried)}' rode along on '{name}'")
             self.held = name
             edits.append(f"held = {name}")
+            # It is in the hand, so it stays in reach however the graph is rearranged.
+            self.graph.set_nearby(set(self.graph.near_objects())
+                                  | self._carried_with(name), note="grasped")
             # A thing in the hand is not in a room of its own. Its room is the robot's,
             # and `room_of` derives it, so the stored edge would only be a duplicate to
             # keep in step on every drive. Placing it down writes the edge back.
@@ -400,6 +436,9 @@ class GraphMachine:
             room = self._room_of(name)
             if room is not None:
                 edits += self._move_to_room(self._carried_with(self.held), room)
+            # Just put down at arm's length, so still in reach.
+            self.graph.set_nearby(set(self.graph.near_objects())
+                                  | self._carried_with(self.held), note="placed")
             self.held = None
             edits.append("held = none")
             return ok()
@@ -413,6 +452,9 @@ class GraphMachine:
                 return ok()
             if self.location is not None:
                 edits += self._move_to_room(self._carried_with(self.held), self.location)
+            # Dropped at the robot's feet, so still in reach.
+            self.graph.set_nearby(set(self.graph.near_objects())
+                                  | self._carried_with(self.held), note="released")
             edits.append(f"released {self.held} (now on the floor)")
             self.held = None
             return ok()

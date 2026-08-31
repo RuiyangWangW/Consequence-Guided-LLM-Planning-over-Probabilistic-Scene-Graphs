@@ -5,7 +5,7 @@ the robot moves - which rooms exist and which are connected. Everything else is 
 the robot searches a room it sees objects, and each observation writes edges here: which
 room the object is in, and how it sits relative to the other objects already seen.
 
-Seven edge types, and where each comes from:
+Eight edge types, and where each comes from:
 
     room_connect    two rooms are traversably adjacent   from the room graph, known up front
     room_inside     an object is in a room               ground truth, when the object is seen
@@ -14,10 +14,13 @@ Seven edge types, and where each comes from:
     under           an object is beneath another         simulator predicate, when both are seen
     next_to         two objects are beside each other    simulator predicate, when both are seen
     holding         the robot has this in its hand       from the robot's own actions
+    nearby          the robot is beside this              from where it navigated to
 
-The robot is a node too, `ROBOT`, and the last two of its three facts are edges like any
-other: `room_inside(robot, kitchen_0)` says where it is and `holding(robot, potato)` says
-what it has. A carried object has **no `room_inside` edge of its own**: it is wherever the
+The robot is a node too, `ROBOT`, and its facts are edges like any other:
+`room_inside(robot, kitchen_0)` says which room it is in, `holding(robot, potato)` says
+what it has, and `nearby(robot, oven)` says what it is standing at. That last one is what
+every manipulation's "the robot is beside it" precondition reads, and it is why a room is
+no longer the finest thing the model knows about where the robot is. A carried object has **no `room_inside` edge of its own**: it is wherever the
 robot is, and `room_of` derives that by following `holding` back to the robot. Storing it
 as well would be a second record of the same fact, kept in step by rewriting it on every
 navigation - which is one more thing that can fall out of step. That is what makes "where is the robot and what is it carrying" a question
@@ -40,7 +43,7 @@ import json
 
 # The six edge types, in the order they are defined above.
 EDGE_TYPES = ("room_connect", "room_inside", "object_inside", "on_top", "under",
-              "next_to", "holding")
+              "next_to", "holding", "nearby")
 
 # The robot's own node. Reserved: nothing observed is ever called this.
 ROBOT = "robot"
@@ -89,6 +92,54 @@ class WorldGraph:
             g.rooms[room_id] = {"room_type": info.get("room_type")}
         for a, b in graph.get("edges", []):
             g.add_edge("room_connect", a, b, note="room graph")
+        return g
+
+    @classmethod
+    def from_scene_graph(cls, graph):
+        """Seed from the RSN's scene graph: the rooms, and where it thinks things are.
+
+        `scene_graph.populate` produces a plain dict - `{potato: {room: kitchen_0,
+        probability: 0.66}}` plus the relations a task stated outright - and that dict is
+        what the LLM is shown and what `planner.validate` checks. Without this it is not
+        what `GraphMachine` checks: `from_room_graph` reads `rooms` and `edges` and drops
+        `objects`, so the machine was validating against a graph with nothing in it and
+        every `GRASP` failed for want of an object the planner had been told about.
+
+        What comes across is a *belief*, and it is written as one. The room is the RSN's
+        guess and the probability travels with it, so a consumer can tell a 0.99 from a
+        0.13. There are no positions: the RSN predicts rooms, not coordinates, and an
+        object here has a room and no place in it until the robot looks.
+        """
+        g = cls.from_room_graph(graph)
+        for name, info in (graph.get("objects") or {}).items():
+            room = info.get("room")
+            # A room the placement names but the topology does not declare is registered
+            # rather than dropped. Dropping it is quiet and total: an object with no room
+            # has no room to be *in*, `_require_here` finds nothing to contradict, and
+            # every precondition that turns on where the robot is standing passes
+            # vacuously - a broken plan comes back clean.
+            if room is not None and room not in g.rooms:
+                g.rooms[room] = {"room_type": None}
+            # The RSN keys its objects by category, so the name is the category - until
+            # the plan is grounded onto instances, when `category` carries it instead.
+            # Getting this wrong is quiet and total too: the category decides every
+            # affordance, so an oven whose category reads `oven_wuinhm_0` is an oven that
+            # does not open.
+            g.see_object(name, info.get("category") or name, None, room=room)
+            if info.get("probability") is not None:
+                g.objects[name]["probability"] = float(info["probability"])
+        # A task that says where something is - "the potato on the counter" - is a fact,
+        # not a guess, and `populate` records it as a relation. It is a kinematic edge
+        # here, which is what makes GRASP(potato) resolvable before the robot has looked.
+        relations = {"ON_TOP": "on_top", "INSIDE": "object_inside"}
+        for relation in graph.get("relations") or []:
+            edge = relations.get(str(relation.get("relation", "")).upper())
+            src, dst = relation.get("from"), relation.get("to")
+            if edge is None or src not in g.objects or dst not in g.objects:
+                continue
+            g.add_edge(edge, src, dst, note="scene graph")
+            if edge == "on_top":
+                g.add_edge("under", dst, src, note="scene graph")
         return g
 
     @classmethod
@@ -245,6 +296,30 @@ class WorldGraph:
         if name is not None:
             self.objects.setdefault(ROBOT, {"category": "robot", "position": None})
             self.add_edge("holding", ROBOT, name, note=note)
+
+    def set_nearby(self, names, note=None):
+        """Replace what the robot is standing at.
+
+        Driving somewhere is the only thing that changes which objects are within arm's
+        reach, so the set is replaced rather than added to - otherwise the robot
+        accumulates a memory of everywhere it has ever been and every precondition about
+        being beside something passes forever after.
+        """
+        wanted = set(names)
+        for _, old in self.edges_of("nearby", src=ROBOT):
+            if old not in wanted:
+                self.remove_edge("nearby", ROBOT, old, note=note)
+        if wanted:
+            self.objects.setdefault(ROBOT, {"category": "robot", "position": None})
+        for name in sorted(wanted):
+            self.add_edge("nearby", ROBOT, name, note=note)
+
+    def is_near(self, name):
+        """Is the robot standing at this? The precondition every manipulation reads."""
+        return self.has_edge("nearby", ROBOT, name)
+
+    def near_objects(self):
+        return sorted(b for _, b in self.edges_of("nearby", src=ROBOT))
 
     def object_names(self):
         """The objects the robot has *seen*. The robot is a node, not an observation."""

@@ -38,6 +38,17 @@ OPENABLE = {
 }
 
 
+# Objects with a switch. The third of the three affordance lists, and it lives here with
+# the other two so that the validator, the graph machine and the 2-D world all decide what
+# an object affords from one place - three copies of this list is three ways to disagree.
+TOGGLEABLE = {
+    "oven", "stove", "microwave", "dishwasher", "washer", "clothes_dryer", "dryer",
+    "coffee_maker", "blender", "toaster", "kettle", "electric_kettle", "lamp",
+    "floor_lamp", "table_lamp", "light", "ceiling_light", "television", "standing_tv",
+    "shower", "sink", "furniture_sink", "fan", "electric_switch",
+}
+
+
 # Large fixed appliances and furniture. These are articulated (OPEN/CLOSE act on their
 # doors) or switchable (TOGGLE_*), but they are not portable: GRASP on one is a planning
 # error the simulator would also refuse, since the robot cannot pick up a fridge.

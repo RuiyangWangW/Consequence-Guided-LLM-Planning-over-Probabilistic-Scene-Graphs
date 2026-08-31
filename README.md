@@ -169,6 +169,7 @@ python check_names.py primitive_patches.py test_primitives.py   # <1s - undefine
 python test_graph_machine.py               # ~1s - world graph and the plan checker
 python test_sim2d.py                       # ~15s - the 2-D world, camera, search and actions
 python ablate_plan.py                      # ~10s - which broken plans each model catches
+python ablate_plan.py --fuzz 240           # ~20s - where the two models still differ
 python test_stance_order.py                # ~2s - which stance the map picks
 python test_pipeline.py                    # ~1s - parser and validator
 python scene_setup.py Beechwood_0_int      # ~2s - furniture selection
@@ -431,6 +432,42 @@ no inside — and the graph model allows it. The simulator refuses it, but on di
 rather than on containment, so it is caught for the wrong reason. Deciding what is a
 container from a category list is the same guess `planner.py` warns about for openability,
 so it is recorded here rather than patched.
+
+### How far apart are the two models now?
+
+`ablate_plan.py --fuzz N` builds plans by walking the graph model forward — at each step
+random actions are tried until one is *accepted* — so what comes out is a plan the graph
+model runs end to end. Then the simulator runs the same plan, and the reverse arm does the
+same the other way round. Sampling actions uniformly instead is close to useless: almost
+every random plan dies on its first step in both models for the same reason, and the run
+reports 100% agreement having tested nothing.
+
+240 plans per scene, ~5 actions each, before and after `near(x)` became an edge:
+
+| | `Beechwood_0_int` | `Rs_int` |
+| --- | --- | --- |
+| graph-valid plans the simulator accepts, with `near` = same room | 190/240 (79%) | 201/240 (84%) |
+| graph-valid plans the simulator accepts, with `near` = the `nearby` edge | **240/240** | **240/240** |
+| plans the simulator accepts that the graph model refuses | 2 | 15 |
+
+**The `nearby` edge closed the whole gap in the dangerous direction.** Every plan the graph
+model now accepts, the simulator can drive — 480 of 480 across two scenes — and the 22-case
+ablation went from 4 disagreements to none. Before, about a fifth of symbolically-valid
+plans were undrivable, and every single one was the same mistake: the plan drove to one
+object in the kitchen and then acted on another three metres away in the same kitchen.
+A room was never fine enough to catch that; what the robot last drove to is.
+
+**What is left is the model being conservative, which is the safe direction.** The
+simulator measures 1.5 m, so it knows two objects a metre apart are both in reach; the
+graph model only knows what the robot drove to and what was on or inside it. So it
+sometimes demands a `NAVIGATE_TO` that geometry says is unnecessary — 2 plans in
+`Beechwood_0_int`, 15 in the much smaller `Rs_int`. That costs a redundant step, where the
+old failure cost a robot that could not carry out the plan.
+
+That the symbolic preconditions agree at all is structural rather than lucky: `Sim2D`
+**runs a `GraphMachine`** over ground truth, and supplies its `nearby` edges from measured
+distance, so both models check the same preconditions with the same code and differ only
+in where the edges came from.
 
 ### What is kept, and what is dropped
 
@@ -1068,6 +1105,27 @@ registry.
 | `object_inside`, `on_top`, `under`, `next_to` | simulator predicates, when both objects are seen |
 | `holding` | the robot's own actions |
 
+**One graph, not two.** `scene_graph.populate` produces a plain dict — `{potato:
+{room: kitchen_0, probability: 1.0}}` plus any relation the task stated outright — and
+that dict is what the LLM is shown and what `planner.validate` checks. It is now also what
+`GraphMachine` checks: `WorldGraph.from_scene_graph` reads it in. Before that,
+`from_room_graph` took `rooms` and `edges` and **dropped `objects` on the floor**, so the
+graph model was validating plans against a graph with nothing in it and every `GRASP`
+failed for want of an object the planner had been told about.
+
+What comes across is a belief and is written as one — the RSN's room, the probability that
+justified it, and no position at all, because the RSN predicts rooms rather than
+coordinates. A stated relation ("the potato on the counter") becomes a kinematic edge,
+which is what makes `GRASP(potato)` resolvable before the robot has looked at anything.
+
+Two ways to get this wrong, both silent and both total, so both are commented at the site
+and covered by tests. A room a placement names but the topology does not declare must be
+**registered, not dropped**: an object in no room is an object `_require_here` finds
+nothing to contradict about, so every precondition that turns on where the robot is
+standing passes vacuously and a broken plan comes back clean. And the category must
+survive grounding: an oven whose category reads `oven_wuinhm_0` rather than `oven` is an
+oven that does not open, because the category is what every affordance is decided from.
+
 **The robot is a node.** `ROBOT` sits in the graph like anything else, and the two facts
 about it that relate it to something else are edges: `room_inside(robot, kitchen_0)` says
 where it is and `holding(robot, potato)` says what it has. So "where is the robot and what
@@ -1107,6 +1165,44 @@ those in which it was the support, which is exactly the edge that makes a later 
 known to carry the potato to the oven.
 
 ### The graph edit state machine
+
+**The specification.** `near(x)` is "the robot is standing at x", and it is a graph fact:
+the `nearby(robot, x)` edge `NAVIGATE_TO` writes, alongside `room_inside` and `holding`. `openable`/`switchable` are
+affordances, read from tracked state where it exists and from the category lists in
+`planner.py` otherwise; those three lists live in one place so the validator, the machine
+and the 2-D world cannot disagree about what an object affords.
+
+"The stack" below is the held object plus everything riding on it, which `carried_with`
+walks over `on_top` and `object_inside`.
+
+| action | preconditions | effect, in words | effect, in edges |
+| --- | --- | --- | --- |
+| `NAVIGATE_TO(x)` | none | the robot is now standing at x, and at whatever is on or inside it | `room_inside(robot)` := room of x; `nearby(robot)` := x and its contents, plus whatever is in the hand |
+| `RELEASE()` | none | the hand is empty; what it held stays in the room the robot released it in, resting on nothing | `-holding`; `room_inside(stack)` := the robot's room |
+| `GRASP(x)` | hand empty; `near(x)`; if `inside(x, c)` then `open(c)`; `graspable(x)` | the robot is holding x, and x travels with it | `+holding(robot, x)`; drop x's kinematic edges but keep its riders; drop `room_inside` for the stack |
+| `TOGGLE_ON/OFF(x)` | `near(x)`; `switchable(x)` | x is now on / off | `toggled(x)` := True / False |
+| `OPEN/CLOSE(x)` | `near(x)`; `openable(x)` | x is now open / shut | `open(x)` := True / False |
+| `PLACE_INSIDE(x)` | `near(x)`; `open(x)` if `openable(x)`; holding something | what was held is now inside x, and is no longer held | `+object_inside(held, x)`; `-holding`; `room_inside(stack)` := room of x |
+| `PLACE_ON_TOP(x)` | `near(x)`; holding something | what was held is now on top of x, and is no longer held | `+on_top(held, x)`, `+under(x, held)`; `-holding`; `room_inside(stack)` := room of x |
+
+Two checks are made that are **not** preconditions, because they are about the plan being
+well formed rather than about the world: arity (`RELEASE` takes no argument, the other
+eight take one), and whether the argument names something the graph has heard of at all.
+`test_graph_machine.py` has one case per line of the table.
+
+Three of those lines are worth a sentence each.
+
+- **`NAVIGATE_TO` has no preconditions.** Whether the robot can get there is a question
+  about floor, and the room graph answers it too coarsely to refuse a plan over; `sim2d`
+  runs A\* on the eroded map and answers it properly. An unseen object is admitted for the
+  navigation controller to search for. `allow_search=False` is a strictness knob outside
+  the specification, for checking a plan *after* exploration.
+- **`RELEASE` has none either.** Opening an empty hand is a step that does nothing, not an
+  error, and a plan is not wrong for containing one.
+- **`PLACE_INSIDE` needs the container actually open**, and not knowing is not the same as
+  knowing it is open — a plan that never opened it has not established what the step needs,
+  so it is refused on the same grounds as one that shut it. Something with no door at all,
+  a bowl or a sink, has nothing to open and the requirement does not apply.
 
 Offline. Takes the room graph and a plan, applies each action as a **temporal graph edit** —
 preconditions read the graph as it stands after every earlier action, effects rewrite it — and

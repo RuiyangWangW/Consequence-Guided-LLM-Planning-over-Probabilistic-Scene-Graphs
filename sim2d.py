@@ -222,14 +222,23 @@ class Sim2D:
         return self.truth_machine.held
 
     def _place_robot(self):
-        """Record where the robot is, in both graphs.
+        """Record where the robot is and what it is standing at, in both graphs.
 
-        Its room is a `room_inside` edge like any object's, so "where is the robot" is a
-        question answered by reading the graph rather than by asking the executor.
+        Its room is a `room_inside` edge like any object's, and what is within arm's reach
+        is a set of `nearby` edges. Those are what `GraphMachine` reads for every
+        manipulation's "the robot is beside it" precondition - so here they are *measured*,
+        and the symbolic model gets the geometric answer without knowing any geometry.
+
+        The belief only gets `nearby` for objects the robot has actually seen. Standing
+        next to something it has never looked at is not knowledge it has.
         """
         room = self.room
         for graph in (self.graph, self.world.truth):
             graph.place_robot(room, self.xy)
+        within = {name for name in self.world.truth.object_names()
+                  if self.world.distance_to(name, self.x, self.y) <= self.reach}
+        self.world.truth.set_nearby(within, note="measured")
+        self.graph.set_nearby(within & set(self.graph.objects), note="measured")
 
     def _say(self, text):
         if self.verbose:
@@ -616,16 +625,16 @@ class Sim2D:
         else:
             distance = None
 
-        # Geometry decides what "here" means, so both machines are told the robot is in
-        # the object's room before their own room check runs. Reaching it is the stronger
-        # statement: the room check exists to stand in for exactly this.
-        target_room = self.world.room_of(name) if name else self.room
-        self._sync_location(target_room)
+        # The room the robot is in is the room it is in. The machines' "beside it" check
+        # reads `nearby` edges, which `_place_robot` measures, so there is no longer any
+        # need to tell them the robot is in the object's room when it is not.
+        self._sync_location(self.room)
 
         truth_step = self.truth_machine.step(index, action, name)
         if not truth_step.ok:
             return self._fail(action, arg, truth_step.reason, distance)
         self._apply_geometry(action, name, held_before)
+        self._place_robot()
 
         belief_step = self.machine.step(index, action,
                                         self.graph.resolve(arg) if arg else None)
@@ -638,7 +647,6 @@ class Sim2D:
             if warning not in warnings:
                 warnings.append(warning)
 
-        self._sync_location(self.room)
         seen = self.observe()      # one look: the robot is facing what it just acted on
         result = ActionResult(action, arg, True, edits=truth_step.edits,
                               warnings=warnings, at=distance, seen=seen)
