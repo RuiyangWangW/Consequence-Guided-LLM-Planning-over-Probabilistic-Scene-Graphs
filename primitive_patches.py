@@ -800,14 +800,57 @@ def build(env, robot, curobo_batch_size=3, joint_tolerance=JOINT_TOLERANCE):
             best = None
             if resting:
                 # Highest surface first - what a person would use, and furthest from the
-                # floor the object would otherwise slide to. Then, among the columns on
-                # that same surface, the most central one. Taking the highest column alone
-                # put the plate at the cavity's edge, where it slid off and out: measured,
-                # that scored 1/6 against 12/12 for a centred placement on the same shelf.
+                # floor the object would otherwise slide to.
                 top_z = max(z for z, _ in resting)
                 level = [c for z, c in resting if abs(z - top_z) < 0.02]
-                mid = th.stack(level)[:, :2].mean(dim=0)
-                best = min(level, key=lambda c: float(th.norm(c[:2] - mid)))
+
+                # Only spots where the object is *fully* supported. Requiring its centre
+                # to be over the shelf is not enough: a 0.209 m plate placed at the very
+                # back of the rack overhangs the edge and slides off once released, and
+                # the check that runs before release cannot see that coming. Measured, the
+                # deepest column put the plate on the rack's back lip - it passed the
+                # placement check, then fell out, and CLOSE fouled on it.
+                #
+                # A candidate survives only if the surface also reaches half the object's
+                # width away in each direction, so its footprint has something under it.
+                # Deep, but not on the back lip.
+                #
+                # Two failures bracket this. Placed centrally, the object sits in the
+                # doorway and the door fouls on it, so CLOSE fails. Placed as deep as the
+                # cavity allows, it overhangs the back of the rack and slides off once
+                # released - the placement check passes, and the object is on the oven
+                # floor by the time anything looks again. So: as deep as possible, less
+                # half the object's width.
+                #
+                # Testing support by ray does not work here and was tried: `rack1` is a
+                # *wire* rack, so a ray cast at the object's edge drops between the wires
+                # and reports the oven floor. Every candidate came back unsupported,
+                # including the centred one that places reliably. A plate spans many
+                # wires; a single ray samples one gap.
+                # Then the deepest spot on it, measured away from the door. A centred
+                # placement leaves the object in the doorway, where the door fouls on it
+                # and CLOSE fails - the plate has to go towards the back of the oven.
+                # `_door_swing` already knows which face the door is on, since that is how
+                # its swept floor is blocked off for navigation.
+                swing = _door_swing(obj) or []
+                if swing:
+                    fx, fy = swing[0][5], swing[0][6]
+                    outward = th.tensor([fx, fy], dtype=th.float32)
+                    centre_xy = obj.get_position_orientation()[0][:2]
+                    # Furthest from the door, by projection onto its outward normal.
+                    #
+                    # `min`, and the sign is worth stating because getting it wrong has
+                    # cost two runs. Measured on `oven/ffitak`: `min` puts the plate at
+                    # x=8.58 and scores 7/8, `max` puts it at x=8.28 and scores 8/12. A
+                    # third variant that backed off "half a plate from the deepest point"
+                    # scored 4/7 - it moved towards the opening, not away from the lip.
+                    reach = {id(c): float(th.dot(c[:2] - centre_xy, outward))
+                             for c in level}
+                    best = min(level, key=lambda c: reach[id(c)])
+                else:
+                    # No door to hide from: the most central spot is the most stable.
+                    mid = th.stack(level)[:, :2].mean(dim=0)
+                    best = min(level, key=lambda c: float(th.norm(c[:2] - mid)))
 
             if best is None:
                 print(f"    [place] no surface inside {obj.name} would hold {held.name} "
@@ -815,11 +858,18 @@ def build(env, robot, curobo_batch_size=3, joint_tolerance=JOINT_TOLERANCE):
                       f"using the cavity")
                 return None
 
+            depth = ""
+            if swing:
+                centre_xy = obj.get_position_orientation()[0][:2]
+                reach = float(th.dot(best[:2] - centre_xy,
+                                     th.tensor([swing[0][5], swing[0][6]],
+                                               dtype=th.float32)))
+                depth = f", {-reach:+.3f} m from the door face"
             print(f"    [place] resting {held.name} inside {obj.name} on the surface at "
                   f"({float(best[0]):+.2f}, {float(best[1]):+.2f}, "
                   f"{float(best[2]) - half_height - 0.005:+.3f}), object centre "
                   f"{float(best[2]):+.3f}, from {len(tops)} columns cast, "
-                  f"{len(resting)} of them usable")
+                  f"{len(resting)} of them usable{depth}")
             return (best - centre_offset).to(th.float32), \
                 held.get_position_orientation()[1]
 

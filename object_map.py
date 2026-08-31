@@ -31,15 +31,23 @@ import math
 # 640x360, so this filters noise without costing real sightings.
 MIN_PIXELS = 4
 
-# Cell states. OUTSIDE is not "unexplored", it is "not part of this room", and it is
-# excluded from coverage and from frontier selection alike.
-UNKNOWN, FREE, OCCUPIED, OUTSIDE = 0, 1, 2, 3
+# Cell states. Room membership is *not* one of them - it lives in `in_room`, so that a
+# wall the robot genuinely saw can be marked OCCUPIED even though the segmentation puts it
+# on a room's boundary rather than inside it.
+UNKNOWN, FREE, OCCUPIED = 0, 1, 2
 
 # Refuse to build a map larger than this many cells. `for_room` does one segmentation
 # lookup per cell, which is nothing for a kitchen (a few thousand) and ruinous for the
 # outdoors: `garden_0` in house_single_floor covers 1.4 million floor-plan pixels, and
 # mapping it on demand because the robot clipped one garden cell would stall a run.
 MAX_CELLS = 250_000
+
+# Room types that are outdoors. They are rooms in the segmentation like any other, and
+# `garden_0` in house_single_floor covers 1.4 million floor-plan pixels - twenty times the
+# house. Including them in the scene map's extent leaves the building a smudge in the
+# middle of a field, so the bounds are taken from the indoor rooms and the outdoors is
+# simply off the edge of the map.
+OUTDOOR_ROOMS = frozenset({"garden", "lawn", "driveway", "porch", "patio", "yard"})
 
 
 class ObjectSemanticMap:
@@ -102,7 +110,7 @@ class ObjectSemanticMap:
 
     @classmethod
     def for_room(cls, scene, room_instance, resolution=0.1, pad=0.5):
-        """A map covering one room, with everything outside it marked OUTSIDE.
+        """A map covering one room, with `in_room` marking which cells are its own.
 
         The mask is read from the scene's room segmentation, one lookup per cell. A room
         at 0.1 m is a few thousand cells, so this costs nothing and is done once.
@@ -149,7 +157,13 @@ class ObjectSemanticMap:
         if seg is None or seg.room_ins_map is None:
             return None
         rooms = th.as_tensor(seg.room_ins_map)
-        rows, cols = th.nonzero(rooms > 0, as_tuple=True)
+        indoors = rooms > 0
+        for ident, name in (getattr(seg, "room_ins_id_to_ins_name", {}) or {}).items():
+            if name.rsplit("_", 1)[0] in OUTDOOR_ROOMS:
+                indoors &= rooms != ident
+        rows, cols = th.nonzero(indoors, as_tuple=True)
+        if rows.numel() == 0:
+            rows, cols = th.nonzero(rooms > 0, as_tuple=True)
         if rows.numel() == 0:
             return None
         corners = [seg.map_to_world(th.tensor([float(r), float(c)]))
@@ -198,26 +212,6 @@ class ObjectSemanticMap:
                     break
                 if self.grid[row, col] == UNKNOWN:
                     self.grid[row, col] = FREE
-
-    def paint_object(self, obj):
-        """Mark an object's floor footprint as OCCUPIED, once it has been seen.
-
-        A ray marks the single cell it lands on, so obstacles came out as dotted arcs
-        rather than shapes. The navigation map has always drawn objects as their bounding
-        boxes; doing the same here makes the two agree and gives the solid blocks that are
-        actually readable. Gated on having seen the object, like everything else - this is
-        the same "ground truth once seen" rule the graph uses.
-        """
-        try:
-            lo, hi = obj.aabb
-        except Exception:
-            return
-        r0, c0 = self.to_cell(float(lo[0]), float(lo[1]))
-        r1, c1 = self.to_cell(float(hi[0]), float(hi[1]))
-        for row in range(min(r0, r1), max(r0, r1) + 1):
-            for col in range(min(c0, c1), max(c0, c1) + 1):
-                if self.in_bounds(row, col):
-                    self.grid[row, col] = OCCUPIED
 
     def record_object(self, name, category, position):
         self.objects[name] = {"category": category, "position": list(position)}
@@ -354,10 +348,7 @@ def observe(env, robot, omap, max_range=5.0, also=(), ignore=()):
     maps = [m for m in (omap,) + tuple(also) if m is not None]
 
     # The building is not an object. Walls, floors and ceilings fill most of every frame,
-    # and painting their footprints turns the whole map into one solid obstacle - which is
-    # exactly what happened: a black rectangle over the entire house. They are excluded
-    # here rather than by the caller, because `paint_object` runs inside this function and
-    # a filter applied afterwards is applied too late.
+    # and recording them would add hundreds of nodes for things no plan ever refers to.
     ignore = set(ignore)
     seen = {n for n in seen
             if getattr(scene.object_registry("name", n), "category", None) not in ignore}
@@ -391,11 +382,18 @@ def observe(env, robot, omap, max_range=5.0, also=(), ignore=()):
     for m in maps:
         m.observe_fov(x, y, yaw, h_fov, max_range, traversable_fn=traversable)
 
-    # Objects are drawn as their footprints, not as the one cell a ray happened to hit.
-    for name in seen:
-        obj = scene.object_registry("name", name)
-        if obj is None:
-            continue
-        for m in maps:
-            m.paint_object(obj)
+    # Object footprints are deliberately *not* painted in.
+    #
+    # An earlier version stamped each seen object's bounding box as OCCUPIED, to get solid
+    # obstacle shapes instead of the dotted arcs the rays were leaving. Those arcs were a
+    # symptom of a different bug - the rays were stopping on the floor at 2.5 m - and with
+    # that fixed the traversability map already marks furniture, so 121 rays hitting real
+    # geometry draw the surfaces on their own.
+    #
+    # Painting did two things wrong that no amount of tuning fixes. A *carried* object was
+    # stamped at every observation along the route, smearing a black trail across the map
+    # behind the robot; and an object seen but not drawn - the `relevant` filter keeps only
+    # the task's - left a solid obstacle the picture never explained. `sim2d` has no
+    # equivalent, which is the other reason to drop it: the two maps are meant to be the
+    # same picture.
     return seen

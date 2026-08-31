@@ -134,9 +134,17 @@ def render(world, frames, out_path, fps=3, stride=1, graph_panel=True, focus=())
         # Every heading the robot observed at, not just the one it ended up facing: a
         # stop is a four-heading scan, and replaying one of them leaves three quarters of
         # what the robot saw off the map.
-        for heading in frame.get("headings") or [frame["yaw"]]:
-            cast_fov(world, frame["x"], frame["y"], heading, CAMERA_FOV, CAMERA_RANGE,
-                     coverage)
+        # A run that measured its own coverage hands it over directly. The 2D simulator
+        # replays `cast_fov` because a pose is a dozen numbers where a grid is thousands;
+        # the BEHAVIOR-1K side has a real camera and a real occupancy grid already, and
+        # re-deriving it here from poses would draw something subtly different from what
+        # the robot actually knew.
+        if frame.get("coverage") is not None:
+            coverage = np.asarray(frame["coverage"], dtype=np.uint8)
+        else:
+            for heading in frame.get("headings") or [frame["yaw"]]:
+                cast_fov(world, frame["x"], frame["y"], heading, CAMERA_FOV,
+                         CAMERA_RANGE, coverage)
         trail.append((frame["x"], frame["y"]))
 
         panels = 2 if graph_panel else 1

@@ -34,6 +34,7 @@ follows the robot; `--robot-camera` records from the robot's own head camera ins
 """
 
 import argparse
+import math
 import os
 
 import yaml
@@ -318,17 +319,27 @@ def main():
         # an edge list - and rendering happens offline, so a drawing bug cannot kill a
         # seventeen-minute run.
         trace = Trace(args.trace or "figures/world_trace.json")
+        driven = {"m": 0.0, "last": None}   # metres travelled, for the frame captions
 
         def snapshot(event):
             # The scene-wide map, not the current room's. The room maps are masked and
             # swap as the robot walks between rooms, so drawing them makes the picture
             # jump and hides everything discovered elsewhere. The scene map accumulates.
+            import omnigibson.utils.transform_utils as _T
+
             room_map = navctl.scene_map
             if room_map is None:
                 room = navctl.room_here()
                 room_map = navctl.maps.get(room) if room else None
-            here = robot.get_position_orientation()[0][:2].tolist()
-            trace.add(event, world, omap=room_map, robot_xy=here, held=live.held)
+            pos, orn = robot.get_position_orientation()
+            yaw = float(_T.quat2euler(orn)[2])
+            here = (float(pos[0]), float(pos[1]))
+            if driven["last"] is not None:
+                driven["m"] += math.dist(here, driven["last"])
+            driven["last"] = here
+            trace.add(event, world, omap=room_map,
+                      robot_pose=(here[0], here[1], yaw), held=live.held,
+                      distance=driven["m"])
 
         navctl.on_observe = snapshot
 

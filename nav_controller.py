@@ -40,7 +40,7 @@ is a separate question the pipeline already answers.
 
 import math
 
-from object_map import OUTSIDE, ObjectSemanticMap, observe
+from object_map import ObjectSemanticMap, observe
 from world_graph import read_predicates, room_of_object
 
 # How many frontiers to drive to before giving up on a room. Each one is a full drive plus
@@ -309,7 +309,11 @@ class NavigationController:
             cells = []
             for row in range(omap.h):
                 for col in range(omap.w):
-                    if omap.grid[row, col] == OUTSIDE:
+                    # `in_room`, not a grid state. The room mask moved out of the grid
+                    # when walls needed to be markable as OCCUPIED, and this check was
+                    # left testing a state the grid no longer holds - so it never fired,
+                    # and cells outside the room were candidates for standing in it.
+                    if not bool(omap.in_room[row, col]):
                         continue
                     wx, wy = omap.to_world(row, col)
                     mm = tmap.world_to_map(th.tensor([wx, wy], dtype=th.float32))
