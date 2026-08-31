@@ -27,12 +27,13 @@ import os
 import numpy as np
 
 from sim2d import CAMERA_FOV, CAMERA_RANGE, FREE, OCCUPIED, UNKNOWN, cast_fov
+from world_graph import ROBOT
 
 # One colour per edge type, the assignment `world_trace.py` uses, so the two animations
 # read the same way.
 EDGE_COLORS = {
     "room_inside": "#9aa0a6", "object_inside": "#d17b0f", "on_top": "#1a73e8",
-    "under": "#8430ce", "next_to": "#188038",
+    "under": "#8430ce", "next_to": "#188038", "holding": "#d93025",
 }
 
 # Unknown is the state the map spends most of its time in, so it reads better as a neutral
@@ -94,9 +95,13 @@ def relevant(frame, focus):
     out.
     """
     known = set(frame["known"])
+    # The robot is always relevant - it is the thing doing the task - and it is not an
+    # observation, so it is never in `known`.
+    if any(name == ROBOT for edge in frame["edges"] for name in edge[1:]):
+        known.add(ROBOT)
     if not focus:
         return known
-    task = {name for name in focus if name in known}
+    task = {name for name in focus if name in known} | (known & {ROBOT})
     keep = set(task)
     for edge_type, a, b in frame["edges"]:
         if edge_type == "room_inside":
@@ -247,6 +252,9 @@ def _draw_objects(ax, world, frame, r0, c0, pe, shown):
     # label first, so a counter the robot happens to be beside can never crowd out the
     # potato's name.
     for name in sorted(shown, key=lambda n: n not in acting):
+        # The robot is on this panel already, as the triangle that shows where it faces.
+        if name == ROBOT:
+            continue
         position = positions.get(name) or world.truth.position_of(name)
         if position is None:
             continue
@@ -314,6 +322,7 @@ def _graph_layout(frames, focus=()):
     shown = relevant(final, focus)
     graph = nx.Graph()
     graph.add_nodes_from(shown)
+    graph.add_node(ROBOT)
     for edge_type, a, b in final["edges"]:
         if a in shown and (b in shown or edge_type == "room_inside"):
             graph.add_edge(a, b)
@@ -329,9 +338,10 @@ def _draw_graph(ax, frame, positions, matplotlib, shown):
     # `under(b, a)` is the converse of `on_top(a, b)` and lands on the same two nodes, so
     # one would hide the other. Drawing the wider one first leaves a blue core inside a
     # purple sheath, which reads as the pair it is.
-    order = {"room_inside": 0, "next_to": 1, "under": 2, "object_inside": 3, "on_top": 4}
+    order = {"room_inside": 0, "next_to": 1, "under": 2, "object_inside": 3, "on_top": 4,
+             "holding": 5}
     widths = {"room_inside": 0.9, "next_to": 0.9, "under": 4.0, "object_inside": 2.6,
-              "on_top": 1.8}
+              "on_top": 1.8, "holding": 2.6}
     for edge_type, a, b in sorted(edges, key=lambda e: order.get(e[0], 5)):
         ax.plot([positions[a][0], positions[b][0]], [positions[a][1], positions[b][1]],
                 color=EDGE_COLORS.get(edge_type, "#888"), zorder=1,
@@ -342,17 +352,22 @@ def _draw_graph(ax, frame, positions, matplotlib, shown):
               for n in (a, b)} | ({frame["held"]} if frame.get("held") else set())
     for name in sorted(drawn):
         x, y = positions[name]
-        is_room = name in rooms
-        ax.plot(x, y, "s" if is_room else "o",
-                markersize=9 if name in acting else (7 if is_room else 5),
-                color="#ea4335" if name in acting else ("#5f6368" if is_room else "#1a73e8"),
+        is_room, is_robot = name in rooms, name == ROBOT
+        # The robot is a triangle here as it is on the map, so the node carrying the
+        # `holding` edge is recognisable as the same thing driving around.
+        marker = "^" if is_robot else ("s" if is_room else "o")
+        ax.plot(x, y, marker,
+                markersize=11 if is_robot else (9 if name in acting else (7 if is_room else 5)),
+                color="#202124" if is_robot else
+                      ("#ea4335" if name in acting else
+                       ("#5f6368" if is_room else "#1a73e8")),
                 markeredgecolor="white", markeredgewidth=0.6, zorder=2)
         ax.annotate(_short(name), (x, y),
-                    fontsize=7.5 if (is_room or name in acting) else 6.5,
+                    fontsize=7.5 if (is_room or is_robot or name in acting) else 6.5,
                     xytext=(5, 5), textcoords="offset points", zorder=3,
-                    fontweight="bold" if name in acting else "normal",
+                    fontweight="bold" if (name in acting or is_robot) else "normal",
                     color="#a50e0e" if name in acting else
-                          ("#202124" if is_room else "#5f6368"))
+                          ("#202124" if (is_room or is_robot) else "#5f6368"))
 
     counts = {}
     for edge_type, _, _ in frame["edges"]:
@@ -364,8 +379,8 @@ def _draw_graph(ax, frame, positions, matplotlib, shown):
     # a legend in a corner lands on top of one about half the time.
     ax.legend(handles=handles, fontsize=7, loc="upper center", ncol=5, frameon=False,
               bbox_to_anchor=(0.5, -0.01))
-    ax.set_title(f"world graph — {len(drawn - rooms)} objects, {len(edges)} relations",
-                 fontsize=10)
+    ax.set_title(f"world graph — {len(drawn - rooms - {ROBOT})} objects, "
+                 f"{len(edges)} relations", fontsize=10)
     ax.axis("off")
     if drawn:
         ax.margins(0.18)

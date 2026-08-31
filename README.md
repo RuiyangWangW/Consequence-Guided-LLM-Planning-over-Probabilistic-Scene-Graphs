@@ -168,6 +168,7 @@ Five offline entry points and one simulator run, split by cost:
 python check_names.py primitive_patches.py test_primitives.py   # <1s - undefined names
 python test_graph_machine.py               # ~1s - world graph and the plan checker
 python test_sim2d.py                       # ~15s - the 2-D world, camera, search and actions
+python ablate_plan.py                      # ~10s - which broken plans each model catches
 python test_stance_order.py                # ~2s - which stance the map picks
 python test_pipeline.py                    # ~1s - parser and validator
 python scene_setup.py Beechwood_0_int      # ~2s - furniture selection
@@ -387,6 +388,49 @@ warning: from living_room_0 the robot can reach kitchen_0, corridor_0, …
 ```
 
 `open_doorways=False` gets the raster exactly as the dataset ships it.
+
+### Ablation: drop one action and see who notices
+
+`ablate_plan.py` starts from the plan above, removes exactly one action, and runs both
+models. 13 leave-one-out cases plus 9 reorderings and substitutions, in **10 seconds**.
+
+```bash
+python ablate_plan.py                    # the potato/oven plan
+python ablate_plan.py --plan plan.json   # a plan from pipeline.py
+```
+
+| dropped step | graph model | 2-D simulator |
+| --- | --- | --- |
+| `NAVIGATE_TO(countertop)` | inapplicable @1 | inapplicable @1 |
+| `GRASP(potato)` | inapplicable @4 | inapplicable @4 |
+| **`NAVIGATE_TO(oven)`** | **ok** | **inapplicable @3** |
+| `OPEN(oven)` | inapplicable @4 | inapplicable @4 |
+| `PLACE_INSIDE(oven)` | inapplicable @9 | inapplicable @9 |
+| `CLOSE` / `TOGGLE_ON` / `TOGGLE_OFF` / `CLOSE` | ok | ok |
+| `OPEN(oven)` before taking it out | inapplicable @9 | inapplicable @9 |
+| `GRASP(potato)` from the oven | inapplicable @12 | inapplicable @12 |
+| **`NAVIGATE_TO(breakfast_table)`** | **ok** | **inapplicable @12** |
+| `PLACE_ON_TOP(breakfast_table)` | goal not met | goal not met |
+
+**Three outcomes, and the third is not a failure.** Dropping `CLOSE` or either `TOGGLE`
+leaves a plan that still applies and still reaches the goal, because the goal is
+`on_top(potato, breakfast_table)` and says nothing about the oven having been on. That is
+a fact about the goal, not a miss — the models are right and the goal is incomplete.
+Nothing in the six edge types can express "was heated", which is a limit of the
+representation worth stating rather than papering over.
+
+**Where the 2-D simulator earns its keep.** Three of the 22 cases are caught only by it,
+all the same root cause: `GraphMachine._require_here` asks whether the robot is *in the
+object's room*, and the oven, the counter and the breakfast table are all in `kitchen_0`.
+Drop the `NAVIGATE_TO` and the graph model still believes the robot is there. The
+simulator measures 3.32 m and refuses. **Room-level "here" is too coarse for a kitchen**,
+and that gap is exactly the layer a symbolic model has to assume.
+
+**One gap neither closes.** `PLACE_INSIDE(countertop)` is not a thing — a countertop has
+no inside — and the graph model allows it. The simulator refuses it, but on distance
+rather than on containment, so it is caught for the wrong reason. Deciding what is a
+container from a category list is the same guess `planner.py` warns about for openability,
+so it is recorded here rather than patched.
 
 ### What is kept, and what is dropped
 
@@ -1012,15 +1056,48 @@ angle.
 
 ### The world graph
 
-Six edge types. `room_connect` is seeded from `room_graph.py` and is all the robot knows
-before it moves; the other five are written **only once the robot has seen the objects they
-connect**, which is what makes the graph a belief rather than a copy of the scene registry.
+Seven edge types. `room_connect` is seeded from `room_graph.py` and is all the robot knows
+before it moves; the observed five are written **only once the robot has seen the objects
+they connect**, which is what makes the graph a belief rather than a copy of the scene
+registry.
 
 | edge | source |
 | --- | --- |
 | `room_connect` | the room graph, known up front |
 | `room_inside` | ground truth, when the object is seen |
 | `object_inside`, `on_top`, `under`, `next_to` | simulator predicates, when both objects are seen |
+| `holding` | the robot's own actions |
+
+**The robot is a node.** `ROBOT` sits in the graph like anything else, and the two facts
+about it that relate it to something else are edges: `room_inside(robot, kitchen_0)` says
+where it is and `holding(robot, potato)` says what it has. So "where is the robot and what
+is it carrying" is answered by reading the graph rather than by asking whoever happens to
+be executing the plan, and both facts are audited against the world alongside every other
+edge. `GraphMachine.location` and `.held` are **views onto those edges**, not a second copy
+— two records of where the robot is, is two records that can disagree.
+
+**A carried object has no room of its own.** `GRASP` removes `room_inside` for the object
+and everything riding on it, and putting it down writes the edges back. While it is in the
+hand its room is the robot's, and `room_of` derives it by following `holding` — one record
+of the fact instead of two kept in step by rewriting them on every drive.
+
+```
+after NAVIGATE_TO(counter)  robot=kitchen_0  held=None    potato.room=kitchen_0  stored=True
+after GRASP(potato)         robot=kitchen_0  held=potato  potato.room=kitchen_0  stored=False
+after PLACE_INSIDE(oven)    robot=kitchen_0  held=None    potato.room=kitchen_0  stored=True
+```
+
+Deriving a value that used to be stored has one trap, and it cost a completed plan whose
+potato ended up in no room at all: `_move_to_room` compared against `room_of`, which for a
+still-held object answers with the robot's room, so the restore decided the edge was
+already right and wrote nothing. Edge-rewriting helpers read **edges**, not derived
+answers.
+
+Two more consequences. `holding` is deliberately *not* one of the kinematic edges, because
+an object in the hand is not resting on anything: putting it there would mean re-observing
+a carried object drops it. And `open` and `toggled` stay off the graph, because they are
+properties of a single node rather than relations between two, and an edge is the wrong
+shape for them.
 
 **Carried objects move, and so does whatever rides on them.** Grasping the plate carries the
 potato resting on it, and anything resting on the potato — `_carried_with` walks `on_top` and

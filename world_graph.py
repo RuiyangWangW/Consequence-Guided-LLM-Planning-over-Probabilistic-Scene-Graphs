@@ -5,7 +5,7 @@ the robot moves - which rooms exist and which are connected. Everything else is 
 the robot searches a room it sees objects, and each observation writes edges here: which
 room the object is in, and how it sits relative to the other objects already seen.
 
-Six edge types, and where each comes from:
+Seven edge types, and where each comes from:
 
     room_connect    two rooms are traversably adjacent   from the room graph, known up front
     room_inside     an object is in a room               ground truth, when the object is seen
@@ -13,6 +13,17 @@ Six edge types, and where each comes from:
     on_top          an object rests on another           simulator predicate, when both are seen
     under           an object is beneath another         simulator predicate, when both are seen
     next_to         two objects are beside each other    simulator predicate, when both are seen
+    holding         the robot has this in its hand       from the robot's own actions
+
+The robot is a node too, `ROBOT`, and the last two of its three facts are edges like any
+other: `room_inside(robot, kitchen_0)` says where it is and `holding(robot, potato)` says
+what it has. A carried object has **no `room_inside` edge of its own**: it is wherever the
+robot is, and `room_of` derives that by following `holding` back to the robot. Storing it
+as well would be a second record of the same fact, kept in step by rewriting it on every
+navigation - which is one more thing that can fall out of step. That is what makes "where is the robot and what is it carrying" a question
+answered by reading the graph rather than by asking whoever happens to be executing the
+plan. `open` and `toggled` stay off the graph, because they are properties of one node
+rather than relations between two.
 
 The gate is the same for all five observed types: **an edge is only written once the robot
 has seen the objects it connects**. That is what makes the graph a belief rather than a
@@ -28,7 +39,11 @@ because those are the ones an action can change; `room_inside` and `room_connect
 import json
 
 # The six edge types, in the order they are defined above.
-EDGE_TYPES = ("room_connect", "room_inside", "object_inside", "on_top", "under", "next_to")
+EDGE_TYPES = ("room_connect", "room_inside", "object_inside", "on_top", "under",
+              "next_to", "holding")
+
+# The robot's own node. Reserved: nothing observed is ever called this.
+ROBOT = "robot"
 
 # Edges whose two endpoints are interchangeable. Stored with the endpoints sorted, so
 # next_to(a, b) and next_to(b, a) are one edge and not two.
@@ -36,7 +51,8 @@ SYMMETRIC = frozenset({"room_connect", "next_to"})
 
 # Edges that describe how an object is resting, as opposed to where it lives. A primitive
 # that moves an object invalidates exactly these, which is also why re-observing an object
-# replaces them rather than adding to them.
+# replaces them rather than adding to them. `holding` is deliberately not among them: an
+# object in the hand is not resting on anything, and re-observing it must not put it down.
 KINEMATIC = ("object_inside", "on_top", "under", "next_to")
 
 # Predicates read from the simulator, and the edge each one writes. `Under` is the
@@ -176,9 +192,77 @@ class WorldGraph:
             self.add_edge("room_inside", name, room, note="seen")
         return first
 
-    def room_of(self, name):
-        found = self.edges_of("room_inside", src=name)
+    # ---------------------------------------------------------------- the robot
+
+    def place_robot(self, room=None, position=None):
+        """Put the robot in the graph, and record which room it is in.
+
+        `room_inside` is single-valued for the robot exactly as it is for an object: it is
+        in one room, so moving rewrites the edge rather than adding a second.
+        """
+        record = self.objects.setdefault(ROBOT, {"category": "robot", "position": None})
+        if position is not None:
+            record["position"] = list(position)
+        if room is not None:
+            for _, old in self.edges_of("room_inside", src=ROBOT):
+                if old != room:
+                    self.remove_edge("room_inside", ROBOT, old, note="robot moved")
+            self.add_edge("room_inside", ROBOT, room, note="robot moved")
+        return record
+
+    def carried_with(self, name):
+        """`name` plus everything that travels with it, transitively.
+
+        Grasping a plate lifts the potato resting on it; grasping a box lifts what is
+        inside the box, and whatever is resting on *that*. The graph already records those
+        relations, so carrying is a reachability question over the `on_top` and
+        `object_inside` edges that point at the thing in the hand.
+        """
+        moving, stack = {name}, [name]
+        while stack:
+            here = stack.pop()
+            for edge_type in ("on_top", "object_inside"):
+                for rider, _ in self.edges_of(edge_type, dst=here):
+                    if rider not in moving:
+                        moving.add(rider)
+                        stack.append(rider)
+        return moving
+
+    def carried(self, name):
+        """Is this travelling with the robot - in the hand, or riding on what is?"""
+        held = self.held_object()
+        return held is not None and name in self.carried_with(held)
+
+    def held_object(self):
+        """What the robot has in its hand, from the graph. One hand, so at most one."""
+        found = self.edges_of("holding", src=ROBOT)
         return found[0][1] if found else None
+
+    def set_held(self, name, note=None):
+        """Grasp or let go. Passing None empties the hand."""
+        for _, old in self.edges_of("holding", src=ROBOT):
+            self.remove_edge("holding", ROBOT, old, note=note)
+        if name is not None:
+            self.objects.setdefault(ROBOT, {"category": "robot", "position": None})
+            self.add_edge("holding", ROBOT, name, note=note)
+
+    def object_names(self):
+        """The objects the robot has *seen*. The robot is a node, not an observation."""
+        return sorted(name for name in self.objects if name != ROBOT)
+
+    def room_of(self, name):
+        """Which room something is in, or None if the graph does not say.
+
+        A carried object has no room edge - it has no room of its own while it is in the
+        hand - so the answer is derived: whatever room the robot is in. That keeps one
+        record of the fact instead of two.
+        """
+        found = self.edges_of("room_inside", src=name)
+        if found:
+            return found[0][1]
+        if name != ROBOT and self.carried(name):
+            return self.room_of(ROBOT)
+        return None
 
     def position_of(self, name):
         rec = self.objects.get(name)
@@ -228,7 +312,7 @@ class WorldGraph:
         counts = {t: 0 for t in EDGE_TYPES}
         for t, _, _ in self.edges:
             counts[t] = counts.get(t, 0) + 1
-        parts = [f"{len(self.rooms)} rooms", f"{len(self.objects)} objects seen"]
+        parts = [f"{len(self.rooms)} rooms", f"{len(self.object_names())} objects seen"]
         parts += [f"{t}={counts[t]}" for t in EDGE_TYPES if counts[t]]
         return ", ".join(parts)
 
@@ -311,7 +395,7 @@ def read_predicates(graph, names, scene, verbose=False):
     """
     from omnigibson import object_states
 
-    known = list(graph.objects)
+    known = list(graph.object_names())
     written = 0
 
     for name in names:

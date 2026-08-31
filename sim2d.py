@@ -49,7 +49,7 @@ import numpy as np
 
 from floor_world import DEFAULT_ROBOT_RADIUS, FloorWorld, astar
 from graph_machine import GraphMachine
-from world_graph import WorldGraph
+from world_graph import ROBOT, WorldGraph
 
 # Coverage-grid values, numbered as `object_map.py` numbers them.
 UNKNOWN, FREE, OCCUPIED = 0, 1, 2
@@ -175,6 +175,7 @@ class Sim2D:
         self.step_index = 0
 
         self.x, self.y, self.yaw = self._starting_pose(start, start_room)
+        self._place_robot()
         # Look before the first snapshot, not after it: the frame has to carry the scan
         # that produced it, or the render replays a pose that observed nothing and the
         # objects found on arrival float on unmapped floor.
@@ -220,6 +221,16 @@ class Sim2D:
     def held(self):
         return self.truth_machine.held
 
+    def _place_robot(self):
+        """Record where the robot is, in both graphs.
+
+        Its room is a `room_inside` edge like any object's, so "where is the robot" is a
+        question answered by reading the graph rather than by asking the executor.
+        """
+        room = self.room
+        for graph in (self.graph, self.world.truth):
+            graph.place_robot(room, self.xy)
+
     def _say(self, text):
         if self.verbose:
             print(f"  [sim2d] {text}")
@@ -237,12 +248,12 @@ class Sim2D:
             "held": self.held,
             "seen": list(seen),
             "headings": list(self._headings),
-            "known": sorted(self.graph.objects),
+            "known": self.graph.object_names(),
             # Where each known object actually is, at this moment. Without it the render
             # draws every object at its final position in every frame, so the potato is
             # already on the table before the robot has picked it up.
             "positions": {name: self.world.truth.position_of(name)
-                          for name in sorted(self.graph.objects)},
+                          for name in self.graph.object_names()},
             "edges": [list(e) for e in sorted(self.graph.edges) if e[0] != "room_connect"],
             "distance": self.distance,
         })
@@ -285,7 +296,7 @@ class Sim2D:
         self._headings = [self.yaw]
 
         new = []
-        for name in sorted(self.world.truth.objects):
+        for name in self.world.truth.object_names():
             if name in self.graph.objects:
                 continue
             if not self.can_see(name, view):
@@ -342,7 +353,9 @@ class Sim2D:
         """
         known = set(self.graph.objects)
         for edge_type, a, b in self.world.truth.edges:
-            if edge_type in ("room_connect", "room_inside", "next_to"):
+            # `holding` is not an observation - the robot knows what is in its own hand
+            # because it put it there, and its own actions write that edge.
+            if edge_type in ("room_connect", "room_inside", "next_to", "holding"):
                 continue
             if name in (a, b) and a in known and b in known:
                 self.graph.add_edge(edge_type, a, b, note="observed")
@@ -441,6 +454,7 @@ class Sim2D:
                 self._snapshot(f"moving{': ' + label if label else ''}", fresh)
         self.distance += driven
         self._carry()
+        self._place_robot()
         return driven, seen
 
     def _carry(self):
@@ -518,7 +532,7 @@ class Sim2D:
 
         return (None, driven, seen,
                 f"'{target}' is not in {room} ({self.coverage_of(room):.0%} covered, "
-                f"{len(self.graph.objects)} objects seen)")
+                f"{len(self.graph.object_names())} objects seen)")
 
     def _guess_room(self, target):
         """Where to look for something never seen.
@@ -529,7 +543,8 @@ class Sim2D:
         """
         if target in self.room_hints:
             return self.room_hints[target]
-        for name, record in sorted(self.graph.objects.items()):
+        for name in self.graph.object_names():
+            record = self.graph.objects[name]
             if record.get("category") == target:
                 return self.graph.room_of(name)
         return None
@@ -593,18 +608,11 @@ class Sim2D:
                 return self._fail(action, arg,
                                   f"'{name}' is {distance:.2f} m away, beyond the "
                                   f"{self.reach:.2f} m the robot can reach; NAVIGATE_TO it first")
-            # Affordances the world knows and the graph model does not. `GraphMachine`
-            # tracks open and toggled as flags on any node, so OPEN(table) and
-            # TOGGLE_ON(fridge) both "succeed" there. Here an object either has the joint
-            # and the switch or it does not, which is what the simulator is for.
-            if action in ("OPEN", "CLOSE") and not self.world.is_openable(name):
-                return self._fail(action, arg,
-                                  f"'{name}' is a {self.world.category_of(name)} and "
-                                  f"does not open", distance)
-            if action in ("TOGGLE_ON", "TOGGLE_OFF") and name not in self.world.toggled:
-                return self._fail(action, arg,
-                                  f"'{name}' is a {self.world.category_of(name)} and "
-                                  f"has no switch", distance)
+            # Affordances are not checked here. They are preconditions, and the
+            # preconditions live in `GraphMachine` - one specification, applied by both
+            # callers. The truth machine below reads its `open` and `toggled` straight
+            # out of this world, so it decides them on this scene's own state rather than
+            # on a category guess.
         else:
             distance = None
 
@@ -693,13 +701,18 @@ class Sim2D:
         Both sides are `WorldGraph`s, so this is a set difference. Edges about objects the
         robot never saw are not disagreements - they are things it does not claim.
         """
-        known = set(self.graph.objects)
+        # The robot is audited too: `room_inside(robot, ...)` and `holding(robot, ...)`
+        # are edges like any other, and a belief about where the robot is that the world
+        # disagrees with is exactly the kind of divergence worth catching. Rooms are in the
+        # node set for the same reason - without them every `room_inside` edge has one
+        # endpoint outside the audit and is silently skipped, the robot's included.
+        known = set(self.graph.objects) | {ROBOT} | set(self.graph.rooms)
         believed = {(t, a, b) for t, a, b in self.graph.edges
                     if t != "room_connect" and a in known and b in known}
         actual = self.world.true_edges(known)
         return {
-            "seen": len(known),
-            "of": len(self.world.truth.objects),
+            "seen": len(self.graph.object_names()),
+            "of": len(self.world.truth.object_names()),
             "agree": sorted(believed & actual),
             "believed_not_true": sorted(believed - actual),
             "true_not_believed": sorted(actual - believed),
@@ -718,7 +731,8 @@ class Sim2D:
                        "trav_map": self.world.trav_map,
                        "categories": categories,
                        "focus": sorted(self.focus),
-                       "objects": {n: r for n, r in self.world.truth.objects.items()},
+                       "objects": {n: self.world.truth.objects[n]
+                                   for n in self.world.truth.object_names()},
                        "frames": self.frames}, f)
         return path
 

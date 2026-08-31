@@ -42,13 +42,18 @@ Two ways a plan fails, reported separately because they mean different things:
                    plan is executable and does not do the task.
 """
 
-from planner import NOT_GRASPABLE, OPENABLE
-from world_graph import WorldGraph
+from planner import NOT_GRASPABLE, OPENABLE, TOGGLEABLE
+from world_graph import ROBOT, WorldGraph
 
-# The robot's hand is not a graph node - an object being carried has no resting relation
-# to anything, which is exactly what `clear_kinematic` expresses. Held-ness is machine
-# state instead, as are open and toggled, because they are properties of a node rather
-# than relations between two.
+# The robot is a node, and the two facts about it that relate it to something else are
+# edges: `room_inside(robot, kitchen_0)` and `holding(robot, potato)`. `location` and
+# `held` below are views onto those edges rather than a second copy of them - two records
+# of where the robot is, is two records that can disagree. What an object in the hand is
+# *not* is resting on anything, which is what `clear_kinematic` expresses and why
+# `holding` is not one of the kinematic edges.
+#
+# `open` and `toggled` stay off the graph: they are properties of a single node rather
+# than relations between two, and an edge is the wrong shape for them.
 
 
 class StepResult:
@@ -105,11 +110,44 @@ class Outcome:
 class GraphMachine:
     """Applies atomic actions to a `WorldGraph` and checks each one's preconditions.
 
-    `allow_search` says whether NAVIGATE_TO may target an object the graph has never
-    seen. It defaults to True because that is what the low-level navigation controller
-    does: it drives to the object's room and searches for it. With it False the machine
-    demands a fully observed graph, which is the right setting for checking a plan
-    *after* exploration rather than before.
+    The specification, in full. `near(x)` is "the robot is beside x" - checked here as
+    `room_inside(robot) == room_inside(x)`, and in `sim2d` as a real distance, which is
+    the stronger test and the reason the two exist. `open(x)` and `toggled(x)` are node
+    properties the machine tracks; `openable(x)` and `switchable(x)` are affordances, read
+    from the tracked state where it exists and from the category lists in `planner.py`
+    otherwise.
+
+    | action              | preconditions                                    |
+    | ------------------- | ------------------------------------------------ |
+    | `NAVIGATE_TO(x)`    | none                                             |
+    | `RELEASE()`         | none                                             |
+    | `GRASP(x)`          | not holding anything; `near(x)`; if `inside(x, c)` then `open(c)`; `graspable(x)` |
+    | `TOGGLE_ON/OFF(x)`  | `near(x)`; `switchable(x)`                       |
+    | `OPEN/CLOSE(x)`     | `near(x)`; `openable(x)`                         |
+    | `PLACE_INSIDE(x)`   | `near(x)`; `open(x)` if `openable(x)`; holding something |
+    | `PLACE_ON_TOP(x)`   | `near(x)`; holding something                     |
+
+    And what each one does to the graph:
+
+    | action              | effects                                          |
+    | ------------------- | ------------------------------------------------ |
+    | `NAVIGATE_TO(x)`    | `room_inside(robot)` := room of x                |
+    | `GRASP(x)`          | `+holding(robot, x)`; drop x's kinematic edges, keeping its riders; drop `room_inside` for x and everything riding on it |
+    | `PLACE_ON_TOP(x)`   | `+on_top(held, x)`, `+under(x, held)`; `-holding`; restore `room_inside` for the stack from x's room |
+    | `PLACE_INSIDE(x)`   | `+object_inside(held, x)`; `-holding`; restore `room_inside` as above |
+    | `RELEASE()`         | `-holding`; restore `room_inside` for the stack from the robot's room |
+    | `OPEN/CLOSE(x)`     | `open(x)` := True / False                        |
+    | `TOGGLE_ON/OFF(x)`  | `toggled(x)` := True / False                     |
+
+    Two things are checked that are not preconditions and are not in the table, because
+    they are about the plan being well formed rather than about the world: an action's
+    arity (`RELEASE` takes no argument, the rest take one), and whether the argument names
+    something the graph has heard of at all.
+
+    `allow_search` is a strictness knob rather than part of the specification: left True,
+    `NAVIGATE_TO` has no preconditions and an unseen object is admitted for the navigation
+    controller to go and search for. Set False, the machine demands a fully observed graph,
+    which is the right setting for checking a plan *after* exploration rather than before.
     """
 
     def __init__(self, graph, allow_search=True, verbose=False, copy=True):
@@ -121,10 +159,36 @@ class GraphMachine:
         self.graph = graph.copy() if copy else graph
         self.allow_search = allow_search
         self.verbose = verbose
-        self.location = None     # room the robot is in
-        self.held = None         # object in the hand
         self.open = {}           # object -> bool
         self.toggled = {}        # object -> bool
+
+    # ------------------------------------------------------------------ robot state
+
+    # Both of these live in the graph. Nothing is initialised here: a graph handed to the
+    # machine may already say where the robot is and what it is carrying, and overwriting
+    # that with None would throw away the state the caller just set up.
+
+    @property
+    def location(self):
+        """The room the robot is in, or None if the graph does not say."""
+        return self.graph.room_of(ROBOT)
+
+    @location.setter
+    def location(self, room):
+        if room is None:
+            for _, old in self.graph.edges_of("room_inside", src=ROBOT):
+                self.graph.remove_edge("room_inside", ROBOT, old, note="robot location lost")
+        else:
+            self.graph.place_robot(room)
+
+    @property
+    def held(self):
+        """The object in the hand, or None."""
+        return self.graph.held_object()
+
+    @held.setter
+    def held(self, name):
+        self.graph.set_held(name, note="grasped" if name else "let go")
 
     # ------------------------------------------------------------------ helpers
 
@@ -163,6 +227,14 @@ class GraphMachine:
                     stack.append(nxt)
         return False
 
+    def _openable(self, name):
+        """Does this have a door? What the machine has tracked beats the category guess."""
+        return name in self.open or self._category(name) in OPENABLE
+
+    def _switchable(self, name):
+        """Does this have a switch?"""
+        return name in self.toggled or self._category(name) in TOGGLEABLE
+
     def _blocked_by_container(self, name):
         """Is `name` inside something that is currently closed?"""
         for _, container in self.graph.edges_of("object_inside", src=name):
@@ -171,28 +243,21 @@ class GraphMachine:
         return None
 
     def _carried_with(self, name):
-        """`name` plus everything that travels with it, transitively.
-
-        Grasping a plate lifts the potato resting on it; grasping a box lifts what is
-        inside the box, and whatever is resting on *that*. The graph already records those
-        relations, so carrying is a reachability question over `on_top` and
-        `object_inside` edges pointing at the thing in the hand.
-        """
-        moving, stack = {name}, [name]
-        while stack:
-            here = stack.pop()
-            for edge_type in ("on_top", "object_inside"):
-                for rider, _ in self.graph.edges_of(edge_type, dst=here):
-                    if rider not in moving:
-                        moving.add(rider)
-                        stack.append(rider)
-        return moving
+        """`name` plus everything that travels with it - the graph answers this."""
+        return self.graph.carried_with(name)
 
     def _move_to_room(self, names, room):
-        """Rewrite room_inside for everything in `names`. Returns what changed."""
+        """Rewrite room_inside for everything in `names`. Returns what changed.
+
+        Reads the *stored* edge, not `room_of`. `room_of` derives a carried object's room
+        from the robot's, so asking it here says "already in kitchen_0" about an object
+        that has no room edge at all - and the restore on putting it down silently does
+        nothing. Measured: the potato came out of a completed plan with no room.
+        """
         edits = []
         for name in sorted(names):
-            current = self.graph.room_of(name)
+            stored = self.graph.edges_of("room_inside", src=name)
+            current = stored[0][1] if stored else None
             if current == room:
                 continue
             if current is not None:
@@ -244,16 +309,22 @@ class GraphMachine:
                                 f"for it before this step can run")
                 edits.append(f"+node {arg} (unseen)")
                 return ok()
+            # No preconditions. Whether the robot can actually get there is a question
+            # about floor, and the room graph's answer to it is too coarse to be worth
+            # refusing a plan over - `sim2d` runs A* over the eroded map and answers it
+            # properly. An unreachable room is reported there, where it is known.
             room = self._room_of(name)
             if room is not None and not self._reachable(room):
-                return fail(f"{room} is not reachable from {self.location}")
+                warnings.append(f"{room} may not be reachable from {self.location}")
             if room is not None:
                 self.location = room
                 edits.append(f"robot -> {room}")
                 # Whatever is in the hand travels with the robot, and so does anything
-                # riding on it - carrying the plate carries the potato on the plate.
+                # riding on it - carrying the plate carries the potato on the plate. None
+                # of them has a room edge to rewrite: they have the robot's room until
+                # they are put down.
                 if self.held is not None:
-                    edits += self._move_to_room(self._carried_with(self.held), room)
+                    edits.append(f"carrying {', '.join(sorted(self._carried_with(self.held)))}")
             return ok()
 
         # RELEASE is exempt: it takes no argument, so `name` is None by construction and
@@ -263,16 +334,23 @@ class GraphMachine:
 
         # --- GRASP -----------------------------------------------------------------
         if action == "GRASP":
+            # 1. the hand is empty
             if self.held is not None:
                 return fail(f"already holding '{self.held}'; place or release it first")
-            if self._category(name) in NOT_GRASPABLE:
-                return fail(f"'{name}' is fixed furniture and cannot be picked up")
+            # 2. the robot is beside it
             problem = self._require_here(name)
             if problem:
                 return fail(problem)
+            # 3. if it is inside something, that something is open
             shut = self._blocked_by_container(name)
             if shut:
                 return fail(f"'{name}' is inside '{shut}', which is closed; OPEN it first")
+            # and it is a thing that can be picked up at all. This is the affordance check
+            # that `TOGGLE` and `OPEN` also make - a robot can no more lift a fridge than
+            # switch on a countertop, and refusing all three on the same grounds is what
+            # makes the three consistent.
+            if self._category(name) in NOT_GRASPABLE:
+                return fail(f"'{name}' is fixed furniture and cannot be picked up")
             # Everything resting on the grasped object comes with it, and everything it
             # was resting on is no longer supporting it.
             carried = [a for t, a, b in sorted(self.graph.edges)
@@ -283,21 +361,36 @@ class GraphMachine:
                 warnings.append(f"'{', '.join(carried)}' rode along on '{name}'")
             self.held = name
             edits.append(f"held = {name}")
+            # A thing in the hand is not in a room of its own. Its room is the robot's,
+            # and `room_of` derives it, so the stored edge would only be a duplicate to
+            # keep in step on every drive. Placing it down writes the edge back.
+            for moving in sorted(self._carried_with(name)):
+                for _, room in self.graph.edges_of("room_inside", src=moving):
+                    self.graph.remove_edge("room_inside", moving, room, note="picked up")
+                    edits.append(f"-room_inside({moving})")
             return ok()
 
         # --- PLACE_ON_TOP / PLACE_INSIDE -------------------------------------------
         if action in ("PLACE_ON_TOP", "PLACE_INSIDE"):
+            # 1. the robot is beside the target
+            problem = self._require_here(name)
+            if problem:
+                return fail(problem)
+            # 2. something is in the hand
             if self.held is None:
                 return fail("nothing in the hand to place")
             if self.held == name:
                 return fail(f"cannot place '{name}' on itself")
-            problem = self._require_here(name)
-            if problem:
-                return fail(problem)
             if action == "PLACE_INSIDE":
-                if self._category(name) in OPENABLE and not self.open.get(name, False):
-                    warnings.append(f"'{name}' is closed; PLACE_INSIDE will fail unless "
-                                    f"it is opened first")
+                # 3. if it has a door, that door is open. Putting something into a shut
+                # oven is exactly as impossible as taking something out of one, which
+                # GRASP already refuses via `_blocked_by_container`. Not knowing the state
+                # is not the same as knowing it is open, so it fails too - a plan that
+                # never opened the container has not established what this step needs.
+                # Something with no door at all - a bowl, a sink - has nothing to open.
+                if self._openable(name) and not self.open.get(name, False):
+                    known = "is closed" if name in self.open else "has not been opened"
+                    return fail(f"'{name}' {known}; OPEN it before placing inside")
                 self.graph.add_edge("object_inside", self.held, name, note="placed")
                 edits.append(f"object_inside({self.held}, {name})")
             else:
@@ -313,8 +406,11 @@ class GraphMachine:
 
         # --- RELEASE ---------------------------------------------------------------
         if action == "RELEASE":
+            # No preconditions. Opening an empty hand is not an error, it is a step that
+            # does nothing, and a plan is not wrong for containing one.
             if self.held is None:
-                return fail("nothing in the hand to release")
+                warnings.append("nothing in the hand; RELEASE does nothing here")
+                return ok()
             if self.location is not None:
                 edits += self._move_to_room(self._carried_with(self.held), self.location)
             edits.append(f"released {self.held} (now on the floor)")
@@ -323,9 +419,12 @@ class GraphMachine:
 
         # --- OPEN / CLOSE ----------------------------------------------------------
         if action in ("OPEN", "CLOSE"):
+            # 1. beside it, 2. it has a door
             problem = self._require_here(name)
             if problem:
                 return fail(problem)
+            if not self._openable(name):
+                return fail(f"'{name}' is a {self._category(name)} and does not open")
             want = action == "OPEN"
             if self.open.get(name) == want:
                 warnings.append(f"'{name}' is already {'open' if want else 'closed'}")
@@ -335,9 +434,12 @@ class GraphMachine:
 
         # --- TOGGLE_ON / TOGGLE_OFF ------------------------------------------------
         if action in ("TOGGLE_ON", "TOGGLE_OFF"):
+            # 1. beside it, 2. it has a switch
             problem = self._require_here(name)
             if problem:
                 return fail(problem)
+            if not self._switchable(name):
+                return fail(f"'{name}' is a {self._category(name)} and has no switch")
             want = action == "TOGGLE_ON"
             if self.toggled.get(name) == want:
                 warnings.append(f"'{name}' is already toggled {'on' if want else 'off'}")

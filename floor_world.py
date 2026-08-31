@@ -47,8 +47,8 @@ import os
 
 import numpy as np
 
-from planner import NOT_GRASPABLE, OPENABLE
-from world_graph import WorldGraph
+from planner import NOT_GRASPABLE, OPENABLE, TOGGLEABLE
+from world_graph import ROBOT, WorldGraph
 
 DEFAULT_DATASET = os.environ.get(
     "BEHAVIOR_ASSETS",
@@ -104,16 +104,6 @@ TIAGO_ERODE_RADIUS = 0.892
 # keeps 4 standable cells and the bathroom none - a house no plan can run in. At 0.35 m,
 # roughly Tiago's base radius, every room in every scene tried keeps floor to stand on.
 DEFAULT_ROBOT_RADIUS = 0.35
-
-# Categories that can be switched on and off. `OPENABLE` and `NOT_GRASPABLE` come from
-# `planner.py` so the world, the validator and the graph machine agree on what an object
-# affords - three copies of that list is three ways to disagree.
-TOGGLEABLE = {
-    "oven", "stove", "microwave", "dishwasher", "washer", "clothes_dryer", "dryer",
-    "coffee_maker", "blender", "toaster", "kettle", "electric_kettle", "lamp",
-    "floor_lamp", "table_lamp", "light", "ceiling_light", "television", "standing_tv",
-    "shower", "sink", "furniture_sink", "fan", "electric_switch",
-}
 
 # Doorways the robot cannot drive through because the raster says so rather than because
 # the house does. Measured across all 51 scenes: 24 come out with their rooms in several
@@ -480,6 +470,11 @@ class FloorWorld:
             raise KeyError(name)
         position = list(position[:2])
         record["position"] = position
+        # An object in the robot's hand has no room of its own - `room_of` derives it from
+        # the robot. Writing one here would put back the duplicate GRASP just removed, on
+        # every metre the robot drives.
+        if self.truth.carried(name):
+            return record
         where = room or self.room_at(position[0], position[1])
         if where is not None:
             for _, old in self.truth.edges_of("room_inside", src=name):
@@ -522,12 +517,12 @@ class FloorWorld:
         explicitly maintains.
         """
         here = self.truth.position_of(name)
-        if here is None:
+        if here is None or name == ROBOT:
             return []
         out = []
         for other, record in self.truth.objects.items():
             there = record.get("position")
-            if other == name or there is None:
+            if other == name or other == ROBOT or there is None:
                 continue
             if math.hypot(here[0] - there[0], here[1] - there[1]) <= distance:
                 out.append(other)
@@ -544,6 +539,8 @@ class FloorWorld:
         names = set(names)
         edges = {(t, a, b) for t, a, b in self.truth.edges
                  if t not in ("room_connect", "next_to") and a in names and b in names}
+        # `next_to` is about two things standing beside each other on the floor. The robot
+        # is beside almost everything it acts on and that is not a fact about the world.
         for name in names:
             for other in self.neighbours(name):
                 if other in names:
