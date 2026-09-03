@@ -297,6 +297,8 @@ Rules:
 - The number after each object is how confident we are that it is really there. A low
   number means the object may not exist in this house; plan for it only if the task
   requires it.
+- **NAVIGATE_TO takes an object, never a room.** `NAVIGATE_TO(kitchen)` is not a step;
+  name the thing in the kitchen you are going to touch.
 - **NAVIGATE_TO the object you are about to act on, every time.** Being in the same room
   is not enough, and having driven there earlier is not enough - if the robot has driven
   somewhere else since, drive back.
@@ -373,18 +375,49 @@ def generate(task, graph, model_name="Qwen/Qwen2.5-7B-Instruct",
 _GENERATORS = {}
 
 
-def get_generator(model_name="Qwen/Qwen2.5-7B-Instruct"):
+def get_generator(model_name="Qwen/Qwen2.5-7B-Instruct", adapter=None):
     """Return a cached prompt->text function for this model."""
-    if model_name not in _GENERATORS:
-        _GENERATORS[model_name] = _local_generator(model_name)
-    return _GENERATORS[model_name]
+    key = (model_name, adapter)
+    if key not in _GENERATORS:
+        _GENERATORS[key] = _local_generator(model_name, adapter)
+    return _GENERATORS[key]
 
 
-def _local_generator(model_name):
-    """Lazily load a local instruct model and return a prompt->text function."""
+def release_generator(model_name=None):
+    """Drop a loaded model and give the GPU memory back.
+
+    Comparing models means loading several in one process, and an 8B in fp16 is ~16 GB -
+    two of them will not sit on one card. Dropping the closure is not enough on its own,
+    because the allocator keeps the freed blocks reserved; `empty_cache` returns them.
+    """
+    import gc
+
+    # Keys are (model_name, adapter), so a bare model name drops every adapter loaded on
+    # top of it too - which is what a caller freeing the card wants.
+    for key in [k for k in _GENERATORS if model_name in (None, k[0])]:
+        _GENERATORS.pop(key, None)
+    gc.collect()
+    try:
+        import torch
+
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
+
+
+def _local_generator(model_name, adapter=None):
+    """Lazily load a local instruct model and return a prompt->text function.
+
+    `adapter` points at a LoRA directory from `finetune_extraction.py`, whose base model
+    it names, so a fine-tuned extractor is loaded by adapter path alone.
+    """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
+    if adapter:
+        import json
+
+        model_name = json.load(open(f"{adapter}/training.json"))["base"]
     tok = AutoTokenizer.from_pretrained(model_name)
     # `device_map="auto"` needs `accelerate`, which is not in the `behavior` env and is
     # not worth installing there - the env has a verified torch/CUDA/OmniGibson stack.
@@ -397,6 +430,10 @@ def _local_generator(model_name):
     except (ValueError, ImportError):
         model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float16)
         model = model.to("cuda" if torch.cuda.is_available() else "cpu")
+    if adapter:
+        from peft import PeftModel
+
+        model = PeftModel.from_pretrained(model, adapter)
     model.eval()
 
     def run(prompt, max_new_tokens, temperature=0.0):
@@ -410,9 +447,21 @@ def _local_generator(model_name):
         messages = [{"role": "user", "content": prompt}]
         # Depending on the transformers version this returns either a bare tensor or a
         # BatchEncoding; normalize to a tensor of ids so both work.
-        encoded = tok.apply_chat_template(
-            messages, add_generation_prompt=True, return_tensors="pt"
-        )
+        #
+        # `enable_thinking=False` is for the Qwen3 family, whose chat template turns on a
+        # `<think>...</think>` preamble by default. Left on, the model spends the whole
+        # token budget reasoning and the reply that reaches `parse_plan` has no actions in
+        # it at all - the plan is not wrong, it never arrives. Templates that do not know
+        # the argument reject it, so it is offered and withdrawn.
+        try:
+            encoded = tok.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt",
+                enable_thinking=False,
+            )
+        except (TypeError, ValueError):
+            encoded = tok.apply_chat_template(
+                messages, add_generation_prompt=True, return_tensors="pt"
+            )
         ids = encoded["input_ids"] if hasattr(encoded, "keys") else encoded
         ids = ids.to(model.device)
         with torch.no_grad():
@@ -422,7 +471,12 @@ def _local_generator(model_name):
                 **({"temperature": temperature, "top_p": 0.9} if temperature > 0 else {}),
                 pad_token_id=tok.eos_token_id,
             )
-        return tok.decode(out[0][ids.shape[-1]:], skip_special_tokens=True)
+        reply = tok.decode(out[0][ids.shape[-1]:], skip_special_tokens=True)
+        # Belt and braces: if a thinking block comes back anyway, the answer is what
+        # follows it.
+        if "</think>" in reply:
+            reply = reply.rsplit("</think>", 1)[1]
+        return reply
 
     return run
 

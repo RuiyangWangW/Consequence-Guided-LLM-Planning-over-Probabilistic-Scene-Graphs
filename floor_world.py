@@ -215,6 +215,7 @@ class FloorWorld:
         self.id_to_room = id_to_room    # segment id -> room name, as room_graph names them
         self.n = free.shape[0]
         self.room_graph = room_graph
+        self._footprints = {}
         self.rooms = room_graph["rooms"]
 
         # Ground truth, in the same class the robot's belief uses. Seeded with the rooms
@@ -407,6 +408,87 @@ class FloorWorld:
             return None
         return int(rows[i]), int(cols[i])
 
+    def footprint(self, name, span=1.2):
+        """The cells `name` occupies: the untraversable blob containing its centre.
+
+        An object here is stored as a point, which is the middle of the thing. That is fine
+        for a mug and misleading for a bed: the camera sees the near edge of a bed from a
+        metre away, and the arm reaches the near edge, but a check measured from the centre
+        of a two-metre bed says both are out of range. Flooding the blob gives the extent
+        back, bounded by `span` so a sofa against a wall does not annex the wall.
+
+        Returns a list of `(row, col)`, or the single centre cell for something that sits
+        on free floor and therefore has no footprint of its own.
+        """
+        centre = self.cell_of(name)
+        if centre is None:
+            return []
+        cached = self._footprints.get((name, span))
+        if cached is not None:
+            return cached
+        row0, col0 = centre
+        if self.free[row0, col0]:
+            cells = [centre]
+        else:
+            limit = int(round(span / self.resolution))
+            seen, stack = {centre}, [centre]
+            while stack:
+                r, c = stack.pop()
+                for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nr, nc = r + dr, c + dc
+                    if not (0 <= nr < self.free.shape[0] and 0 <= nc < self.free.shape[1]):
+                        continue
+                    if abs(nr - row0) > limit or abs(nc - col0) > limit:
+                        continue
+                    if not self.free[nr, nc] and (nr, nc) not in seen:
+                        seen.add((nr, nc))
+                        stack.append((nr, nc))
+            cells = sorted(seen)
+        self._footprints[(name, span)] = cells
+        return cells
+
+    def reachable_point_on(self, support, near=None, span=1.2):
+        """A point on `support` that a robot can actually stand beside.
+
+        Objects here are points, and a support's point is its centre. That is fine for a
+        mug and wrong for a sofa: placing a clock "on the sofa" put it at the sofa's middle,
+        2.6 m from any floor the robot can stand on, so the robot could put the clock down
+        and then never pick it up again. A real placement happens at arm's length, on the
+        near edge of the furniture, and this returns that edge.
+
+        The footprint is the blob of untraversable cells containing the support's centre,
+        flooded no further than `span` metres so a sofa against a wall does not become the
+        wall. Among those cells, the one closest to free floor wins - or closest to `near`
+        (the robot) when it is given, which is the difference between "somewhere you could
+        reach" and "where you are standing now".
+        """
+        centre = self.cell_of(support)
+        if centre is None:
+            return None
+        row0, col0 = centre
+        cells = self.footprint(support, span)
+        if not cells or self.free[row0, col0]:
+            return self.to_world(row0, col0)        # already standable; nothing to do
+
+        # The footprint cells that touch free floor: where a robot could reach onto it.
+        edge = [(r, c) for r, c in cells
+                if any(0 <= r + dr < self.free.shape[0] and 0 <= c + dc < self.free.shape[1]
+                       and self.free[r + dr, c + dc]
+                       for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
+        if not edge:
+            return self.to_world(row0, col0)
+        if near is not None:
+            target = self.to_cell(near[0], near[1])
+        else:
+            target = None
+        if target is None:
+            # Nearest to the centre keeps the object on the support rather than flung to
+            # the far end of a long counter.
+            best = min(edge, key=lambda rc: (rc[0] - row0) ** 2 + (rc[1] - col0) ** 2)
+        else:
+            best = min(edge, key=lambda rc: (rc[0] - target[0]) ** 2 + (rc[1] - target[1]) ** 2)
+        return self.to_world(best[0], best[1])
+
     def sample_free(self, room=None, radius=DEFAULT_ROBOT_RADIUS, rng=None):
         """A standable point, optionally inside one room. Where to drop a new object."""
         mask, _ = self.traversable(radius)
@@ -442,7 +524,13 @@ class FloorWorld:
                 raise ValueError(f"cannot place '{name}' on '{support}': it has no position")
             # In two dimensions, on a counter and in a drawer are the same place. Which of
             # the two it is, is what the `on_top` / `object_inside` edge says.
-            position = list(base)
+            #
+            # Not the support's *centre*, though: the near edge a robot could actually
+            # stand beside. Spawning at the centre of a wide bed or a wedged-in coffee
+            # table put 12 of the benchmark's objects further from any reachable floor than
+            # the camera's 0.8 m sight margin or the arm's 1.5 m reach, so a known-good
+            # plan could neither see nor grasp them.
+            position = self.reachable_point_on(support) or list(base)
         if position is None and room is not None:
             position = self.sample_free(room, rng=rng)
             if position is None:
@@ -504,10 +592,24 @@ class FloorWorld:
         return self.category_of(name) not in NOT_GRASPABLE
 
     def distance_to(self, name, x, y):
+        """How far the robot at (x, y) is from `name` - measured to its NEAR EDGE.
+
+        An object is stored as a point, and for a bed or a sofa that point is a metre from
+        anything the robot can touch. An arm reaches the edge of a bed, not its middle, so
+        measuring to the centre refused grasps that a real robot makes easily: measured on
+        the benchmark, twelve known-good plans failed this check on furniture the robot was
+        standing right beside.
+        """
         position = self.truth.position_of(name)
         if position is None:
             return float("inf")
-        return math.hypot(position[0] - x, position[1] - y)
+        straight = math.hypot(position[0] - x, position[1] - y)
+        cells = self.footprint(name)
+        if len(cells) <= 1:
+            return straight
+        row, col = self.to_cell(x, y)
+        nearest = min((r - row) ** 2 + (c - col) ** 2 for r, c in cells) ** 0.5
+        return min(straight, nearest * self.resolution)
 
     def neighbours(self, name, distance=NEXT_TO_DISTANCE):
         """Objects close enough to `name` to count as beside it.

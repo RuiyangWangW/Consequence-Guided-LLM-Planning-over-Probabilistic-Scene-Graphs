@@ -50,16 +50,33 @@ def repair_prompt(task, graph, steps, outcome):
     back whole instead of as a fragment to splice in.
     """
     lines = []
+    abandoned = set(outcome.left_open) | set(outcome.left_on)
     for index, step in enumerate(steps):
         arg = step.get("object") or ""
         mark = ""
         if index == outcome.failed_at:
             mark = f"   <-- REJECTED: {outcome.steps[index].reason}"
+        elif arg in abandoned and step["action"] in ("OPEN", "TOGGLE_ON"):
+            mark = "   <-- never undone"
         elif index < len(outcome.steps) and outcome.steps[index].ok:
             mark = "   ok"
         lines.append(f"  {index + 1:2d}. {step['action']}({arg}){mark}")
 
-    if outcome.failed_at is None:
+    if outcome.failed_at is None and not outcome.safe:
+        # The one thing the loop can fault a *runnable* plan for without being told what
+        # the task wants. The machine already knows what this plan opened and did not
+        # shut, and what it switched on and did not switch off - no goal required, because
+        # "put back what you disturbed" is not a property of the task, it is a property of
+        # every task.
+        left = ([f"    still open:        {n}" for n in outcome.left_open]
+                + [f"    still switched on: {n}" for n in outcome.left_on])
+        complaint = ("Every action was applicable, but the plan leaves the house in a "
+                     "state it should not:\n" + "\n".join(left)
+                     + "\n\nAnything the robot opens it must close again, and anything "
+                       "it switches on it must switch off. Add the missing CLOSE and "
+                       "TOGGLE_OFF actions, at the right points - a door has to stay open "
+                       "while something is being put in or taken out.")
+    elif outcome.failed_at is None:
         complaint = ("Every action was applicable, but the plan does not achieve the "
                      "task. These are still missing at the end:\n"
                      + "\n".join(f"    {t}({a}, {b})" for t, a, b in outcome.missing))
@@ -126,7 +143,10 @@ def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
         if not steps:
             prompt = build_prompt(task, graph)      # nothing parsed; ask again cleanly
             continue
-        if outcome.failed_at is None and (not goal or outcome.goal_met):
+        # A plan is only accepted if it applies, tidies up after itself, and - where a
+        # goal was given - reaches it. Leaving the oven on used to count as success,
+        # because the loop had nothing to check but preconditions.
+        if outcome.failed_at is None and outcome.safe and (not goal or outcome.goal_met):
             record["accepted"] = True
             return history
         prompt = repair_prompt(task, graph, steps, outcome)
@@ -149,6 +169,7 @@ def main():
     parser.add_argument("--json", help="write the whole transcript here")
     args = parser.parse_args()
 
+    stated = {}
     if args.objects:
         objects, dependent = list(args.objects), []
     else:
@@ -157,11 +178,13 @@ def main():
         # `dependent` is what the task already said the location of.
         found = extract(args.task, args.model, generator=get_generator(args.model))
         objects, dependent = found["uncertain"], found["dependent"]
+        stated = found["stated"]
     if dependent:
         print("dependent: " + ", ".join(
             f"{d['object']} {d['relation']} {d['target']}" for d in dependent))
 
-    graph = populate(args.scene, objects, dependent, args.rsn_model, DEFAULT_THRESHOLD)
+    graph = populate(args.scene, objects, dependent, stated=stated,
+                     model_path=args.rsn_model, threshold=DEFAULT_THRESHOLD)
     print(f"task:  {args.task}")
     print(f"scene: {args.scene}\n")
     print(format_for_llm(graph))

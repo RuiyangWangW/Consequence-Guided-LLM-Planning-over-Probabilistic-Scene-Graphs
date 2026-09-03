@@ -77,6 +77,10 @@ class WorldGraph:
         self.rooms = {}      # room id -> {"room_type": str}
         self.objects = {}    # object name -> {"category": str, "position": [x, y, z]}
         self.edges = set()   # (edge_type, src, dst)
+        # Rooms the robot has searched for something and not found it in. Negative
+        # evidence, kept separately from `edges` because it is a fact about the *search*,
+        # not about the world: "the mug is not in the kitchen" is not a placement.
+        self.ruled_out = {}  # object name -> set of room ids
         self.log = []        # ordered record of every edit, for inspection and rollback
 
     # ---------------------------------------------------------------- construction
@@ -131,7 +135,8 @@ class WorldGraph:
         # A task that says where something is - "the potato on the counter" - is a fact,
         # not a guess, and `populate` records it as a relation. It is a kinematic edge
         # here, which is what makes GRASP(potato) resolvable before the robot has looked.
-        relations = {"ON_TOP": "on_top", "INSIDE": "object_inside"}
+        relations = {"ON_TOP": "on_top", "INSIDE": "object_inside",
+                     "UNDER": "under", "NEXT_TO": "next_to"}
         for relation in graph.get("relations") or []:
             edge = relations.get(str(relation.get("relation", "")).upper())
             src, dst = relation.get("from"), relation.get("to")
@@ -242,6 +247,26 @@ class WorldGraph:
                     self.remove_edge("room_inside", name, old_room, note="moved rooms")
             self.add_edge("room_inside", name, room, note="seen")
         return first
+
+    def rule_out_room(self, name, room, note="searched and not found"):
+        """Record that `name` was looked for in `room` and is not there.
+
+        A belief that has been disconfirmed has to be retracted, not merely overridden
+        later. Without this the graph kept asserting `room_inside(mug, kitchen_0)` after
+        the robot had swept the kitchen and found no mug, so anything reading the graph -
+        the planner's view of the world, the validator, the next search - was told the mug
+        was somewhere the robot had already established it was not.
+
+        Retracting is the honest state: the object's room is now unknown again, which is
+        exactly what the robot learned. The room is remembered in `ruled_out` so the search
+        does not return to it.
+        """
+        self.ruled_out.setdefault(name, set()).add(room)
+        return self.remove_edge("room_inside", name, room, note=note)
+
+    def is_ruled_out(self, name, room):
+        """Has the robot already searched this room for this object and come back empty?"""
+        return room in self.ruled_out.get(name, ())
 
     # ---------------------------------------------------------------- the robot
 

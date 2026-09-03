@@ -10,10 +10,17 @@ pipeline supplies the missing information — a learned prior over where objects
 symbolic model of what the primitives permit — and rejects plans that violate either.
 
 ```
-task description ──> objects needed ──┐
-                                      ├──> scene graph ──> LLM plan ──> validator ──> simulator
-scene floor plan ──> room graph ──────┘        (RSN)                                   (video)
+task description ──> objects needed ──┐                     ┌─> graph machine ─> repair loop
+                                      ├──> scene graph ──> LLM plan                    │
+scene floor plan ──> room graph ──────┘        (RSN)         └─> 2-D simulator  <──────┘
+                                                              or OmniGibson (video)
 ```
+
+There are **two** checkers, and the difference between them is the point. The graph machine
+replays a plan as typed graph edits in about a millisecond and asks whether every
+precondition holds; the 2-D simulator drives the robot over the real floor plan and asks
+whether it could have got there and reached. Measured over 480 random plans, one
+precondition still separates them — see *How far apart are the two models now?*
 
 | Stage | Module | What it does |
 | --- | --- | --- |
@@ -24,6 +31,14 @@ scene floor plan ──> room graph ──────┘        (RSN)          
 | 4' | `replan.py` | checks the plan with the graph machine and hands its complaint back to the LLM, up to 5 times |
 | 5 | `execute_plan.py` | grounds onto scene objects, runs in OmniGibson, records video |
 | 5' | `floor_world.py` + `sim2d.py` | the same nine primitives on a 2-D grid, in a second, with no Isaac |
+
+And, to measure whether any of it helps:
+
+| what | module | it does |
+| --- | --- | --- |
+| the benchmark | `tasks.py`, `task_shapes.py`, `build_tasks.py` | 100 tasks over 10 scenes, every one proved solvable before it is written out |
+| the experiment | `evaluate.py` | runs the full pipeline over the benchmark with and without the checker, and says where the errors come from |
+| the ablation | `ablate_plan.py` | drops one action from a working plan and asks which model notices |
 
 Where the plan does not know where an object is, three more modules close the gap:
 `nav_controller.py` turns one `NAVIGATE_TO` into a room drive plus a frontier search,
@@ -75,6 +90,162 @@ open the fridge in the kitchen     -> fridge
 put the laptop on the coffee table -> laptop, coffee_table
 ```
 
+### Most of what looked like misreading was misnaming
+
+After the safety check landed, extraction was the largest remaining source of failure —
+43% of what Qwen3-4B still got wrong and 61% of the 8B's. The obvious reading was that the
+model was skipping objects, so every object it appeared to miss on the 100 benchmark tasks
+was sorted by *why*:
+
+| cause | share | example |
+| --- | --- | --- |
+| room-qualified name | **65%** | task says "the office bottom cabinet", model answers `office_bottom_cabinet`, the category is `bottom_cabinet` |
+| synonym | 26% | `apple_juice` for `bottle_of_apple_juice` |
+| genuinely dropped | 9% | missed "warm it in the microwave" |
+
+Only two of twenty-three were reading failures. The rest were names the model had read
+correctly and written in a form that does not ground.
+
+The room qualifier is not a scoring artifact. `same_object` matches a one-word category
+inside a longer name — `countertop` is a token of `bathroom_countertop` — but not a
+two-word one, so `bottom_cabinet` never matches `office_bottom_cabinet`, and
+`execute_plan.ground_plan` applies that same rule when it puts a plan onto a real scene.
+The model read the sentence, and the object was still unreachable.
+
+So `strip_room` splits the qualifier off. It does not discard it: "the office bottom
+cabinet" *states* the room, which is precisely what the RSN would otherwise have to guess,
+so it comes back as a hint and `populate` uses it directly with probability 1.0 — for the
+same reason a dependent object's stated container is trusted rather than predicted. A hint
+naming a room type the scene lacks is ignored rather than obeyed.
+
+### What was tried, and what the prompt's own examples were teaching
+
+Prompt wordings live in `extraction_prompts.py` as ablations of the shipped one;
+`extraction_eval.py` measures them. Exact = every object found and every relation right,
+on the 100 benchmark tasks:
+
+| | 4B | 8B |
+| --- | --- | --- |
+| baseline | 69% | 56% |
+| + room normalization | 79% | 60% |
+| + longer examples, five relation examples dropped to fit | 73% | 79% |
+| + restructured: enumerate first, then classify | 79% | 69% |
+| union of three samples | 79% | 67% |
+| **+ longer examples, all relation examples kept** | **78%** | **82%** |
+
+The two models needed different fixes, which is why measuring them separately mattered.
+The 4B was already reading correctly — 98% recall — so it had nothing to gain from better
+examples and something to lose; normalization alone was its whole gain. The 8B genuinely
+dropped objects, at 81% recall, and the longer examples were what fixed it.
+
+What the 8B was copying was answer *length*. Every example in the original prompt answered
+with two or three objects, and it returned 2.8 where 3.5 were wanted. Adding examples that
+answer with five and seven raised recall to 96%. But the first attempt at that dropped five
+short examples to make room, and relation errors rose 22 → 27 on the restructured variant
+and 15 → 23 on the 4B: the short examples were carrying the INSIDE/ON_TOP and now-vs-goal
+distinction. Keeping all of them and appending the long ones is the shipped prompt.
+
+Sampling three times and unioning never beat the best single prompt while costing three
+times the calls, so it is not used.
+
+**Tuning on the test set is the obvious hazard here**, so `extraction_data.py` generates
+labelled instructions from slot templates with no scene involved — the answer is known by
+construction — and `--exclude-benchmark` holds back all 109 categories the benchmark uses.
+A first version of that dev set scored 90% against the benchmark's 69% and was useless: it
+had no room-qualified phrasing, the single hardest thing in the real instructions. With
+that added it tracks (4B 66% vs 69%, 8B 57% vs 56%), and the shipped prompt validates on
+held-out categories at **91% (4B) and 96% (8B)**, up from 66% and 57%.
+
+### Fine-tuning beats prompting, and a 1.7B beats an 8B
+
+`finetune_extraction.py` LoRA-tunes a small model on generated instructions instead of
+talking a large one into the task. Two things make the comparison honest:
+
+**The training data shares no vocabulary with the test set.** `--exclude-benchmark` holds
+back all 109 categories the benchmark uses, leaving 1,467 movables, 12 surfaces, 15
+containers and 8 appliances to train on. The model never sees the words `oven`,
+`countertop` or `bottom_cabinet` and is then asked about them. Nothing is scene-derived, so
+none of this is memorising the ten scenes.
+
+**The tuned model gets a short prompt, not the long one.** Twelve worked examples exist to
+demonstrate a format and an answer length; a model trained on thousands should need
+neither. So it is given a ~400-character instruction against the prompted model's 3,300 —
+a fair test rather than a stacked one. Answers are trained in the exact format
+`task_objects.parse` already reads, so nothing downstream changes.
+
+Exact-match on the 100 benchmark tasks:
+
+| | model | prompt | exact |
+| --- | --- | --- | --- |
+| prompted, original | Qwen3-4B | 2.3k | 69% |
+| prompted, original | Qwen3-8B | 2.3k | 56% |
+| prompted, shipped | Qwen3-4B | 3.3k | 78% |
+| prompted, shipped | Qwen3-8B | 3.3k | 82% |
+| fine-tuned, 500 examples | Qwen3-1.7B | 0.4k | 74% |
+| **fine-tuned, 2,000 examples** | **Qwen3-1.7B** | **0.4k** | **87%** |
+| fine-tuned, 8,000 examples | Qwen3-1.7B | 0.4k | 87% |
+| fine-tuned, 8,000 examples | Qwen3-4B | 0.4k | 85% |
+
+**Five hundred generated examples make a 1.7B beat a prompted 4B**, and two thousand make
+it beat the best prompted 8B by five points at a fifth of the size and an eighth of the
+prompt. Training the winner took 14 minutes on one A5000, updating 17.4M LoRA parameters —
+1% of the model.
+
+Two results worth stating plainly because they decide how much effort this deserves.
+**It saturates at about 2,000 examples**: 8,000 buys nothing (87% either way), so the
+tedious part — generating data at volume — turns out to be unnecessary. And **size stops
+helping once tuned**: the fine-tuned 4B scores 85%, *below* the 1.7B, so the remaining
+errors are not capacity. Recall is 99% and the residue is relations — INSIDE versus ON_TOP,
+and current position versus where the task wants the thing to end up.
+
+```bash
+python extraction_data.py --n 2000 --seed 7 --exclude-benchmark \
+                          --out data/extraction-train.json
+python finetune_extraction.py --model Qwen/Qwen3-1.7B --out models/extract-1.7b-2000
+python extraction_eval.py --on data/tasks.json --variants extract-1.7b-2000 \
+                          --adapters models/extract-1.7b-2000
+```
+
+
+### Three classes, not two lists
+
+Every object the task names falls into exactly one of three classes, ordered by how much
+the instruction says about where it is:
+
+```
+DEPENDENT: potato INSIDE fridge      the task named its support
+STATED:    fridge IN kitchen         the task named its room
+UNCERTAIN: stove                     the task said nothing
+```
+
+A support beats a room and a room beats nothing, and each object takes the first that
+applies. The classes being **disjoint** is what lets `populate` read the output directly
+instead of reconciling overlapping lists.
+
+The middle class did not exist at first, and losing it was expensive. 55% of instructions
+name a room, the extractor read them correctly, and then the answer format had nowhere to
+put the room — so the model was trained to *delete* a fact the task had given it and the
+pipeline fell back to guessing a location it had been told. Adding it took room recall from
+about 65% to **98%**.
+
+Two defects fixed alongside:
+
+**Eight of eighteen room words matched no scene room type.** An instruction says "the office
+cabinet" and the scene graph says `private_office`; `pantry` is `pantry_room`, `hallway` is
+`corridor`. The stated room was extracted, then silently discarded for failing an equality
+test. `scene_graph.ROOM_SYNONYMS` fixes it.
+
+**`strip_room` split 22 real categories.** `bar_soap` became soap-in-a-bar, `gym_shoe` became
+shoe-in-a-gym, `garden_chair` and `kitchen_analog_scale` the same. It now refuses to split a
+name that is itself a category.
+
+With the hierarchy, on the 100 benchmark tasks:
+
+| | exact | objects | class | relations | rooms |
+| --- | --- | --- | --- | --- | --- |
+| 1.7B, 2,000 examples | 89% | 98% | 95% | 96% | 98% |
+| **1.7B, 8,000 examples** | **94%** | 99% | 96% | 96% | 98% |
+
 ## Stage 2 — room graphs
 
 `room_graph.py` derives room adjacency from the ground-truth floor plans in `layout/`
@@ -114,6 +285,34 @@ absent, blocking a task the scene could actually support. Carrying the number in
 the planner weigh a doubtful object against a confident one. `--threshold` restores the old
 behavior. The RSN will sometimes be wrong, and that is expected: its plan is a first guess.
 
+### A stated location is the first guess, never the only one
+
+`populate` resolves a location rather than guessing it wherever the task allows. A dependent
+object's room is its **root's** room — follow the chain of relations to the object nothing
+else hangs off, and take that one's. "the mug in the office cabinet" puts the mug in the
+office without the RSN ever being asked about mugs, and a chain of any depth works the same
+way.
+
+**Everything keeps a ranked fallback, including a stated room.** `candidates` is the order
+the robot searches in, and it always ends with the RSN's full ranking:
+
+| tier | what it assumes |
+| --- | --- |
+| 1 | where the task says the support is |
+| 2 | where the support might be instead, if that room is ruled out |
+| 3 | where this object itself tends to live — the tier that saves the task when the *relation* was wrong, not just the room |
+
+Before this a stated room produced a **one-element** list, so a wrong statement was
+unrecoverable: the object was simply unfindable and the plan died. A potato reported on the
+countertop but actually in the fridge is only findable because the potato's own ranking is
+in the list.
+
+And a disconfirmed belief is **retracted**, not merely overridden later.
+`WorldGraph.rule_out_room` removes the `room_inside` edge and records the room, so nothing
+downstream keeps asserting a room the robot has already swept, and no search returns to it.
+`test_fallback.py` checks all of this, including that the same search fails with a single
+candidate.
+
 ## Stage 4 — planning and validation
 
 The LLM (Qwen2.5-7B-Instruct by default) sees the action space, the scene graph, the rules,
@@ -140,6 +339,18 @@ holds, where it is, and what is open. It rejects:
 
 Warnings cover the non-fatal cases: placing inside a closed container, closing something
 never opened, navigating between non-adjacent rooms.
+
+### NAVIGATE_TO takes an object, not a room
+
+Planners write `NAVIGATE_TO(kitchen_0)` and mean "go to the kitchen". The machine used to
+admit it by inventing a node called `kitchen_0` and navigating to that, so the plan
+validated and then died on the simulator's very first step — **23 of the 27** plans that
+passed validation and failed when driven.
+
+It is refused now, with a complaint that names the room so the repair loop can rewrite the
+step: *"'kitchen_0' is a room, not an object; NAVIGATE_TO takes the object you are about to
+act on."* The simulator refuses it in the same words, because the two have to agree about
+what a plan may say or a plan passes validation and dies downstream.
 
 ## Stage 4' — replanning from the checker's complaint
 
@@ -256,67 +467,58 @@ If a run segfaults with an OOM, check for your own leftover processes before bla
 contention — `nvidia-smi --query-compute-apps=pid,used_memory --format=csv`. A zombie run
 can hold ~19 GB across all four cards.
 
+### The files
+
+| | |
+| --- | --- |
+| `task_objects.py` | stage 1 — extraction into the three classes, and the parser |
+| `extraction_data.py` | generates labelled instructions; no scene involved |
+| `extraction_prompts.py` | the prompt wordings that lost, kept as ablations of the one that won |
+| `extraction_eval.py` | measures extraction on its own, per class |
+| `finetune_extraction.py` | LoRA-tunes a small model on generated data |
+| `scene_graph.py` | stage 2/3 — rooms, and resolving a location from what the task said |
+| `planner.py` | stage 4 — the prompt, the parser, the affordance tables |
+| `graph_machine.py` | the validator: preconditions, effects, goal, safety |
+| `replan.py` | stage 4' — the repair loop |
+| `floor_world.py` | the 2-D house: floor, rooms, objects, footprints |
+| `sim2d.py` | the robot: A*, the wedge camera, the primitives |
+| `sim_eval.py` | drives one plan in the simulator and judges it |
+| `build_tasks.py` / `task_shapes.py` | the benchmark, and the shapes it is built from |
+| `evaluate.py` | the three-arm experiment over all 100 tasks |
+| `run_reference_sim.py` | the ceiling: can the reference plans themselves be driven? |
+
+`data/tasks.json` is the benchmark and `data/reference-sim.json` is the evidence every task
+in it can be finished. Trained adapters, rendered figures and run output are not tracked —
+`finetune_extraction.py` rebuilds an adapter in 14 minutes and `extraction_data.py` rebuilds
+any split byte-for-byte from its seed.
+
 ### Testing
 
-Five offline entry points and one simulator run, split by cost:
+Everything offline, in order of cost. Nothing here needs Isaac.
 
 ```bash
-python check_names.py primitive_patches.py test_primitives.py   # <1s - undefined names
-python test_graph_machine.py               # ~1s - world graph and the plan checker
+python check_names.py *.py                 # <1s  - names a function uses that nothing defines
+python test_graph_machine.py               # ~2s  - the world graph and the precondition model
+python build_tasks.py                      # ~20s - all 100 tasks, seven checks each
 python test_sim2d.py                       # ~15s - the 2-D world, camera, search and actions
 python ablate_plan.py                      # ~10s - which broken plans each model catches
 python ablate_plan.py --fuzz 240           # ~20s - where the two models still differ
-python test_stance_order.py                # ~2s - which stance the map picks
-python test_pipeline.py                    # ~1s - parser and validator
-python scene_setup.py Beechwood_0_int      # ~2s - furniture selection
-python door_swing.py                       # ~1s - door swing shapes
-
-OMNIGIBSON_GPU_ID=1 CUROBO_GPU_ID=1 python test_primitives.py \
-    --scene house_single_floor --bev --video figures/plan_potato_plate_bev.mp4
+python test_pipeline.py                    # ~1s  - the parser and the flat validator
+python test_stance_order.py                # ~2s  - which stance the map picks
 ```
 
-`check_names.py` reports names a function reads that nothing it can see defines — the
-NameError class of bug, found in a second rather than three minutes into a simulator run.
-It follows Python's scoping rules, so a closure variable or a module-level import is not
-flagged while a genuine typo is. Run it before every launch.
+| suite | checks |
+| --- | --- |
+| `test_graph_machine.py` | 95 — one per line of the precondition and effect tables, the robot node, the carried-object rules, and the scene-graph seed |
+| `test_sim2d.py` | 72 — the loader's coordinate transform, A\*, the camera wedge, the search, every primitive, and the belief-vs-world audit |
+| `test_pipeline.py` | 20 — plan parsing and the flat validator |
+| `build_tasks.py` | 100 tasks × 7 checks |
 
-`test_stance_order.py` reproduces the stance choice from the navigation map alone and
-`test_primitives.py --probe` measures the distance at which the robot actually fits, so the
-ranking can be iterated on in seconds rather than half-hour simulator runs.
+Then one simulator run, which does need Isaac:
 
-**Check that a run actually started before believing its output.** Compare the log's
-timestamp against the sources it should have picked up: a background launch that silently
-fails leaves the previous log in place. Editing a source *during* a run has the same
-effect, since Python has already imported it.
-
-`test_primitives.py` launches Isaac Sim and runs one atomic action plan end to end — cook a
-potato on a plate and set it on the table — checking the resulting world state after every
-step (`Open`, `ToggledOn`, `OnTop`, `Inside`, object-in-hand), not merely that no exception
-was raised, so a step cannot pass by doing nothing.
-
+```bash
+python test_primitives.py --scene house_single_floor --search --bev --video out.mp4
 ```
-NAVIGATE_TO(potato)   GRASP(potato)      NAVIGATE_TO(plate)  PLACE_ON_TOP(plate)
-GRASP(plate)          NAVIGATE_TO(oven)  OPEN(oven)          PLACE_INSIDE(oven)
-CLOSE(oven)           TOGGLE_ON(oven)    TOGGLE_OFF(oven)    OPEN(oven)
-GRASP(plate)          CLOSE(oven)        NAVIGATE_TO(table)  PLACE_ON_TOP(table)
-```
-
-Sixteen steps covering eight of the nine primitives — every one except `RELEASE`, which
-this plan never needs because each placement empties the hand. Every `NAVIGATE_TO` is its
-own step, because the manipulation primitives do not travel and `_require_near` fails them
-if none ran.
-
-**The plan runs exactly as written.** Nothing is inserted between steps to tidy up after a
-failure. An earlier version released whatever was in the hand before each
-OPEN/CLOSE/TOGGLE, which kept later steps passing but would put the plate on the floor
-halfway through this plan. If a step leaves the world in a state the next step cannot use,
-that is a result about the plan and it should show.
-
-The potato and the plate are dropped onto the counter at opposite ends of its edge
-(`lateral` ∓0.45 m), so the first two `NAVIGATE_TO` steps are genuinely different drives.
-The potato is welded to the plate the moment it lands there: it is a separate rigid body
-resting on contact alone, so it would otherwise slide off when the plate is lifted, and the
-run would measure whether a potato stays balanced rather than whether the plan is right.
 
 ### Recording a bird's eye view
 
@@ -384,6 +586,38 @@ It is the same 16-step potato/plate/oven plan the simulator run above executes:
 16/16 actions succeeded, 15.8 m driven
 audit: saw 17 of 22 objects; 12 edges agree, 0 believed but not true
 ```
+
+### The camera is the robot's, not a round number
+
+The 2-D camera is derived from the same intrinsics OmniGibson's `VisionSensor` ships, the
+way `object_map.camera_fov` derives it from a loaded sensor:
+
+```
+h_fov = 2 * atan(horizontal_aperture / (2 * focal_length))
+      = 2 * atan(20.995 / 34.0)  =  1.1064 rad  =  63.4 deg
+```
+
+It was 1.2 rad — the *fallback* those functions use when no camera object is available,
+hardcoded here where a camera is always implied. The 2-D robot was seeing 5.4° wider than
+the one in Isaac, which makes a simulated search easier than the real one by that much arc.
+
+Correcting it exposed a second defect. `SCAN_HEADINGS` was fixed at 4, and four headings of
+a 63.4° camera cover **254° of 360**, leaving four 26.6° blind wedges on the diagonals. A
+ring of markers every 15° around a stopped robot came back with exactly the four at 45°,
+135°, 225° and 315° missing — an object standing there was invisible to a robot that had
+stopped and turned specifically to find it. The count is derived now,
+`ceil(2*pi / CAMERA_FOV)` = 6, and the ring closes. Both properties are tests: one look
+while driving sees only what is ahead, and a stop sees the whole ring.
+
+The camera runs **while the robot moves** — a look every `OBSERVE_EVERY = 1.0` m along the
+route, along the direction of travel. That is where most of the map comes from. On a task
+whose plan names three objects, the robot finishes knowing 89 of the 104 things in the
+house: 23 visible from the start pose, **60 learned while driving**, 6 from deliberate
+scans. It is also why the second navigation to a room is direct.
+
+Range is not a sensor limit — OmniGibson's default clipping is effectively unbounded. The
+5 m is the distance beyond which `object_map.observe` stops trusting a detection, matched
+here so the two searches explore at the same rate.
 
 ### The world is the floor plan
 
@@ -678,6 +912,251 @@ Whether the arm can reach, whether CuRobo can route, whether an object sampled a
 back wall of a counter is graspable. Those need the real thing. What it does answer is
 whether the plan is drivable, whether the search finds what the plan assumes, and whether
 the graph the robot ends up with matches the world — which is what fails first.
+
+### Driving the plan, not replaying it
+
+`evaluate.py --simulate` adds a third arm: the accepted plan is **driven** in `sim_eval.py`
+rather than replayed symbolically. `GraphMachine` has no camera and no floor, so a
+`NAVIGATE_TO` always succeeds there and a plan that depends on finding a mug in the wrong
+room scores the same as one that does not. The gap between the two arms is the cost of
+perception.
+
+**The world is ground truth and the belief is not**, and that separation is easy to lose.
+`sim2d.stage_plan` injects each object into the room the *belief* names, which is right for
+a demo and fatal for a measurement: a wrong belief then places the object where it expects
+and can never be caught. In `sim_eval` the objects go where `task["spawn"]` says — with the
+instance chosen by `build_tasks.seed_graph`, so the house is identical no matter which
+belief is under test — and the belief comes from extraction and the RSN.
+
+Running the benchmark's **own reference plans** through it found nothing about planning and
+a great deal about the simulator. Every task in `data/tasks.json` was validated by the graph
+machine when it was built, so symbolically all 100 succeed. Driven, 82 did. The other 18
+were all the simulator's fault, and the ceiling is now **100/100** — proof, recorded in
+`data/reference-sim.json`, that a successful plan exists for every task.
+
+| what was wrong | tasks |
+| --- | --- |
+| objects placed at a support's geometric *centre* — the robot could set a clock on a sofa it was standing beside and never pick it up again | 12 |
+| the room sweep scoped strictly to the room mask, when all eight vantage points for one television were just outside it | 2 |
+| the sweep giving up while reachable floor was still unseen | 2 |
+| two tasks that were physically impossible | 2 |
+
+**Objects are points; furniture is not.** `FloorWorld.footprint` floods the untraversable
+blob around an object, bounded at 1.2 m so a sofa against a wall does not annex the wall,
+and `reachable_point_on` returns the edge of it that touches free floor. Placing now happens
+at the cell nearest the *robot* — arm's length, where it is standing — and `distance_to` and
+`can_see` measure to the near edge rather than the middle. An object at the centre of a bed
+is 0.90 m from any standable floor, past the camera's 0.8 m sight margin, so it was
+literally invisible however well the robot searched; at the near edge it is 0.10 m.
+
+Two tasks were dropped rather than papered over. One needed a utility room with **0 of 298**
+standable cells reachable — the washer is behind a doorway too narrow for Tiago. The other
+named the scene's only armchair, 2.30 m from the nearest floor the robot can stand on,
+against a 1.5 m arm. Both were replaced with tasks built from the same shapes on reachable
+furniture, and `build_tasks.verify()` now **requires the reference plan to run in the
+simulator**, so a task that cannot be done cannot be added.
+
+## The benchmark: 100 tasks over 10 scenes
+
+`data/tasks.json`, built by `build_tasks.py` from `tasks.py` and `task_shapes.py`. Ten
+scenes, ten tasks each, **11 to 17 actions apiece** (mean 12.4). Each task carries what the
+pipeline would otherwise have to be trusted on:
+
+| field | what it is |
+| --- | --- |
+| `task` | the instruction — the only thing an LLM is given |
+| `extraction` | the ground-truth stage-1 answer, split into stated and unstated locations |
+| `spawn` | the small objects the task needs, and where they start |
+| `goal` | what must hold at the end, as graph edges or node state |
+| `plan` | a reference sequence that achieves it |
+
+```bash
+python build_tasks.py                 # verify all 100 and write data/tasks.json
+python build_tasks.py --scene Rs_int --verbose
+```
+
+**Nothing is taken on trust.** Every reference plan is replayed through `GraphMachine`, and
+the dataset is not written unless all of them pass seven checks. Each one caught something:
+
+| check | what it caught |
+| --- | --- |
+| every action applies | `OPEN(public_trash_can)` and `OPEN(cedar_chest)` — neither is in `planner.OPENABLE` |
+| the goal is reached | — |
+| the goal is **not already true** | "carry the pillow from one bed to another": objects are named by category, both beds are `bed`, so the empty plan satisfied it |
+| the plan leaves nothing open or on | the reshaped `stack_then_store`, which opened a cupboard it never shut |
+| **the goal requires** putting it back | not enough that the reference plan tidies up — an unsafe plan must fail the goal |
+| furniture exists in *this scene*, in the room claimed | `top_cabinet` claimed in `childs_room_1`; it is in `childs_room_0` |
+| injected objects are loadable BEHAVIOR categories, and do not clash with the scene | **71 of 101** invented names — `pie`, `cutlery`, `cue_ball` — that OmniGibson cannot instantiate; and 3 that duplicate something the scene already has |
+
+That last row is worth dwelling on. Asked what each scene contains that a robot could pick
+up, the answer across all ten is **three objects**: `Rs_int`'s laptop, `Wainscott_0_int`'s
+coffee maker, and a garden fence. BEHAVIOR scenes are furniture-only, so every task injects
+what it needs — and what it may inject is limited by what the object dataset ships.
+
+**Plans come from shapes, not from hand-writing**, so the length is a property of the shape
+and cannot drift while someone edits a plan:
+
+| shape | actions | the job |
+| --- | --- | --- |
+| `laundry_cycle` | 17 | wash it, take it out, dry it, leave both machines off and shut |
+| `fetch_heat_serve` | 15 | out of the fridge, heated, served |
+| `load_and_run` | 14 | two things into an appliance, run it, switch it off |
+| `heat_and_serve` | 13 | in, run, out, set down elsewhere |
+| `two_into_container`, `move_three`, `unload_two`, `swap_places` | 12 | |
+| `stack_then_store` | 11 | out of a cupboard, onto a tray, and the pair put away |
+| `carry_two_and_switch` | 11 | two things moved, then something switched on and off |
+
+Two of them lean on things a flat model cannot express: `stack_then_store` needs the rider
+to travel with the tray when it is grasped, and `swap_places` needs a spare surface because
+the robot has one hand.
+
+**Everything a plan opens it shuts, and everything it switches on it switches off** — and
+the *goal says so*. 65 tasks open something and all 65 require it shut; 34 switch something
+on and all 34 require it off. No goal anywhere asks for something to be left running.
+
+### The extraction ground truth is derived, not written
+
+`uncertain` is every object the plan acts on or the task injects, minus the ones whose
+starting place the instruction states; `dependent` is those, and an injected object counts
+as `dependent` **exactly when the instruction names the thing it starts in or on** — "take
+the fruitcake out of the fridge" states a location, "put the mug away in the cabinet" does
+not.
+
+Deriving it removed a whole class of unfair scoring. Written by hand, **57 of 100** named a
+worktop the plan passes over and the instruction never mentions, so an extractor would have
+been marked wrong for not inventing objects nobody asked for — a false ~57% extraction
+failure rate, which is a number this experiment exists to measure. `build_tasks.py` now
+refuses a task whose ground truth names something the text does not.
+
+### The relations had to be audited too
+
+`mentions()` refuses a task whose ground truth names an object the text does not. That check
+was never applied to the *relations*, and 20 of them came from the scene's spawn
+configuration rather than from the sentence:
+
+```
+bring the sock, the t-shirt and the bath towel to the hamper in the bedroom
+   labelled: sock ON_TOP bed        <- the instruction never says where the sock is
+```
+
+An extractor reads text. A relation that exists only in the spawn config cannot be
+extracted from the sentence, and scoring against it measures clairvoyance rather than
+extraction — it was understating relation recall by about 16%. Those objects are now
+`uncertain`, which is the honest label: still required, location unknown.
+
+This removes no obligation from the model. `uncertain` **is** the "I don't know where it is"
+answer, and the split between the classes is itself what gets graded: omitting a relation
+the task did state costs recall, and inventing one it did not costs precision.
+
+The stated-room labels needed the same care. Two false-positive patterns had to be
+excluded — "the folder **away in the** office cabinet" is not the folder being in the
+office, and "in the office **bottom cabinet**" is the room qualifying the cabinet rather
+than a phrase about where something is — leaving 44 room facts, every one verified adjacent
+to its object in the text.
+
+## The experiment: does checking the plan help?
+
+`evaluate.py` runs the whole pipeline over the benchmark. **Both arms come from one run per
+task**, which is what makes the comparison exact rather than approximate:
+
+| arm | what it is |
+| --- | --- |
+| without validation | the model's first answer, kept whatever it says |
+| with validation | `replan.py`'s loop — check, hand the refusal back, ask again, up to 5 times |
+
+Attempt 1 is greedy, so it is the *same sample* in both arms; the arms differ only in
+whether anything is done about a bad plan. Stage 1 and stage 3 are shared.
+
+```bash
+HF_HOME=/mnt/check/ruiyangw/hf_cache python evaluate.py \
+    --models Qwen/Qwen3-4B Qwen/Qwen3-8B --json data/evaluation.json
+```
+
+**The pipeline never sees ground truth.** It gets the instruction, its own extraction, and
+the RSN's guesses. **Scoring uses ground truth** — a plan valid in the RSN's imagined house
+and impossible in the real one is a failure, and scoring against the RSN's own guess would
+hide exactly the error the filter exists to catch.
+
+**The dataset's reference plan takes no part in scoring at all**, and its extraction answer
+only labels a failure after the fact. A run whose extraction differs from the reference and
+whose plan works anyway is a success, because it is one. Two leaks had to be closed to make
+that true: the verdict was being overridden by the ground-truth extraction, and the scoring
+world contained only the furniture the reference named — so a plan routing through a
+different real cupboard failed for touching furniture that exists.
+
+### Where the errors come from
+
+Failures cascade — an object nobody extracted is one the RSN cannot place and the planner
+cannot use — so each is attributed to the *first* stage that went wrong:
+
+| bucket | what it means |
+| --- | --- |
+| `task_objects extraction` | stage 1 missed an object, or misread a stated location |
+| `RSN could not place it` | absent from the graph the planner was shown, so unnameable |
+| `LLM plan invalid` | inapplicable against the real world, or nothing parsed |
+| `LLM plan valid but does not do the task` | every action applies, goal unmet |
+| `left unsafe` | goal met, something left open or switched on |
+
+**A wrong RSN room is not a failure.** The RSN returns a ranking and the search layer works
+down it: a room searched and ruled out costs metres, not the task, and nothing re-plans
+because the instruction only ever said `NAVIGATE_TO(potato)`. Only an object the RSN could
+not place *at all* is unrecoverable.
+
+### What it answers
+
+Tasks solved out of 100, scored against ground truth. **These are the symbolic arm**, and
+each row is a separate finding rather than a tuning step:
+
+| | Qwen3-4B | Qwen3-8B |
+| --- | --- | --- |
+| without validation | 16 | 17 |
+| with validation, preconditions only | 25 | 37 |
+| with validation, preconditions + safety | 33 | 49 |
+| + extraction naming fixed | 37 | 59 |
+| + fine-tuned extractor | 42 | **62** |
+
+**Checking the plan is worth more than trebling the model.** An 8B unchecked solves 17; a
+4B with the checker solves 42. The loop repaired 23 tasks for the 4B and 41 for the 8B and
+made none worse in either — a rejected plan that cannot be repaired is still refused, so
+the arm can only gain.
+
+Validating preconditions alone let a plan pass that satisfied every precondition and still
+did not do the task, or left the oven on; feeding the goal and safety check back as a
+complaint took the 8B from 37 to 49. Fixing the naming problem took it to 59, and replacing
+the prompted extractor with the fine-tuned one to 62.
+
+**These numbers predate the simulator work and are due a re-measurement.** They were taken
+before `NAVIGATE_TO` stopped accepting rooms, which alone was 23 of 27 plans that validated
+and then failed when driven, and before the object hierarchy reached the belief. The
+`--simulate` arm was measured once at 30 (4B) and 36 (8B) against a ceiling of 82; both the
+arm and the ceiling have moved since, and quoting them now would be quoting a camera model
+that has changed twice.
+
+Where the failures came from in that run, with validation:
+
+| | 4B | 8B |
+| --- | --- | --- |
+| LLM plan invalid | 28 (48%) | 10 (26%) |
+| plan valid but does not do the task | 21 (36%) | 18 (47%) |
+| task_objects extraction | 9 (16%) | 10 (26%) |
+
+Extraction was 43% and 61% of the two models' failures before any of this work and is now
+the smallest bucket for both. What is left is the planner.
+
+### Running it
+
+Two things about the models are worth recording because either would have wrecked a run
+silently. **Qwen3's chat template enables `<think>` reasoning by default** — left on, the
+model spends the whole token budget reasoning, the reply reaching `parse_plan` has no
+actions in it, and every task scores `unparsed` as though the model could not plan.
+`planner` passes `enable_thinking=False`, withdrawn for templates that do not know it, and
+strips a stray `</think>` prefix as a backstop. And **retries must sample**: decoding is
+greedy, so a rejected plan came back byte-identical on all five attempts until attempt 1
+was left greedy and retries stepped 0.5 → 1.0.
+
+Model weights live in `/mnt/check/ruiyangw/hf_cache` rather than `~/.cache`, which was at
+98%. Runs need `HF_HOME` set to it. `evaluate.py --models` frees the GPU between models,
+because an 8B in fp16 is ~16 GB and two will not share a card.
 
 ## Choosing a scene, and setting it up
 
@@ -1111,10 +1590,25 @@ that gap, and they sit at three different levels.
 
 | module | level | what it owns |
 | --- | --- | --- |
+| `exploration.py` | the first version of this | an occupancy grid and a frontier walk, kept for reference |
 | `nav_controller.py` | below the primitive | turns one `NAVIGATE_TO` into a series of drives |
 | `object_map.py` | below that | what the camera has actually seen, per room |
 | `world_graph.py` | beside them | what is known, as typed edges |
 | `graph_machine.py` | above the plan | whether a plan works, checked without a simulator |
+
+**A wrong room costs metres, not the task.** The RSN returns a distribution and
+`scene_graph.populate` now keeps the whole ranking, not just the winner. When the robot
+searches the most likely room and the object is not there, that is evidence: the belief
+moves to the next room down and the search runs again. **Nothing re-plans** — the plan only
+ever said `NAVIGATE_TO(potato)`, and *finding* it is this layer's job, so the planner is
+never asked a second question. Measured in `Beechwood_0_int` with the right room ranked
+third: two rooms ruled out, the potato found in the third, 28 m driven against 10 m for a
+correct first guess, and the plan untouched.
+
+That also settles what counts as a grounding *failure* in the evaluation. A wrong first
+guess is not one, because it is recoverable. The only unrecoverable case is an object the
+RSN could not place at all — absent from the graph the planner was shown, so it cannot be
+named in a plan.
 
 **The search is a lower layer, not a tenth primitive.** The nine primitives stay high-level
 and the action space does not change. `NavigationController.navigate_to` decides *where to
@@ -1189,7 +1683,7 @@ angle.
 
 ### The world graph
 
-Seven edge types. `room_connect` is seeded from `room_graph.py` and is all the robot knows
+Eight edge types. `room_connect` is seeded from `room_graph.py` and is all the robot knows
 before it moves; the observed five are written **only once the robot has seen the objects
 they connect**, which is what makes the graph a belief rather than a copy of the scene
 registry.
@@ -1200,6 +1694,7 @@ registry.
 | `room_inside` | ground truth, when the object is seen |
 | `object_inside`, `on_top`, `under`, `next_to` | simulator predicates, when both objects are seen |
 | `holding` | the robot's own actions |
+| `nearby` | what `NAVIGATE_TO` drove to, and what is on or inside it |
 
 **One graph, not two.** `scene_graph.populate` produces a plain dict — `{potato:
 {room: kitchen_0, probability: 1.0}}` plus any relation the task stated outright — and
@@ -1431,10 +1926,25 @@ were verified against brute-force computation including tie handling.
   welding objects to the gripper and teleporting them; the arm does not reach for anything.
   **The navigation is real** — A* over the eroded traversability map, driven by the robot —
   so a video shows genuine driving and a state flip for everything else.
-- **BEHAVIOR scenes are furniture-only.** No loose small objects exist in any of the 51
-  scenes, so anything to pick up has to be injected. Where it is placed matters as much as
-  that it exists: an object sampled against the back wall of a counter is one the robot can
-  stand beside but not reach.
+- **BEHAVIOR scenes are furniture-only.** Asked what each of the ten benchmark scenes holds
+  that a robot could pick up, the answer across all ten is **three objects**: `Rs_int`'s
+  laptop, `Wainscott_0_int`'s coffee maker, and a garden fence. Anything to pick up has to
+  be injected, and it has to be a category the object dataset ships. Where it is placed
+  matters as much as that it exists: an object sampled against the back wall of a counter is
+  one the robot can stand beside but not reach.
+- **Half the scenes are not one region of floor.** The room graph says which rooms adjoin;
+  A\* says which the robot can drive between, and 24 of 51 disagree before the door
+  thresholds are opened, 4 after. `Wainscott_0_int` is in two pieces, so its ten benchmark
+  tasks all stay inside one of them.
+- **The goal language cannot say "was heated".** Goals are graph edges plus the two node
+  properties, so a plan that never switches the oven on still satisfies "heat the pie and
+  put it on the table". Three ablation cases are harmless for exactly this reason - a fact
+  about the goal, not a miss by the checker.
+- **`PLACE_INSIDE` on something with no inside is allowed.** A countertop is not a
+  container, and neither model refuses it: the graph model has no containment affordance,
+  and the simulator refuses it only on distance. Deciding what is a container from a
+  category list is the same guess `planner.py` warns about for openability, so it is
+  recorded rather than patched.
 - **Open-vocabulary generalization is imperfect.** `printer` scores 0.92 for kitchen;
   `bathrobe` favors garden. Fine-grained names the model was not trained on fall back to
   the text embedding — raw `pot_plant` scores garden 0.97 and living_room 0.05, though its

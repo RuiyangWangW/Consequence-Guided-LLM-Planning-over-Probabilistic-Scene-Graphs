@@ -55,25 +55,64 @@ def load_room_graph(scene, graphs_path=DEFAULT_GRAPHS, dataset_root=None):
     return build_room_graph(scene, dataset_root or DEFAULT_DATASET)
 
 
+# What a person calls a room, mapped to what BEHAVIOR calls it. An instruction says "the
+# office cabinet" and the scene graph says `private_office`; without this the stated room
+# matched nothing and was silently discarded, which is worse than not extracting it - the
+# work was done and then thrown away. Eight of the eighteen room words the extractor can
+# produce needed one of these.
+ROOM_SYNONYMS = {
+    "office": "private_office", "study": "private_office", "den": "living_room",
+    "pantry": "pantry_room", "hallway": "corridor", "hall": "corridor",
+    "playroom": "childs_room", "nursery": "childs_room", "lounge": "living_room",
+    "washroom": "bathroom", "toilet": "bathroom", "laundry": "utility_room",
+    "laundry_room": "utility_room", "storage": "storage_room", "foyer": "entryway",
+    "hallway_corridor": "corridor", "basement": "storage_room", "cellar": "storage_room",
+}
+
+
+def resolve_room_type(word, available):
+    """The scene room type a stated room word means, or None if the scene has no such room."""
+    if word in available:
+        return word
+    alias = ROOM_SYNONYMS.get(word)
+    return alias if alias in available else None
+
+
 def populate(
     scene_or_graph,
     objects,
     dependent=None,
+    stated=None,
     model_path=DEFAULT_MODEL,
     threshold=DEFAULT_THRESHOLD,
     graphs_path=DEFAULT_GRAPHS,
     device=None,
 ):
-    """Attach `objects` to the rooms of a scene graph using RSN probabilities.
+    """Place the task's objects in the scene's rooms, using what the task said first.
 
-    Each object goes in its single most probable room among the types this scene has,
-    and the probability is kept alongside it:
+    Takes the three disjoint classes `task_objects.extract` produces:
 
-        {object_name: {"room": room_id, "probability": float, "room_type": str}}
+        objects     the task said nothing about where these are - the RSN guesses
+        stated      {object: room} the task named the room of
+        dependent   [{object, relation, target}] the task named the support of
 
-    With `threshold` set, objects whose best room falls below it are diverted to an
-    `unplaced` map instead. Left as None (the default) nothing is discarded, and the
-    probability is reported so the consumer can judge for itself.
+    and resolves them into one map:
+
+        {object: {"room": room_id, "room_type": str, "probability": float,
+                  "candidates": [room_id, ...]}}
+
+    **A location is resolved, not guessed, wherever the task allows.** A dependent object's
+    room is its *root's* room - follow the chain of relations to the object nothing else
+    hangs off, and take that one's room. "the mug in the office cabinet" puts the mug in
+    the office without the RSN ever being asked about mugs, and a chain of any depth works
+    the same way.
+
+    **Everything keeps a ranked fallback, including stated rooms.** `candidates` is the
+    order the robot should search, and it always ends with the RSN's full ranking. A stated
+    room goes first because the task said so, but if the robot searches it and the object
+    is not there, the belief was wrong and there is somewhere else to look. Before this,
+    a stated room produced a one-element list and a wrong statement was unrecoverable -
+    the object was simply unfindable and the plan died.
     """
     import torch
 
@@ -97,53 +136,111 @@ def populate(
         if t not in best_instance or info["pixels"] > rooms[best_instance[t]]["pixels"]:
             best_instance[t] = rid
 
-    placed, unplaced = {}, {}
-    for name in objects:
+    def rsn_ranking(name):
+        """Every room in this scene, most probable first, with the winner's probability."""
         probs = predict_rooms(model, ckpt, name, device)
-
         # Only room types this scene actually has are candidates: a high score for
         # `garage` is irrelevant in a scene with no garage.
-        candidates = [
-            (probs[room_types.index(t)], t)
-            for t in best_instance
-            if t in room_types
-        ]
-        if not candidates:
+        scored = [(probs[room_types.index(t)], t) for t in best_instance if t in room_types]
+        if not scored:
+            return [], 0.0, None
+        scored.sort(reverse=True)
+        return ([best_instance[t] for _, t in scored], float(scored[0][0]), scored[0][1])
+
+    stated = stated or {}
+    dependent = dependent or []
+    # Follow each dependent object to the root of its chain - the thing nothing else it
+    # rests on hangs off. That root is the only object whose room has to be established;
+    # everything above it inherits.
+    support = {d["object"]: d["target"] for d in dependent}
+
+    def root_of(name):
+        seen = set()
+        while name in support and name not in seen:
+            seen.add(name)
+            name = support[name]
+        return name
+
+    # The roots, plus every free-standing object, are what need a room of their own.
+    roots = {root_of(d["object"]) for d in dependent}
+    to_place = list(dict.fromkeys(list(objects) + list(stated) + list(roots)))
+    to_place = [n for n in to_place if n not in support]
+
+    placed, unplaced = {}, {}
+    for name in to_place:
+        ranked, p, best_type = rsn_ranking(name)
+        said = resolve_room_type(stated.get(name), best_instance) if name in stated else None
+        if said:
+            # The task said so, so search there first - but keep the RSN's ranking behind
+            # it, because a stated room can still be wrong and the robot needs somewhere
+            # else to look when it is.
+            first = best_instance[said]
+            placed[name] = {
+                "room": first,
+                "room_type": said,
+                "probability": 1.0,
+                "candidates": [first] + [r for r in ranked if r != first],
+                "stated": True,
+            }
+            continue
+        if not ranked:
             unplaced[name] = {"reason": "no known room type in scene", "probability": 0.0}
             continue
-
-        p, room_type = max(candidates)
         if threshold is not None and p < threshold:
             unplaced[name] = {
                 "reason": f"below threshold ({p:.3f} < {threshold:.2f})",
-                "probability": float(p),
-                "best_room_type": room_type,
+                "probability": p,
+                "best_room_type": best_type,
             }
             continue
-
         placed[name] = {
-            "room": best_instance[room_type],
-            "room_type": room_type,
-            "probability": float(p),
+            "room": best_instance[best_type],
+            "room_type": best_type,
+            "probability": p,
+            "candidates": ranked,
         }
 
-    # Dependent objects are not guessed at: the task stated where they are, so they get
-    # a deterministic edge to their container or support. A potato "from the fridge" is
-    # inside the fridge with probability 1, and its room follows from the fridge's.
+    # Now the dependent objects, outward from the roots. A relation is a fact the task
+    # stated, so the object is where its support is - and it inherits the support's search
+    # order too, so that if the support turns out to be somewhere else, the object is
+    # looked for there as well.
     relations = []
-    for dep in dependent or []:
-        target = dep["target"]
-        room = placed.get(target, {}).get("room")
-        placed[dep["object"]] = {
-            "room": room,
-            "room_type": rooms[room]["room_type"] if room in rooms else None,
-            "probability": 1.0,
-            "via": {"relation": dep["relation"], "target": target},
-        }
-        relations.append({
-            "from": dep["object"], "relation": dep["relation"], "to": target,
-            "probability": 1.0,
-        })
+    remaining = list(dependent)
+    for _ in range(len(remaining) + 1):
+        progressed = False
+        for dep in list(remaining):
+            target = dep["target"]
+            if target not in placed and target in support:
+                continue                       # its own support is not resolved yet
+            anchor = placed.get(target, {})
+            room = anchor.get("room")
+            # Three tiers of fallback, weakest assumption last:
+            #   1. where the task says the support is
+            #   2. where the support might be instead, if that room is ruled out
+            #   3. where this object itself tends to live - the tier that saves the task
+            #      when the *relation* was wrong, not just the room. A potato reported on
+            #      the countertop but actually in the fridge is only findable if the
+            #      potato's own ranking is in the list.
+            own, _, _ = rsn_ranking(dep["object"])
+            order = list(anchor.get("candidates") or ([room] if room else [])) + own
+            placed[dep["object"]] = {
+                "room": room,
+                "room_type": rooms[room]["room_type"] if room in rooms else None,
+                "probability": 1.0,
+                "candidates": list(dict.fromkeys(order)),
+                "via": {"relation": dep["relation"], "target": target},
+            }
+            relations.append({
+                "from": dep["object"], "relation": dep["relation"], "to": target,
+                "probability": 1.0,
+            })
+            remaining.remove(dep)
+            progressed = True
+        if not progressed:
+            break
+    for dep in remaining:                      # a cycle in the stated relations
+        unplaced[dep["object"]] = {"reason": "relation chain has no root",
+                                   "probability": 0.0}
 
     out = dict(graph)
     out["objects"] = placed
@@ -226,7 +323,8 @@ def main():
     parser.add_argument("--json", action="store_true", help="emit the graph as JSON")
     args = parser.parse_args()
 
-    graph = populate(args.scene, args.objects, args.model, args.threshold)
+    graph = populate(args.scene, args.objects, model_path=args.model,
+                     threshold=args.threshold)
     print(json.dumps(graph, indent=1) if args.json else format_for_llm(graph))
 
 

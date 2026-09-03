@@ -54,12 +54,36 @@ from world_graph import ROBOT, WorldGraph
 # Coverage-grid values, numbered as `object_map.py` numbers them.
 UNKNOWN, FREE, OCCUPIED = 0, 1, 2
 
-# Tiago's head camera: 1.2 rad horizontal, and 5 m is the range `object_map.observe`
-# uses. The camera is the search's only source of evidence, so these two numbers decide
-# how many frontier moves a room costs.
-CAMERA_FOV = 1.2
+
+def _widen(mask, cells):
+    """Grow a boolean mask by `cells` in each direction - a square dilation."""
+    out = mask.copy()
+    for _ in range(cells):
+        out[1:, :] |= out[:-1, :]
+        out[:-1, :] |= out[1:, :]
+        out[:, 1:] |= out[:, :-1]
+        out[:, :-1] |= out[:, 1:]
+    return out
+
+# Tiago's head camera, derived the way `object_map.camera_fov` and `exploration.camera_fov`
+# derive it from a loaded sensor - `2*atan(aperture / 2*focal_length)` - using the values
+# OmniGibson's VisionSensor ships (`sensors/vision_sensor.py:119,122`). Those two functions
+# fall back to 1.2 rad when no camera object is available, and this file had hardcoded that
+# fallback: 68.8 deg against the real 63.4, so the 2-D robot saw a wider wedge than the one
+# in Isaac and the simulated search was easier than the real one by 5.4 deg of arc.
+#
+# The camera is the search's only source of evidence, so these numbers decide how many
+# frontier moves a room costs - and whether a result here transfers to BEHAVIOR-1K at all.
+CAMERA_FOCAL_LENGTH = 17.0        # mm, VisionSensor default
+CAMERA_APERTURE = 20.995          # mm, VisionSensor default
+CAMERA_FOV = 2 * math.atan(CAMERA_APERTURE / (2 * CAMERA_FOCAL_LENGTH))   # 1.106 rad
+
+# Not a sensor limit: OmniGibson's default clipping range is effectively unbounded
+# (0.001, 1e7), so the depth image runs to the far wall. 5 m is the range
+# `object_map.observe` uses as the distance beyond which a detection is not trusted, and
+# this matches it so the two searches explore at the same rate.
 CAMERA_RANGE = 5.0
-CAMERA_RAYS = 121
+CAMERA_RAYS = 121                 # matches `object_map.observe_fov(n_rays=121)`
 
 # How far from an object the camera has to have reached for the object to count as seen.
 # An object is not on free floor - it is inside its own footprint, which is exactly what
@@ -83,15 +107,25 @@ REACH = 1.5
 STANCE_CANDIDATES = 8
 
 # Headings observed at every stop. One look reports only what happened to be in front of
-# the robot when it arrived, and with a 1.2 rad camera that is a fifth of the room: the
+# the robot when it arrived - with a 63.4 deg camera that is a sixth of the room, and the
 # search then shuffles between two cells half a metre apart, gaining nothing. Measured in
-# `Rs_int`, one heading stalls at 21% coverage; four reach 60% and find the potato.
-SCAN_HEADINGS = 4
+# `Rs_int`, one heading stalls at 21% coverage.
+#
+# The count is *derived* from the camera rather than chosen. It was fixed at four, which
+# covers 4 x 63.4 = 254 of the 360 degrees and leaves four 26.6 deg blind wedges on the
+# diagonals: a ring of markers every 15 deg around a stopped robot came back with exactly
+# the four at 45, 135, 225 and 315 deg missing. An object standing in one of those wedges
+# was invisible to a robot that had stopped and scanned specifically to find it.
+SCAN_HEADINGS = math.ceil(2 * math.pi / CAMERA_FOV)
 
 # Search parameters, matching `nav_controller.py` so that a search here and a search there
 # give up at the same point.
 COVERAGE_ENOUGH = 0.95
 MIN_FRONTIER_DISTANCE = 0.6
+
+# How far outside a room to look for a place to stand while searching it. An object at the
+# edge of a room is seen from the floor on the other side of that edge.
+ROOM_MARGIN = 1.5
 MAX_FRONTIERS = 10
 
 # How far the robot drives between observations. The camera runs while it moves, which is
@@ -140,11 +174,15 @@ class Sim2D:
         # up eight countertops on its way to the potato should not put eight countertops
         # in the figure.
         self.focus = set(focus)
-        # Where the robot expects to find things it has never seen: `{name: room}`, the
-        # RSN's prior as `scene_graph.populate` produced it. A belief, not a fact - a hint
-        # that turns out to be wrong costs a fruitless search, which is the behaviour the
-        # pipeline exists to study.
-        self.room_hints = dict(room_hints or {})
+        # Where the robot expects to find things it has never seen. A value is either one
+        # room or the RSN's whole ranking, best first. A ranking is what makes a wrong
+        # guess survivable: the robot searches the most likely room, does not find the
+        # object, and the belief moves down the list - without asking the planner for
+        # anything, because the plan only ever said `NAVIGATE_TO(potato)` and *finding* it
+        # is this layer's job.
+        self.room_hints = {name: [rooms] if isinstance(rooms, str) else list(rooms)
+                           for name, rooms in (room_hints or {}).items()}
+        self.rooms_searched = {}     # target -> rooms ruled out, in the order tried
         self.radius = radius
         self.fov = fov
         self.range = camera_range
@@ -341,12 +379,21 @@ class Sim2D:
             if container in self.world.open and not self.world.open[container]:
                 return False
         dx, dy = position[0] - self.x, position[1] - self.y
-        if math.hypot(dx, dy) > self.range:
+        if self.world.distance_to(name, self.x, self.y) > self.range:
             return False
         bearing = math.atan2(dy, dx) - self.yaw
         if abs((bearing + math.pi) % (2 * math.pi) - math.pi) > self.fov / 2:
             return False
+        # Anchor the margin at the part of the object nearest the robot, not its centre.
+        # A bed seen from beside it is seen; a rule measured from the middle of the bed
+        # says the floor 0.8 m from its centre was never observed, because that floor is
+        # the bed.
+        cells = self.world.footprint(name)
         row, col = self.world.to_cell(position[0], position[1])
+        if len(cells) > 1:
+            here = self.world.to_cell(self.x, self.y)
+            row, col = min(cells, key=lambda rc: (rc[0] - here[0]) ** 2
+                           + (rc[1] - here[1]) ** 2)
         margin = max(1, int(round(SIGHT_MARGIN / self.world.resolution)))
         patch = view[max(0, row - margin):row + margin + 1,
                      max(0, col - margin):col + margin + 1]
@@ -400,6 +447,47 @@ class Sim2D:
     def nearest_frontier(self, room, exclude=()):
         best, best_d = None, float("inf")
         for cell in self.frontiers(room):
+            if cell in exclude:
+                continue
+            fx, fy = self.world.to_world(*cell)
+            d = math.hypot(fx - self.x, fy - self.y)
+            if d < MIN_FRONTIER_DISTANCE or d >= best_d:
+                continue
+            best, best_d = cell, d
+        return best
+
+    def nearest_unvisited(self, room, exclude=()):
+        """The closest standable cell in `room` the camera has not reached yet.
+
+        A frontier is a *known* free cell beside an *unknown* one, so frontier search can
+        only grow the observed region outwards from itself. A room split by a furniture run
+        into pockets joined by a 0.10-0.20 m gap has pockets that are never adjacent to
+        anything observed, so no frontier is ever generated for them and the sweep declares
+        itself finished with a third of the room unseen - while A* can route into the pocket
+        perfectly well. Measured on `Pomaria_0_int`, the robot gave up at 33% coverage with
+        a routable stance 0.70 m from the television it was looking for.
+
+        So when frontiers run out, fall back to the plainer question: where in this room
+        have I not been that I can still get to? That uses the map and the coverage the
+        robot has built, and nothing about where the object actually is.
+        """
+        # Only cells in the robot's own connected region - the filter `stances_for`
+        # already applies, and the one that matters. Without it the nearest unvisited cell
+        # is usually in the pocket the robot cannot enter, and the search spends its whole
+        # budget re-picking single cells it can never drive to.
+        mask, labels = self.world.traversable(self.radius)
+        here = self.world.region_of(self.x, self.y, self.radius)
+        # The room, widened. An object against a room's edge is looked at from the floor
+        # just outside it - measured, all eight standable cells beside one television were
+        # outside the mask of the room the television is in, so a search scoped strictly to
+        # the room could never take the one viewpoint that sees it.
+        room_mask = _widen(self.world.room_mask(room),
+                           int(round(ROOM_MARGIN / self.world.resolution)))
+        candidates = np.argwhere(room_mask & mask & (labels == here)
+                                 & (self.coverage == UNKNOWN))
+        best, best_d = None, float("inf")
+        for row, col in candidates:
+            cell = (int(row), int(col))
             if cell in exclude:
                 continue
             fx, fy = self.world.to_world(*cell)
@@ -496,14 +584,51 @@ class Sim2D:
         An object already in the graph gets one approach; an unknown one gets driven to
         its room and frontier-searched until it appears or the room is ruled out.
         """
+        # Refused for the same reason `GraphMachine` refuses it, and with the same words:
+        # the two have to agree about what a plan may say, or a plan passes validation and
+        # dies here.
+        if target in self.world.rooms:
+            return (None, 0.0, [],
+                    f"'{target}' is a room, not an object; NAVIGATE_TO takes the object "
+                    f"you are about to act on - name the thing in {target}, not the room")
+
         name = self.graph.resolve(target)
         if name is not None and self.graph.position_of(name) is not None:
             return self._approach(name)
 
-        room = room or self._guess_room(target)
-        if room is None:
+        rooms = [room] if room else self._candidate_rooms(target)
+        if not rooms:
             return None, 0.0, [], f"'{target}' has never been seen and no room was given"
 
+        # Work down the ranking. A room searched and ruled out is evidence, and the next
+        # room is the RSN's next best answer - no replanning, because the plan has not
+        # changed and does not need to.
+        driven, seen, ruled_out = 0.0, [], []
+        for candidate in rooms:
+            found, leg, more, problem = self._search_room(target, candidate)
+            driven += leg
+            seen += more
+            if found is not None:
+                self.rooms_searched[target] = ruled_out
+                return found, driven, seen, None
+            # The belief said the object was here and it is not. Retract it, so nothing
+            # downstream keeps asserting a room the robot has just swept. This is what
+            # makes a wrong *stated* location survivable: the task said "the office
+            # cabinet", the office had no cabinet, and the search moves to the RSN's next
+            # room instead of the plan dying. Only the belief is touched - the ground-truth
+            # graph is not a belief and has nothing to retract.
+            self.graph.rule_out_room(target, candidate)
+            ruled_out.append(candidate)
+            if len(ruled_out) < len(rooms):
+                self._say(f"{target} is not in {candidate}; trying "
+                          f"{rooms[len(ruled_out)]} next")
+        self.rooms_searched[target] = ruled_out
+        return (None, driven, seen,
+                f"'{target}' is in none of {', '.join(ruled_out)} "
+                f"({len(self.graph.object_names())} objects seen)")
+
+    def _search_room(self, target, room):
+        """Drive into one room and frontier-search it. Returns (found, m, seen, problem)."""
         self._say(f"searching {room} for {target}")
         route, problem = self.go_to_room(room)
         if route is None:
@@ -528,6 +653,11 @@ class Sim2D:
                 break
             cell = self.nearest_frontier(room, exclude=blocked)
             if cell is None:
+                # Frontiers exhausted does not mean the room is searched - only that the
+                # observed region cannot grow outwards. Ask where else in this room the
+                # robot can still drive to that it has not seen.
+                cell = self.nearest_unvisited(room, exclude=blocked)
+            if cell is None:
                 break
             blocked.add(cell)
             route = self.route_to(cell)
@@ -543,20 +673,25 @@ class Sim2D:
                 f"'{target}' is not in {room} ({self.coverage_of(room):.0%} covered, "
                 f"{len(self.graph.object_names())} objects seen)")
 
-    def _guess_room(self, target):
-        """Where to look for something never seen.
+    def _candidate_rooms(self, target):
+        """Where to look for something never seen, best guess first.
 
         Nothing here is allowed to know where the object actually is - that is the cheat
-        this layer exists to remove. Two sources are legitimate: the prior the caller
+        this layer exists to remove. Two sources are legitimate: the ranking the caller
         supplied, and the room another instance of the same category was seen in.
         """
         if target in self.room_hints:
-            return self.room_hints[target]
+            # A room already searched for this object is not a candidate again. Two
+            # NAVIGATE_TO calls for the same thing would otherwise re-sweep the same wrong
+            # room, and a repair loop that retries the plan would do it five times over.
+            return [r for r in self.room_hints[target]
+                    if not self.graph.is_ruled_out(target, r)]
         for name in self.graph.object_names():
             record = self.graph.objects[name]
             if record.get("category") == target:
-                return self.graph.room_of(name)
-        return None
+                room = self.graph.room_of(name)
+                return [room] if room else []
+        return []
 
     def _approach(self, name):
         """Drive to the nearest stance the robot can route to. Returns (name, m, seen, err)."""
@@ -671,7 +806,12 @@ class Sim2D:
         if action == "GRASP":
             self._carry()
         elif action in ("PLACE_ON_TOP", "PLACE_INSIDE"):
-            target = self.world.truth.position_of(name)
+            # Where the robot can reach on that support, not the support's centre. A robot
+            # places at arm's length; putting the object at the middle of a sofa let it set
+            # something down and then be unable to pick it up again, which is not a thing
+            # that happens to a robot with an arm.
+            target = (self.world.reachable_point_on(name, near=(self.x, self.y))
+                      or self.world.truth.position_of(name))
             if target is not None and held_before is not None:
                 # Everything riding on what was placed lands with it: putting down the
                 # plate puts down the potato that was on it.
@@ -702,6 +842,21 @@ class Sim2D:
         return results
 
     # ------------------------------------------------------------------ afterwards
+
+    def left_unsafe(self):
+        """What this run opened and never shut, and switched on and never switched off.
+
+        Read from the *world*, not from the plan: the truth machine tracks what its own
+        actions disturbed, and this is that set filtered by the state the world is
+        actually in. A run can succeed at every step, reach its goal, and still leave an
+        open fridge and a lit hob behind - which is not a run anyone should be pleased
+        with, and is invisible to a check that only asks whether the goal edges hold.
+        """
+        machine = self.truth_machine
+        return {
+            "open": sorted(n for n in machine.opened if self.world.open.get(n)),
+            "on": sorted(n for n in machine.switched_on if self.world.toggled.get(n)),
+        }
 
     def audit(self):
         """Where the robot's belief and the world disagree, over what it has seen.
@@ -846,7 +1001,10 @@ def stage_plan(world, saved, rng=None, verbose=True):
 
     grounded = [{**step, "object": binding.get(step.get("object"), step.get("object"))}
                 for step in steps]
-    hints = {binding[name]: info["room"]
+    # The whole RSN ranking where there is one, so a wrong first guess is a room ruled out
+    # rather than a failed navigation.
+    hints = {binding[name]: [binding.get(r, r) for r in
+                             (info.get("candidates") or [info["room"]])]
              for name, info in (graph.get("objects") or {}).items()
              if info.get("room") and name in binding}
     return grounded, hints, injected, set(binding.values())
@@ -920,6 +1078,14 @@ def main():
     ok = sum(1 for r in results if r.ok)
     print(f"\n{ok}/{len(plan)} actions succeeded, {sim.distance:.1f} m driven")
     print(sim.summary())
+
+    unsafe = sim.left_unsafe()
+    if unsafe["open"] or unsafe["on"]:
+        print("\nWARNING: the run left things as it found them only in part -")
+        if unsafe["open"]:
+            print(f"  still open:         {', '.join(unsafe['open'])}")
+        if unsafe["on"]:
+            print(f"  still switched on:  {', '.join(unsafe['on'])}")
 
     report = sim.audit()
     print(f"\naudit: saw {report['seen']} of {report['of']} objects; "

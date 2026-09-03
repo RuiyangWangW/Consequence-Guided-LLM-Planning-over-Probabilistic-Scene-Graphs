@@ -285,10 +285,15 @@ def robot_camera(robot):
     return cams[0]
 
 
-def camera_fov(cam, default=1.2):
+def camera_fov(cam, default=1.1064):
     """Horizontal field of view in radians, from the camera's own intrinsics.
 
         h_fov = 2 * atan(horizontal_aperture / (2 * focal_length))
+
+    The default is what OmniGibson's own VisionSensor defaults produce - 1.1064 rad, 63.4
+    deg - rather than a round number. It used to be 1.2, which is 5.4 deg wider than any
+    camera the robot actually has, so a run that fell back to it explored faster than the
+    real robot could.
     """
     try:
         aperture = float(cam.horizontal_aperture)

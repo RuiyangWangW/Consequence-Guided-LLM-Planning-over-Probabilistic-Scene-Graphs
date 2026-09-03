@@ -39,10 +39,14 @@ def run(task, scene, model_name="Qwen/Qwen2.5-7B-Instruct",
         strict=True, verbose=True):
     """Run the full pipeline and return every intermediate stage."""
     # --- stage 1: what does the task need? ---
-    dependent = []
+    dependent, stated = [], {}
     if objects is None:
         found = extract_objects(task, model_name)
         objects, dependent = found["uncertain"], found["dependent"]
+        # The task named a room for some of these ("the office bottom cabinet"). That is
+        # stated, so it leads the search order - with the RSN's ranking behind it, in case
+        # the statement is wrong.
+        stated = found["stated"]
     if verbose:
         print(f"task:    {task}")
         print(f"scene:   {scene}")
@@ -53,7 +57,8 @@ def run(task, scene, model_name="Qwen/Qwen2.5-7B-Instruct",
         print()
 
     # --- stages 2+3: topology from the floor plan, contents from the RSN ---
-    graph = populate(scene, objects, dependent, rsn_model, threshold)
+    graph = populate(scene, objects, dependent, stated=stated, model_path=rsn_model,
+                     threshold=threshold)
     if verbose:
         print(format_for_llm(graph))
         print()

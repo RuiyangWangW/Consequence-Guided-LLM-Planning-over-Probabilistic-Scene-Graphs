@@ -78,13 +78,24 @@ class StepResult:
 class Outcome:
     """What running a whole plan produced."""
 
-    def __init__(self, steps, graph, goal, goal_met, missing, failed_at):
+    def __init__(self, steps, graph, goal, goal_met, missing, failed_at,
+                 left_open=(), left_on=()):
         self.steps = steps
         self.graph = graph
         self.goal = goal
         self.goal_met = goal_met
         self.missing = missing
         self.failed_at = failed_at
+        # Doors the plan opened and never shut, and switches it turned on and never turned
+        # off. A plan can be applicable and reach its goal and still walk away from an open
+        # fridge and a lit hob, which is not a plan anyone should run.
+        self.left_open = list(left_open)
+        self.left_on = list(left_on)
+
+    @property
+    def safe(self):
+        """Did the plan put back what it disturbed?"""
+        return not (self.left_open or self.left_on)
 
     @property
     def ok(self):
@@ -103,6 +114,10 @@ class Outcome:
         else:
             lines.append("\nplan runs to completion but does NOT do the task; missing:")
             lines += [f"    {t}({a}, {b})" for t, a, b in self.missing]
+        if self.left_open:
+            lines.append("left open: " + ", ".join(self.left_open))
+        if self.left_on:
+            lines.append("left switched on: " + ", ".join(self.left_on))
         lines.append(f"final graph: {self.graph.summary()}")
         return "\n".join(lines)
 
@@ -173,6 +188,14 @@ And what each one does. "The stack" is the held object plus everything riding on
         self.verbose = verbose
         self.open = {}           # object -> bool
         self.toggled = {}        # object -> bool
+        # What *this plan* has ever opened or switched on. Append-only: a plan that opens
+        # a door and shuts it still opened it, which is what lets a caller ask whether the
+        # goal requires putting it back. `left_open` / `left_on` filter these by the state
+        # at the end, so they are the ones the plan actually walked away from. Discarding
+        # on CLOSE was tried and made that question unanswerable - a tidy plan looked like
+        # a plan that had touched nothing.
+        self.opened = set()
+        self.switched_on = set()
 
     # ------------------------------------------------------------------ robot state
 
@@ -328,6 +351,20 @@ And what each one does. "The stack" is the held object plus everything riding on
 
         # --- NAVIGATE_TO -----------------------------------------------------------
         if action == "NAVIGATE_TO":
+            # A room is not a destination for this primitive. NAVIGATE_TO takes the
+            # object the robot is about to act on, and a plan that drives to `kitchen_0`
+            # has not said which thing it means to reach - the next GRASP then has no
+            # `nearby` edge and fails several steps later, where the cause is hard to see.
+            #
+            # Refusing here is what makes it repairable: the complaint names the room and
+            # the loop rewrites the step to the object. Admitting it instead invented a
+            # node called `kitchen_0` and validated a plan the simulator then refused on
+            # its very first step - 23 of the 27 plans that passed validation and died when
+            # driven.
+            if arg in self.graph.rooms:
+                return fail(f"'{arg}' is a room, not an object; NAVIGATE_TO takes the "
+                            f"object you are about to act on - name the thing in "
+                            f"{arg}, not the room")
             if name is None:
                 if not self.allow_search:
                     return fail(f"'{arg}' has not been seen and search is disabled")
@@ -471,6 +508,8 @@ And what each one does. "The stack" is the held object plus everything riding on
             if self.open.get(name) == want:
                 warnings.append(f"'{name}' is already {'open' if want else 'closed'}")
             self.open[name] = want
+            if want:
+                self.opened.add(name)
             edits.append(f"{name}.open = {want}")
             return ok()
 
@@ -486,6 +525,8 @@ And what each one does. "The stack" is the held object plus everything riding on
             if self.toggled.get(name) == want:
                 warnings.append(f"'{name}' is already toggled {'on' if want else 'off'}")
             self.toggled[name] = want
+            if want:
+                self.switched_on.add(name)
             edits.append(f"{name}.toggled = {want}")
             return ok()
 
@@ -493,11 +534,38 @@ And what each one does. "The stack" is the held object plus everything riding on
 
     # ------------------------------------------------------------------ whole plans
 
-    def run(self, plan, goal=()):
-        """Apply every action in order, then check the goal edges.
+    def unmet(self, goal):
+        """Which of these goal conditions do not hold in this machine's world?
 
-        `plan` is a list of (action, argument-or-None). `goal` is a list of
-        (edge_type, src, dst) that must be present in the final graph.
+        Separate from `run` so the *simulator* can ask it of the true world after driving a
+        plan. Replaying symbolically and executing with a camera have to be judged by one
+        definition of done, or the difference between them measures the definition rather
+        than the perception.
+        """
+        missing = []
+        for edge_type, src, dst in goal:
+            a = self._resolve(src) or src
+            if edge_type == "open":
+                held = self.open.get(a) == dst
+            elif edge_type == "toggled":
+                held = self.toggled.get(a) == dst
+            else:
+                held = self.graph.has_edge(edge_type, a, self._resolve(dst) or dst)
+            if not held:
+                missing.append((edge_type, src, dst))
+        return missing
+
+    def run(self, plan, goal=()):
+        """Apply every action in order, then check the goal.
+
+        `plan` is a list of (action, argument-or-None). A goal entry is a triple. Usually
+        it is an edge - `("on_top", "potato", "table")` - that must be present at the end.
+
+        The two node properties can be asked for as well: `("open", "oven", False)` and
+        `("toggled", "oven", True)`. Without them half the tasks a kitchen suggests are
+        inexpressible - "turn the oven on", "shut the fridge" - because what they change is
+        a property of one node rather than a relation between two, and a goal language of
+        edges alone cannot say it.
         """
         steps, failed_at = [], None
         for i, (action, arg) in enumerate(plan):
@@ -509,18 +577,12 @@ And what each one does. "The stack" is the held object plus everything riding on
                 failed_at = i
                 break
 
-        missing = []
-        if failed_at is None:
-            for edge_type, src, dst in goal:
-                a = self._resolve(src) or src
-                b = self._resolve(dst) or dst
-                if not self.graph.has_edge(edge_type, a, b):
-                    missing.append((edge_type, src, dst))
-        else:
-            missing = list(goal)
+        missing = self.unmet(goal) if failed_at is None else list(goal)
 
+        left_open = sorted(n for n in self.opened if self.open.get(n))
+        left_on = sorted(n for n in self.switched_on if self.toggled.get(n))
         return Outcome(steps, self.graph, list(goal), failed_at is None and not missing,
-                       missing, failed_at)
+                       missing, failed_at, left_open, left_on)
 
 
 def check(graph, plan, goal=(), allow_search=True, verbose=False):
