@@ -42,8 +42,35 @@ Two ways a plan fails, reported separately because they mean different things:
                    plan is executable and does not do the task.
 """
 
-from planner import NOT_GRASPABLE, OPENABLE, TOGGLEABLE
+import json
+import os
+import re
+
+from object_names import match
+from planner import CONFERS, NOT_GRASPABLE, OPENABLE, TOGGLEABLE
 from world_graph import ROBOT, WorldGraph
+
+_CATALOGUE = None
+
+
+def _object_categories():
+    """Every object category BEHAVIOR ships, cached; empty if the catalogue is missing.
+
+    Category-level and scene-free - it says `bar` and `toilet` are things that exist in the
+    world, never that this house has one. It is here to settle the handful of words that
+    name both a room and an object.
+    """
+    global _CATALOGUE
+    if _CATALOGUE is None:
+        try:
+            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "data", "vocab.json")) as handle:
+                vocab = json.load(handle)
+            _CATALOGUE = frozenset(vocab.get("object_categories", ())) | frozenset(
+                vocab.get("merged_categories", ()))
+        except (OSError, ValueError):
+            _CATALOGUE = frozenset()
+    return _CATALOGUE
 
 # The robot is a node, and the two facts about it that relate it to something else are
 # edges: `room_inside(robot, kitchen_0)` and `holding(robot, potato)`. `location` and
@@ -59,12 +86,19 @@ from world_graph import ROBOT, WorldGraph
 class StepResult:
     """One action's outcome: whether it applied, and what it did to the graph."""
 
-    def __init__(self, index, action, arg, ok, reason=None, edits=(), warnings=()):
+    def __init__(self, index, action, arg, ok, reason=None, edits=(), warnings=(),
+                 fault=None):
         self.index = index
         self.action = action
         self.arg = arg
         self.ok = ok
         self.reason = reason
+        # `reason` is the sentence a human (or an LLM) reads; `fault` is the same refusal
+        # as a pair, `(kind, object)`, for code to branch on. They are set together at
+        # every refusal so the two cannot drift, and the pair is what lets the repair loop
+        # and the complaint writer key off the precondition that actually failed rather
+        # than grepping the English.
+        self.fault = fault
         self.edits = list(edits)
         self.warnings = list(warnings)
 
@@ -166,28 +200,67 @@ And what each one does. "The stack" is the held object plus everything riding on
     where `PLACE_ON_TOP` writes both directions: there is no "contains" edge, so one
     direction is the whole record.
 
-    Two things are checked that are not preconditions and are not in the table, because
-    they are about the plan being well formed rather than about the world: an action's
-    arity (`RELEASE` takes no argument, the rest take one), and whether the argument names
-    something the graph has heard of at all.
+    One thing is checked that is not a precondition and is not in the table, because it is
+    about the plan being well formed rather than about the world: an action's arity -
+    `RELEASE` takes no argument, the rest take one.
 
-    `allow_search` is a strictness knob rather than part of the specification: left True,
-    `NAVIGATE_TO` has no preconditions and an unseen object is admitted for the navigation
-    controller to go and search for. Set False, the machine demands a fully observed graph,
-    which is the right setting for checking a plan *after* exploration rather than before.
+    The line the machine draws is between knowing what a *kind* of thing is and knowing
+    what is true of *this house*. Whether a fridge has a door is a fact about fridges, and
+    a robot that recognises one knows it; where the fridge is, and whether it is shut right
+    now, are things the belief graph has to guess. So `planner.OPENABLE` is consulted and
+    the guess is not second-guessed.
+
+    That one fact has to cut both ways or it is not knowledge. A container with a door must
+    be opened before anything is taken out of it or put into it; a bowl, a sink, an
+    open-topped bin has nothing to open, so `PLACE_INSIDE` needs no `OPEN` first *and*
+    `OPEN` on it is refused outright. Excusing the one while permitting the other was the
+    incoherent middle: it claimed the machine could not know a bin has no lid at the moment
+    it refused, and did know at the moment it excused.
+
+    The same holds for the other two affordances, and for the same reason: a fridge cannot
+    be lifted and a countertop has no switch, so `GRASP` and `TOGGLE` refuse them. What is
+    refused is always what the *kind* of thing cannot do, never what this particular one
+    happens not to be doing.
+
+    `planner.CONFERS` is the same kind of category fact, read the same way: a dishwasher
+    washes what is inside it, so a goal can ask for a clean plate.
+
     """
 
-    def __init__(self, graph, allow_search=True, verbose=False, copy=True):
+    def __init__(self, graph, verbose=False, copy=True):
         # `copy=False` runs the machine *on* a live graph rather than a snapshot of it,
         # which is how the same effect model serves two jobs. Offline it checks a plan
         # against a copy and leaves the original alone. Online it edits the world graph as
         # each primitive succeeds, so the graph knows the plate is on the table because
         # the robot put it there - not only if the robot later happens to look at it.
         self.graph = graph.copy() if copy else graph
-        self.allow_search = allow_search
         self.verbose = verbose
         self.open = {}           # object -> bool
         self.toggled = {}        # object -> bool
+        # What running an appliance has done to things. A task that says "heat the pie" is
+        # not finished by the pie arriving on the table, and "load the dishwasher and run
+        # it" is not finished by loading it - both need the machine to have run, and
+        # neither `on_top` nor `toggled` can say so. Append-only, like `opened`: a plan that
+        # cooked something and then moved it still cooked it.
+        self.states = {name: set() for name in CONFERS}
+        # Every object an executed action named. A goal written in the instruction's words
+        # is read against these first - the plan is what says which cabinet was meant.
+        self.touched = set()
+        # The room ids the pipeline holds, plus the bare word each one is built from -
+        # `kitchen_0` gives `kitchen`. Both spellings are the planner's own vocabulary:
+        # `scene_graph.format_for_llm` prints the ids into its prompt under "Rooms:", and
+        # the word is what is left when the instance number is taken off. Nothing here
+        # comes from the scene's true contents.
+        #
+        # Exact equality on both, and no fuzzy matching in either direction. Fuzzy is the
+        # obvious way to do this and it is wrong: `object_names.same` calls `kitchen_table`
+        # a `kitchen`, `bathroom_sink` a `bathroom`, and `bar_soap` a `bar` - and `bar_soap`
+        # is a real object in this benchmark while `bar` is a real BEHAVIOR-1K room type.
+        from scene_graph import ROOM_SYNONYMS
+
+        types = {re.sub(r"_\d+$", "", room) for room in self.graph.rooms}
+        self.room_words = set(self.graph.rooms) | types | {
+            word for word, room_type in ROOM_SYNONYMS.items() if room_type in types}
         # What *this plan* has ever opened or switched on. Append-only: a plan that opens
         # a door and shuts it still opened it, which is what lets a caller ask whether the
         # goal requires putting it back. `left_open` / `left_on` filter these by the state
@@ -227,6 +300,29 @@ And what each one does. "The stack" is the held object plus everything riding on
 
     # ------------------------------------------------------------------ helpers
 
+    def _is_room(self, name):
+        """Does this name a room rather than a thing to act on?
+
+        A handful of words name both - `bar`, `toilet` and `locker` are BEHAVIOR object
+        categories *and* room types - and for those the object wins, because a task that
+        scrubs a toilet must be able to say `toilet`.
+
+        The tie-break asks the object catalogue, not this graph's nodes. Asking the graph
+        is the obvious thing and it is exactly wrong: `graph.objects` is filled from the
+        extractor's own words with nothing filtering room names out, so an extractor that
+        answers `kitchen` creates a node called `kitchen` - and the check that exists to
+        catch `kitchen` would then switch itself off, precisely when it was needed. The
+        catalogue is fixed, scene-free, and nothing upstream can write to it.
+        """
+        if name not in self.room_words:
+            return False
+        catalogue = _object_categories()
+        if catalogue:
+            return name not in catalogue
+        # No catalogue to consult: fall back to the graph, which is poisonable but better
+        # than refusing every `toilet` in the benchmark.
+        return name not in self.graph.objects
+
     def _category(self, name):
         rec = self.graph.objects.get(name)
         return (rec or {}).get("category") or name
@@ -263,12 +359,32 @@ And what each one does. "The stack" is the held object plus everything riding on
         return False
 
     def _openable(self, name):
-        """Does this have a door? What the machine has tracked beats the category guess."""
+        """Does this have a door - per BDDL's category annotations, or per the plan?
+
+        Whether a fridge has a door is a fact about fridges, not about this house, and a
+        robot that recognises one knows it. That makes it different in kind from where the
+        fridge is or whether it is currently shut, which are the things the belief graph
+        has to guess at. `name in self.open` comes first so a plan that has already opened
+        something is believed over the table.
+        """
         return name in self.open or self._category(name) in OPENABLE
 
     def _switchable(self, name):
-        """Does this have a switch?"""
+        """Has a switch to flip, per BDDL - or the plan has already flipped it."""
         return name in self.toggled or self._category(name) in TOGGLEABLE
+
+    def _contents(self, name):
+        """Everything in or on this object, and everything riding on those."""
+        found, frontier = set(), [name]
+        while frontier:
+            here = frontier.pop()
+            for edge in ("object_inside", "on_top"):
+                for item, _ in self.graph.edges_of(edge, dst=here):
+                    if item not in found:
+                        found.add(item)
+                        frontier.append(item)
+        return found
+
 
     def _blocked_by_container(self, name):
         """Is `name` inside something that is currently closed?"""
@@ -334,8 +450,9 @@ And what each one does. "The stack" is the held object plus everything riding on
         # an explicit None for the one action that takes no object is a wart.
         edits, warnings = [], []
 
-        def fail(reason):
-            return StepResult(index, action, arg, False, reason=reason, warnings=warnings)
+        def fail(reason, fault=None):
+            return StepResult(index, action, arg, False, reason=reason,
+                              warnings=warnings, fault=fault)
 
         def ok():
             return StepResult(index, action, arg, True, edits=edits, warnings=warnings)
@@ -343,11 +460,24 @@ And what each one does. "The stack" is the held object plus everything riding on
         # --- arity, the same rule the validator applies -----------------------------
         if action == "RELEASE":
             if arg:
-                return fail("RELEASE takes no argument")
+                return fail("RELEASE takes no argument", ("arity", arg))
         elif not arg:
-            return fail(f"{action} needs an object")
+            return fail(f"{action} needs an object", ("arity", None))
+
+        # A room is not something any primitive acts on. This sits before resolution and
+        # before every branch, because the alternative is worse in two different ways:
+        # `NAVIGATE_TO(kitchen)` used to be admitted as an object node called `kitchen`
+        # that corresponds to nothing, and `PLACE_ON_TOP(kitchen_0)` used to be refused for
+        # standing in the wrong place - a true sentence about a step whose real problem is
+        # that it names a room.
+        if arg and self._is_room(arg):
+            return fail(f"'{arg}' is a room, not an object; {action} takes the object you "
+                        f"are acting on - name the thing in {arg}, not the room",
+                        ("room", arg))
 
         name = self._resolve(arg) if arg else None
+        if name:
+            self.touched.add(name)
 
         # --- NAVIGATE_TO -----------------------------------------------------------
         if action == "NAVIGATE_TO":
@@ -361,21 +491,9 @@ And what each one does. "The stack" is the held object plus everything riding on
             # node called `kitchen_0` and validated a plan the simulator then refused on
             # its very first step - 23 of the 27 plans that passed validation and died when
             # driven.
-            if arg in self.graph.rooms:
-                return fail(f"'{arg}' is a room, not an object; NAVIGATE_TO takes the "
-                            f"object you are about to act on - name the thing in "
-                            f"{arg}, not the room")
             if name is None:
-                if not self.allow_search:
-                    return fail(f"'{arg}' has not been seen and search is disabled")
-                # The low-level controller handles this: drive to the object's room and
-                # search it. The machine cannot know which room, so it admits the object
-                # without one and leaves `location` where it is.
-                self.graph.see_object(arg, arg, None)
-                warnings.append(f"'{arg}' unseen; the navigation controller must search "
-                                f"for it before this step can run")
-                edits.append(f"+node {arg} (unseen)")
-                return ok()
+                return fail(f"'{arg}' is not one of the objects this task is about; use "
+                            f"the names listed above", ("unknown", arg))
             # No preconditions. Whether the robot can actually get there is a question
             # about floor, and the room graph's answer to it is too coarse to be worth
             # refusing a plan over - `sim2d` runs A* over the eroded map and answers it
@@ -397,30 +515,37 @@ And what each one does. "The stack" is the held object plus everything riding on
             edits.append(f"nearby({', '.join(sorted(reach))})")
             return ok()
 
-        # RELEASE is exempt: it takes no argument, so `name` is None by construction and
-        # there is no object for the graph to have seen. Every other primitive names one.
+        # A name that does not resolve is admitted rather than refused. Every object a
+        # task needs is placed by the RSN before planning starts, so "the robot has never
+        # seen it" was never true - what it really meant was that the plan spelled the
+        # object differently from the graph. Refusing that made the machine complain about
+        # its own vocabulary, which is not something the plan can fix.
+
         if name is None and action != "RELEASE":
-            return fail(f"'{arg}' is not in the graph; the robot has never seen it")
+            return fail(f"'{arg}' is not one of the objects this task is about; use the "
+                        f"names listed above", ("unknown", arg))
 
         # --- GRASP -----------------------------------------------------------------
         if action == "GRASP":
             # 1. the hand is empty
             if self.held is not None:
-                return fail(f"already holding '{self.held}'; place or release it first")
+                return fail(f"already holding '{self.held}'; place or release it first",
+                            ("holding", self.held))
             # 2. the robot is beside it
             problem = self._require_here(name)
             if problem:
-                return fail(problem)
+                return fail(problem, ("not_near", name))
             # 3. if it is inside something, that something is open
+            # A robot can no more lift a fridge than switch on a countertop. Same fact as
+            # the door, in a different suit: what a *kind* of thing affords is known, where
+            # this one is and what state it is in is believed.
+            if self._category(name) in NOT_GRASPABLE:
+                return fail(f"'{name}' is fixed furniture and cannot be picked up",
+                            ("not_graspable", name))
             shut = self._blocked_by_container(name)
             if shut:
-                return fail(f"'{name}' is inside '{shut}', which is closed; OPEN it first")
-            # and it is a thing that can be picked up at all. This is the affordance check
-            # that `TOGGLE` and `OPEN` also make - a robot can no more lift a fridge than
-            # switch on a countertop, and refusing all three on the same grounds is what
-            # makes the three consistent.
-            if self._category(name) in NOT_GRASPABLE:
-                return fail(f"'{name}' is fixed furniture and cannot be picked up")
+                return fail(f"'{name}' is inside '{shut}', which is closed; OPEN it "
+                            f"first", ("closed", shut))
             # Everything resting on the grasped object comes with it, and everything it
             # was resting on is no longer supporting it.
             carried = [a for t, a, b in sorted(self.graph.edges)
@@ -448,12 +573,10 @@ And what each one does. "The stack" is the held object plus everything riding on
             # 1. the robot is beside the target
             problem = self._require_here(name)
             if problem:
-                return fail(problem)
+                return fail(problem, ("not_near", name))
             # 2. something is in the hand
             if self.held is None:
-                return fail("nothing in the hand to place")
-            if self.held == name:
-                return fail(f"cannot place '{name}' on itself")
+                return fail("nothing in the hand to place", ("empty_hand", None))
             if action == "PLACE_INSIDE":
                 # 3. if it has a door, that door is open. Putting something into a shut
                 # oven is exactly as impossible as taking something out of one, which
@@ -461,9 +584,14 @@ And what each one does. "The stack" is the held object plus everything riding on
                 # is not the same as knowing it is open, so it fails too - a plan that
                 # never opened the container has not established what this step needs.
                 # Something with no door at all - a bowl, a sink - has nothing to open.
+                # Only a container that has a door has to be opened. A bowl or a sink has
+                # nothing to open, and demanding it would ask for a step the robot cannot
+                # perform - the same knowledge that refuses `OPEN(bowl)` below excuses the
+                # plan from needing it here, which is what makes the pair coherent.
                 if self._openable(name) and not self.open.get(name, False):
                     known = "is closed" if name in self.open else "has not been opened"
-                    return fail(f"'{name}' {known}; OPEN it before placing inside")
+                    return fail(f"'{name}' {known}; OPEN it before placing inside",
+                                ("not_open", name))
                 self.graph.add_edge("object_inside", self.held, name, note="placed")
                 edits.append(f"object_inside({self.held}, {name})")
             else:
@@ -501,9 +629,14 @@ And what each one does. "The stack" is the held object plus everything riding on
             # 1. beside it, 2. it has a door
             problem = self._require_here(name)
             if problem:
-                return fail(problem)
+                return fail(problem, ("not_near", name))
+            # The other half of the same fact. If the machine is entitled to excuse a
+            # `PLACE_INSIDE(bowl)` from needing a door opened, it is entitled to say that
+            # opening the bowl is not a thing that can happen - and a model that knows one
+            # and not the other is not a model, it is a preference.
             if not self._openable(name):
-                return fail(f"'{name}' is a {self._category(name)} and does not open")
+                return fail(f"'{name}' is a {self._category(name)} and does not open",
+                            ("no_door", name))
             want = action == "OPEN"
             if self.open.get(name) == want:
                 warnings.append(f"'{name}' is already {'open' if want else 'closed'}")
@@ -518,21 +651,41 @@ And what each one does. "The stack" is the held object plus everything riding on
             # 1. beside it, 2. it has a switch
             problem = self._require_here(name)
             if problem:
-                return fail(problem)
+                return fail(problem, ("not_near", name))
             if not self._switchable(name):
-                return fail(f"'{name}' is a {self._category(name)} and has no switch")
+                return fail(f"'{name}' is a {self._category(name)} and has no switch",
+                            ("no_switch", name))
             want = action == "TOGGLE_ON"
             if self.toggled.get(name) == want:
                 warnings.append(f"'{name}' is already toggled {'on' if want else 'off'}")
             self.toggled[name] = want
             if want:
                 self.switched_on.add(name)
+                category = self._category(name)
+                for state, appliances in CONFERS.items():
+                    if category in appliances:
+                        for item in self._contents(name):
+                            self.states[state].add(item)
+                            edits.append(f"{item}.{state} = True")
             edits.append(f"{name}.toggled = {want}")
             return ok()
 
-        return fail(f"unknown action {action!r}")
+        return fail(f"unknown action {action!r}", ("unknown_action", action))
 
     # ------------------------------------------------------------------ whole plans
+
+    def _resolve_goal_name(self, name):
+        """The graph node a goal term names, or the term itself.
+
+        One vocabulary: the goal is written in the same names the belief graph is built
+        from, so this is equality. It used to match loosely, with the plan breaking ties,
+        because the goal model wrote the sentence's words - `cabinet` for `bottom_cabinet`
+        - on 16 of 100 tasks. That gap is closed at the source now: the instruction names
+        the dataset's category and the goal is canonicalised on the way in. A term that
+        still does not resolve is a term nothing produced, and leaving it unresolved makes
+        the condition unmet, which is the honest answer.
+        """
+        return name if name in self.graph.objects else name
 
     def unmet(self, goal):
         """Which of these goal conditions do not hold in this machine's world?
@@ -544,13 +697,20 @@ And what each one does. "The stack" is the held object plus everything riding on
         """
         missing = []
         for edge_type, src, dst in goal:
-            a = self._resolve(src) or src
+            a = self._resolve_goal_name(src)
+            # A door nobody touched is shut, and a switch nobody touched is off. Reading an
+            # untracked object as `None` made "leave the oven shut" *unmet* for a plan that
+            # never opened the oven - so a goal asserting the safe state of something the
+            # plan does not disturb could never be satisfied, and five attempts would be
+            # spent failing to satisfy it.
             if edge_type == "open":
-                held = self.open.get(a) == dst
+                held = self.open.get(a, False) == dst
+            elif edge_type in self.states:
+                held = (a in self.states[edge_type]) == bool(dst)
             elif edge_type == "toggled":
-                held = self.toggled.get(a) == dst
+                held = self.toggled.get(a, False) == dst
             else:
-                held = self.graph.has_edge(edge_type, a, self._resolve(dst) or dst)
+                held = self.graph.has_edge(edge_type, a, self._resolve_goal_name(dst))
             if not held:
                 missing.append((edge_type, src, dst))
         return missing
@@ -585,6 +745,6 @@ And what each one does. "The stack" is the held object plus everything riding on
                        missing, failed_at, left_open, left_on)
 
 
-def check(graph, plan, goal=(), allow_search=True, verbose=False):
+def check(graph, plan, goal=(), verbose=False):
     """Convenience: build a machine, run the plan, hand back the outcome."""
-    return GraphMachine(graph, allow_search=allow_search, verbose=verbose).run(plan, goal)
+    return GraphMachine(graph, verbose=verbose).run(plan, goal)

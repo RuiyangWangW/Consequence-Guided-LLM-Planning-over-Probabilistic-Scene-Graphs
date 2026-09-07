@@ -116,7 +116,7 @@ def offline(world, plan, goal, scene_graph):
     Open and toggled state is seeded too, for the same reason: a shut oven looks shut, and
     without it the machine cannot tell "closed" from "never mentioned".
     """
-    machine = GraphMachine(world.truth.copy(), allow_search=True)
+    machine = GraphMachine(world.truth.copy())
     machine.open = dict(world.open)
     machine.toggled = dict(world.toggled)
     outcome = machine.run(plan, goal)
@@ -280,7 +280,7 @@ def fuzz(saved, trials=200, length=8, seed=0):
         if not steps:
             continue
         reset()
-        machine = GraphMachine(world.truth.copy(), allow_search=True)
+        machine = GraphMachine(world.truth.copy())
         machine.open, machine.toggled = dict(world.open), dict(world.toggled)
         outcome = machine.run(steps)
         if outcome.failed_at is not None:
@@ -292,7 +292,7 @@ def fuzz(saved, trials=200, length=8, seed=0):
     for _ in range(trials):
         # --- a plan the graph model accepts, built one accepted step at a time ---
         reset()
-        machine = GraphMachine(world.truth.copy(), allow_search=True)
+        machine = GraphMachine(world.truth.copy())
         machine.open, machine.toggled = dict(world.open), dict(world.toggled)
         steps = []
         for index in range(rng.randint(2, length)):

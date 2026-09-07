@@ -24,6 +24,9 @@ dataset the RSN will later be measured against, so its object locations have to 
 """
 
 import argparse
+import re
+
+from scene_graph import ROOM_SYNONYMS
 import json
 import os
 from collections import Counter
@@ -64,36 +67,93 @@ def furniture_rooms(scene):
     return {category: counts.most_common(1)[0][0] for category, counts in seen.items()}
 
 
-def derive_extraction(task):
-    """The stage-1 ground truth, derived from the plan rather than written by hand.
+EXTRACTION_TRUTH = "data/extraction_truth.json"
+_TRUTH = None
 
-    `uncertain` is every object the plan acts on or the task injects, minus the ones whose
-    starting place the task states outright; `dependent` is those. Deriving it removes a
-    whole class of unfair scoring: written by hand, 57 of these named a worktop the plan
-    passes over and the instruction never mentions, so an extractor was being marked wrong
-    for not inventing objects nobody asked for.
 
-    An injected object counts as `dependent` exactly when **the instruction names the thing
-    it starts in or on** - "take the fruitcake out of the fridge" states a location, "put
-    the mug away in the cabinet" does not say where the mug is. Deriving that too keeps the
-    ground truth in step with the wording: these texts were rewritten several times, and a
-    hand-written `dependent` list silently stopped matching them.
+def extraction_truth(task, path=EXTRACTION_TRUTH):
+    """The stage-1 ground truth for one task: what the INSTRUCTION says, read by a reader.
+
+    This used to be computed. The rule took the last word of an object's name and looked for
+    it anywhere in the sentence, so "put the tablespoon away in the top cabinet" was recorded
+    as saying where the *breakfast table* is - the letters "table" occur inside "tablespoon" -
+    and "the top cabinet in the kitchen" as saying where the *bottom* cabinet is. Five of the
+    hundred tasks were wrong in that direction, each of them marking a correct extraction as
+    a miss.
+
+    Whether a sentence states a location is a question about English, and no substring test
+    answers it. So the answers are written down instead: `data/extraction_truth.json`, one
+    entry per task, authored by reading each instruction and independently checked by a
+    second reader. It is data, versioned and inspectable, rather than a rule nobody re-reads.
     """
-    stated = {s["name"]: {"object": s["name"], "relation": s["relation"],
-                          "target": s["target"]}
-              for s in task["spawn"] if mentions(task["task"], s["target"])}
-    named = {arg for _, arg in task["plan"] if arg} | {s["name"] for s in task["spawn"]}
-    return {"uncertain": sorted(named - set(stated)),
-            "dependent": [stated[n] for n in sorted(stated)]}
+    global _TRUTH
+    if _TRUTH is None:
+        with open(path) as handle:
+            _TRUTH = json.load(handle)
+    answer = _TRUTH.get(task["id"])
+    if answer is None:
+        raise SystemExit(f"no extraction ground truth for {task['id']} - add it to {path}")
+    return {"uncertain": list(answer.get("uncertain") or []),
+            "stated": dict(answer.get("stated") or {}),
+            "dependent": [dict(d) for d in (answer.get("dependent") or [])]}
 
 
-def mentions(text, name):
-    """Does this instruction name this object? Underscores read as spaces, and a
-    `bag_of_flour` may reasonably be called just "the flour"."""
+_ON = re.compile(r"\b(?:on top of|onto|on)\s+(?:the\s+)?([a-z' ]+)")
+_IN = re.compile(r"\b(?:inside(?: of)?|into|in)\s+(?:the\s+)?([a-z' ]+)")
+
+
+def stated_preposition(text, target):
+    """ON_TOP or INSIDE if the instruction says which, else None.
+
+    Whether a thing goes in something or on it is usually settled by what the thing is -
+    rubbish goes *in* a bin - and BEHAVIOR's `fillable` annotation answers that. But it does
+    not always: a tray is annotated fillable and nine instructions say "put it **on** the
+    tray", which is what a person means and what the tray is for. The sentence is the better
+    authority when it commits, so it is asked first and the annotation is the fallback.
+    """
+    prose = target.replace("_", " ")
+    words = prose.split()
     lowered = text.lower()
-    prose = name.replace("_", " ")
-    return (prose in lowered or name.replace("_", "-") in lowered
-            or prose.split()[-1] in lowered)
+    for pattern, relation in ((_IN, "INSIDE"), (_ON, "ON_TOP")):
+        for match in pattern.finditer(lowered):
+            tail = match.group(1).split()
+            # the preposition governs this destination if its name starts right here
+            if tail[:len(words)] == words or tail[:1] == words[-1:]:
+                return relation
+    return None
+
+
+def reconcile_relations(task):
+    """Make the goal and the plan agree with how the instruction words each destination.
+
+    The shapes decide in-versus-on from the category alone. Where the sentence itself says,
+    the sentence wins - so "on the tray" stays `on_top` even though a tray is fillable, and
+    "to the trash can", which commits to nothing, falls back to the annotation and becomes
+    `object_inside`.
+    """
+    from planner import FILLABLE, OPENABLE
+
+    goal, plan = [list(g) for g in task["goal"]], [list(p) for p in task["plan"]]
+    destinations = {g[2] for g in goal if g[0] in ("on_top", "object_inside")
+                    and isinstance(g[2], str)}
+    for target in destinations:
+        said = stated_preposition(task["task"], target)
+        want = said or ("INSIDE" if target in FILLABLE else "ON_TOP")
+        # Opening and closing is sequenced by the shape; rewriting a destination with a door
+        # would leave that sequencing wrong, so those are left to the shape.
+        if target in OPENABLE:
+            continue
+        edge = "object_inside" if want == "INSIDE" else "on_top"
+        action = "PLACE_INSIDE" if want == "INSIDE" else "PLACE_ON_TOP"
+        for g in goal:
+            if g[0] in ("on_top", "object_inside") and g[2] == target:
+                g[0] = edge
+        for step in plan:
+            if step[0] in ("PLACE_ON_TOP", "PLACE_INSIDE") and step[1] == target:
+                step[0] = action
+    task["goal"] = [list(g) for g in goal]
+    task["plan"] = [list(p) for p in plan]
+    return task
 
 
 def seed_graph(task):
@@ -183,12 +243,10 @@ def check_objects(task):
 
     # Everything the ground-truth extraction names must be nameable *from the instruction*,
     # or stage 1 is being asked to invent it.
-    extraction = derive_extraction(task)
-    for name in (extraction["uncertain"]
-                 + [d["object"] for d in extraction["dependent"]]):
-        if not mentions(task["task"], name):
-            problems.append(f"the task text never mentions '{name}', "
-                            f"so extraction cannot be expected to find it")
+    # The ground truth is now read rather than derived, so the old "is this name in the
+    # sentence" check has nothing to catch - a reader does not put an object in the answer
+    # that the sentence never named. What is still worth checking is that it names things
+    # the simulator can actually load, which is the loop below.
 
     for name in sorted(spawned):
         if _LOADABLE and name not in _LOADABLE:
@@ -214,11 +272,11 @@ def verify(task, verbose=False, simulate=True):
     plan = [(a, b if b else None) for a, b in task["plan"]]
     goal = [tuple(g) for g in task["goal"]]
 
-    already = GraphMachine(WorldGraph.from_scene_graph(graph), allow_search=True).run([], goal)
+    already = GraphMachine(WorldGraph.from_scene_graph(graph)).run([], goal)
     if already.goal_met:
         return False, "the goal is already true before the plan runs"
 
-    machine = GraphMachine(WorldGraph.from_scene_graph(graph), allow_search=True)
+    machine = GraphMachine(WorldGraph.from_scene_graph(graph))
     outcome = machine.run(plan, goal)
     if verbose:
         print(outcome.report())
@@ -275,7 +333,8 @@ def main():
         print(f"\n=== {scene} === {len(tasks)} tasks")
         for index, task in enumerate(tasks, 1):
             task = {**task, "scene": scene, "id": f"{scene}-{index:02d}"}
-            task["extraction"] = derive_extraction(task)
+            task = reconcile_relations(task)
+            task["extraction"] = extraction_truth(task)
             ok, message = verify(task, args.verbose)
             print(f"  {'ok  ' if ok else 'FAIL'} {task['id']}  {task['task'][:58]:58s} {message}")
             if ok:

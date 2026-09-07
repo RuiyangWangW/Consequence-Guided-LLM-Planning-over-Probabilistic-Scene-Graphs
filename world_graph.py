@@ -376,16 +376,16 @@ class WorldGraph:
         return sorted(n for n, r in self.objects.items() if r.get("category") == category)
 
     def resolve(self, name):
-        """A plan names `potato`; the scene may hold `potato_lqjear_0`. Accept either.
+        """The node this name refers to, or None. Nothing but equality.
 
-        Returns the instance name if it is unambiguous, else None. Categories with several
-        instances seen are ambiguous on purpose - picking one silently is how a plan ends
-        up acting on the wrong object.
+        The belief graph is built from the extractor's names, the goal is written in the
+        same names, and the plan is asked for the same names, so a name that is not a node
+        is a name the pipeline never produced - the model made it up. Matching it onto
+        something near it used to hide exactly that: `cabinet` found a lone `bottom_cabinet`
+        and the plan sailed on, and where it found nothing the machine admitted a node with
+        the invented name and the plan filled a cupboard that does not exist.
         """
-        if name in self.objects or name in self.rooms:
-            return name
-        matches = self.by_category(name)
-        return matches[0] if len(matches) == 1 else None
+        return name if name in self.objects or name in self.rooms else None
 
     # ---------------------------------------------------------------- serialisation
 

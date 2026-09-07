@@ -14,6 +14,8 @@ other primitive takes exactly one object.
 import json
 import re
 
+from object_names import canonical
+
 # The nine primitives, mirroring StarterSemanticActionPrimitiveSet. `takes_object` is
 # read off the controller method signatures, not guessed.
 #
@@ -66,42 +68,176 @@ PRIMITIVES = {
         "effect": "it is off"},
 }
 
-# Containers a robot must open before placing inside. Used only for warnings: the real
-# precondition lives in the simulator, and an object's true openability depends on its
-# model, which the scene graph does not carry.
-OPENABLE = {
-    "fridge", "refrigerator", "freezer", "oven", "microwave", "dishwasher", "washer",
-    "clothes_dryer", "dryer", "cabinet", "bottom_cabinet", "top_cabinet", "drawer",
-    "trash_can", "box", "carton", "backpack", "briefcase",
+# ------------------------------------------------------------------ what objects afford
+#
+# Read from BEHAVIOR's own annotations, not typed out. These three sets decide every
+# affordance the machine refuses on - whether a thing opens, switches on, or can be picked
+# up at all - so a hand-written version makes the checker right about the objects somebody
+# thought of and guessing about the rest. Ours had eighteen openable categories where BDDL
+# annotates thirty-five, and twenty-four switchable where BDDL annotates a hundred and
+# eighty-four, and the gap was already live: the task generator can put things in a
+# `cedar_chest` and heat them on a `burner`, and the machine called the first doorless and
+# the second switchless. Neither word was in the lists because neither is in the benchmark.
+#
+# One place, so the validator, the graph machine and the 2-D world cannot disagree.
+
+BDDL_DATA = "/mnt/check/ruiyangw/omnigibson/BEHAVIOR-1K/bddl3/bddl/generated_data"
+
+# The handful of words BDDL has no category for. An instruction says "the cabinet" and
+# "the lamp"; the dataset ships `bottom_cabinet` and `table_lamp`. These are spellings, not
+# affordances - each is here because the dataset names the same thing more specifically.
+GENERIC = {
+    "openable": {"cabinet", "drawer", "trash_can", "box", "briefcase",
+                 "refrigerator", "freezer", "dryer"},
+    "toggleable": {"lamp", "light", "ceiling_light", "television", "fan", "sink",
+                   "shower", "kettle", "dryer"},
+    "fixture": {"cabinet", "counter", "table", "sink", "television",
+                "refrigerator", "dryer", "window", "fireplace"},
 }
 
 
-# Objects with a switch. The third of the three affordance lists, and it lives here with
-# the other two so that the validator, the graph machine and the 2-D world all decide what
-# an object affords from one place - three copies of this list is three ways to disagree.
-TOGGLEABLE = {
-    "oven", "stove", "microwave", "dishwasher", "washer", "clothes_dryer", "dryer",
-    "coffee_maker", "blender", "toaster", "kettle", "electric_kettle", "lamp",
-    "floor_lamp", "table_lamp", "light", "ceiling_light", "television", "standing_tv",
-    "shower", "sink", "furniture_sink", "fan", "electric_switch",
+# What a mobile manipulator can lift. This is the robot's spec, not a number fitted to
+# results: BEHAVIOR annotates every category's mass, and the question "can the robot pick
+# this up" is answered by the arm's payload against that mass. 15 kg puts a `cedar_chest`
+# (5.8) and a `bag_of_rice` (5.0) in the hand and leaves a `breakfast_table` (18) and a
+# `bookcase` (36) on the floor, with nothing near the line.
+#
+# BDDL's `sceneObject` looked like the right annotation and is not: it marks what may
+# appear in a scene, so a `water_glass` carries it, and using it refused two benchmark
+# tasks that pick one up.
+PAYLOAD_KG = 15.0
+
+
+def _mass_table():
+    """Every category's mass in kilograms, as BEHAVIOR annotates it."""
+    import csv as _csv
+    import os
+
+    out = {}
+    try:
+        with open(os.path.join(BDDL_DATA, "category_mapping.csv"), newline="") as handle:
+            for row in _csv.DictReader(handle):
+                category = (row.get("category") or "").strip()
+                value = (row.get("mass (auto)") or "").replace(",", "").strip()
+                if category and value:
+                    try:
+                        out[category] = float(value)
+                    except ValueError:
+                        pass
+    except OSError:
+        pass
+    return out
+
+
+def _by_property(name):
+    """Every object category BEHAVIOR annotates with this property."""
+    import collections
+    import csv as _csv
+    import os
+
+    try:
+        with open(os.path.join(BDDL_DATA, "properties_to_synsets.json")) as handle:
+            synsets = set(json.load(handle).get(name, ()))
+        realises = collections.defaultdict(set)
+        with open(os.path.join(BDDL_DATA, "category_mapping.csv"), newline="") as handle:
+            for row in _csv.DictReader(handle):
+                synset, category = (row.get("synset") or "").strip(), (row.get("category") or "").strip()
+                if synset and category:
+                    realises[synset].add(category)
+    except (OSError, ValueError):
+        return set()
+    return {c for s in synsets for c in realises.get(s, ())}
+
+
+OPENABLE = _by_property("openable") | GENERIC["openable"]
+
+# Whether things go *in* a thing, which is a different question from whether it has a door.
+# A bin, a hamper and a bookcase are all fillable and none of them opens; a fridge and a
+# cabinet are both. Deciding "inside or on top" with `openable` called all three of the
+# first group surfaces, so the benchmark demanded rubbish be balanced on top of the bin -
+# 22 of its 100 tasks asked for `on_top` into something BEHAVIOR annotates as fillable.
+FILLABLE = _by_property("fillable")
+
+# Two conditions, and it takes both. Heavy enough to be beyond the arm, *and* a thing
+# scenes are built from. Either alone is wrong: `water_glass` carries `sceneObject` and
+# weighs 250 g, and BEHAVIOR annotates a `sugar_sack` at 35 kg because the asset is a
+# wholesale sack - each of those refused a benchmark task that picks the thing up. Together
+# they agree with every case we can check by hand.
+_HEAVY = {c for c, kg in _mass_table().items() if kg >= PAYLOAD_KG}
+NOT_GRASPABLE = (_HEAVY & _by_property("sceneObject")) | GENERIC["fixture"]
+
+TOGGLEABLE = _by_property("toggleable") | GENERIC["toggleable"]
+
+
+CONFERS = {
+    "cooked": {"oven", "microwave", "stove", "burner", "toaster_oven", "toaster",
+               "electric_cauldron", "charcoal_grill", "flat_top_grill", "espresso_machine",
+               "electric_kettle", "kettle", "pressure_cooker", "rice_cooker", "smoker",
+               "deep_fryer", "air_fryer", "slow_cooker"},
+    "washed": {"washer", "washing_machine", "dishwasher"},
+    "dried": {"clothes_dryer", "dryer"},
 }
 
 
-# Large fixed appliances and furniture. These are articulated (OPEN/CLOSE act on their
-# doors) or switchable (TOGGLE_*), but they are not portable: GRASP on one is a planning
-# error the simulator would also refuse, since the robot cannot pick up a fridge.
-NOT_GRASPABLE = {
-    "fridge", "refrigerator", "freezer", "oven", "stove", "microwave", "dishwasher",
-    "washer", "clothes_dryer", "dryer", "sink", "furniture_sink", "pedestal_sink",
-    "bathtub", "shower", "shower_stall", "toilet", "bed", "sofa", "counter",
-    "countertop", "cabinet", "bottom_cabinet", "top_cabinet", "bookcase", "door",
-    "window", "openable_window", "coffee_table", "breakfast_table", "table", "desk",
-    "standing_tv", "television", "fireplace", "trash_can", "public_trash_can",
-}
+OBJECT_STATES = tuple(CONFERS)
 
 
 class PlanError(Exception):
     """A plan step the controller would refuse."""
+
+
+def parse_goal(text):
+    """Pull the GOAL section out of a reply, as triples the graph machine can test.
+
+    Returns `[(edge_type, object, target_or_bool), ...]`, in the same language
+    `GraphMachine.unmet` reads. Anything unrecognised is dropped rather than guessed at:
+    a goal the machine cannot test is worse than no goal, because it would reject every
+    plan for failing a condition that never had a meaning.
+    """
+    if "GOAL:" not in text.upper():
+        return []
+    start = text.upper().index("GOAL:") + len("GOAL:")
+    end = text.upper().find("PLAN:", start)
+    block = text[start:end if end != -1 else len(text)]
+
+    # The goal language, and nothing outside it. `cooked`/`washed`/`dried` were missing
+    # here while the model was being trained to produce them, so every state condition it
+    # wrote was silently dropped and the goal looked like placements only - which read as
+    # the model failing to learn them.
+    kinds = {"on_top": "on_top", "ontop": "on_top", "inside": "object_inside",
+             "object_inside": "object_inside"}
+    kinds.update({state: state for state in CONFERS})
+    goal = []
+    for match in re.finditer(r"([a-z_]+)\s*\(\s*([^,()]+?)\s*,\s*([^,()]+?)\s*\)",
+                             block, re.I):
+        kind = kinds.get(match.group(1).strip().lower())
+        if kind is None:
+            continue
+        # The same vocabulary the extractor produces. Two models read the same sentence -
+        # one for the objects, one for the goal - and nothing else makes them agree, so a
+        # goal saying `dryer` while the graph holds `clothes_dryer` would be unmeetable
+        # forever, and the loop would spend every attempt on a condition no plan can reach.
+        obj = canonical(_clean_name(match.group(2)))
+        rhs = match.group(3).strip().lower()
+        if kind in CONFERS:
+            if rhs not in ("true", "false"):
+                continue
+            entry = (kind, obj, rhs == "true")
+        else:
+            entry = (kind, obj, canonical(_clean_name(match.group(3))))
+        if obj and entry not in goal:
+            goal.append(entry)
+    # No `open`/`toggled` here on purpose. "Put back what you disturbed" is not a property
+    # of the task, it is a property of every task, and `GraphMachine` derives it from what
+    # the plan actually opened - which also catches a cupboard the instruction never
+    # mentioned, where a goal condition on a named object cannot.
+    return goal
+
+
+def _clean_name(text):
+    """An object name as the graph writes them: lowercase, underscored, no punctuation."""
+    name = re.sub(r"[^a-z0-9_ ]", "", text.strip().lower()).strip()
+    return re.sub(r"\s+", "_", name)
 
 
 def parse_plan(text):
@@ -270,8 +406,33 @@ def validate(steps, graph, strict=True):
     return errors, warnings
 
 
-def build_prompt(task, graph):
-    """The planning prompt: action space, scene graph, rules, and output format."""
+# What a goal condition may say. The same four the graph machine can test, which is what
+# makes a self-declared goal checkable rather than decorative.
+GOAL_PREDICATES = """  on_top(object, surface)        the object ends resting on that surface
+  inside(object, container)     the object ends inside that container
+  open(object, false)           that door or lid ends shut
+  toggled(object, false)        that switch ends off"""
+
+
+def build_prompt(task, graph, with_goal=False):
+    """The planning prompt: action space, scene graph, rules, and output format.
+
+    `with_goal` asks the model to state the finished world before it plans for it.
+
+    The checker can test whether a plan achieves a goal, but nothing upstream produces
+    one: the benchmark's goal conditions are *ground truth*, kept for scoring, and handing
+    them to the planner would be telling it the answer it is meant to read out of the
+    instruction. So the loop was checking only that every action applies and that nothing
+    was left open - and a plan that ran flawlessly and did the wrong thing was accepted
+    without complaint. Measured, that was 9 of the 8B's 16 goal failures passing on the
+    first attempt, including a swap that carefully put both objects on the same table.
+
+    Asking the *planner* for the goal closes that without a leak: the goal comes from the
+    instruction, the same place the plan comes from. What it cannot catch is a
+    misunderstood task - a model that misreads "swap" writes a wrong goal and then
+    satisfies it. What it does catch is the commoner failure by far: understanding the
+    task and writing a plan that does not carry it out.
+    """
     from scene_graph import format_for_llm
 
     actions = "\n\n".join(
@@ -280,6 +441,26 @@ def build_prompt(task, graph):
         f"      then:     {s['effect']}"
         for name, s in PRIMITIVES.items()
     )
+    if with_goal:
+        tail = f"""First state the GOAL: the conditions that must hold when the task is
+done. Use only these forms, one per line:
+
+{GOAL_PREDICATES}
+
+State every condition the task requires, including putting back what you disturb - if the
+task has you open something or switch something on, the goal must say it ends shut and
+off. Then write PLAN: and the actions.
+
+GOAL:
+  <conditions>
+PLAN:
+  <actions>
+
+Reply with only those two sections, no prose."""
+    else:
+        tail = ("Reply with ONLY the action sequence, one action per line, no numbering, "
+                "no prose.")
+
     prompt = f"""You are a task planner for a household robot in a simulated home.
 
 Produce a sequence of atomic actions that completes the task. You may ONLY use these
@@ -347,7 +528,7 @@ Examples of correct sequences:
 
 Task: {task}
 
-Reply with ONLY the action sequence, one action per line, no numbering, no prose."""
+{tail}"""
 
     return prompt
 
@@ -373,6 +554,8 @@ def generate(task, graph, model_name="Qwen/Qwen2.5-7B-Instruct",
 # One loaded model per name. Object extraction and planning both call the LLM, and a 7B
 # load costs ~30s of GPU time, so the second caller reuses the first one's weights.
 _GENERATORS = {}
+# Loaded base models, keyed by name, so several LoRA adapters can share one.
+_BASES = {}
 
 
 def get_generator(model_name="Qwen/Qwen2.5-7B-Instruct", adapter=None):
@@ -405,11 +588,22 @@ def release_generator(model_name=None):
         pass
 
 
+def _slug(path):
+    """A PEFT adapter name: no dots or slashes, which `add_module` refuses."""
+    return path.strip("/").replace("/", "_").replace(".", "_").replace("-", "_")
+
+
 def _local_generator(model_name, adapter=None):
     """Lazily load a local instruct model and return a prompt->text function.
 
     `adapter` points at a LoRA directory from `finetune_extraction.py`, whose base model
     it names, so a fine-tuned extractor is loaded by adapter path alone.
+
+    **Adapters on the same base share it.** The pipeline runs three models at once - an 8B
+    planner and two fine-tuned 1.7B heads, one reading objects and one reading the goal -
+    and loading Qwen3-1.7B twice put 23.5 GB on a 24 GB card and killed the run on the
+    second task. A LoRA adapter is 78 MB against a 3.4 GB base, so the base is loaded once
+    and each adapter is attached to it and selected per call.
     """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -418,6 +612,12 @@ def _local_generator(model_name, adapter=None):
         import json
 
         model_name = json.load(open(f"{adapter}/training.json"))["base"]
+        shared = _BASES.get(model_name)
+        if shared is not None:
+            name = _slug(adapter)
+            if name not in getattr(shared, "peft_config", {}):
+                shared.load_adapter(adapter, adapter_name=name)
+            return _bind(shared, AutoTokenizer.from_pretrained(model_name), name)
     tok = AutoTokenizer.from_pretrained(model_name)
     # `device_map="auto"` needs `accelerate`, which is not in the `behavior` env and is
     # not worth installing there - the env has a verified torch/CUDA/OmniGibson stack.
@@ -433,10 +633,20 @@ def _local_generator(model_name, adapter=None):
     if adapter:
         from peft import PeftModel
 
-        model = PeftModel.from_pretrained(model, adapter)
+        model = PeftModel.from_pretrained(model, adapter, adapter_name=_slug(adapter))
+        _BASES[model_name] = model
     model.eval()
 
+    return _bind(model, tok, _slug(adapter) if adapter else None)
+
+
+def _bind(model, tok, adapter=None):
+    """The prompt->text function for one model, selecting `adapter` before each call."""
+    import torch
+
     def run(prompt, max_new_tokens, temperature=0.0):
+        if adapter is not None:
+            model.set_adapter(adapter)
         """`temperature` 0 is greedy, which is the right default: one question, one answer.
 
         Anything above it samples, which is what a *retry* needs. Greedy decoding makes a

@@ -46,12 +46,13 @@ TASKS = {
                         "dependent": [inside("bottle_of_soup", "fridge")]},
          **fetch_heat_serve("bottle_of_soup", "fridge", "microwave", "breakfast_table")},
 
-        {"task": "wash the t-shirt in the washer, then dry it in the dryer, leaving both "
-                 "machines off and shut",
-         "extraction": {"uncertain": ["t_shirt", "washer", "clothes_dryer"],
-                        "dependent": []},
-         "rooms": {"bottom_cabinet": "utility_room_0"},
-         **laundry_cycle("t_shirt", "bottom_cabinet", "washer", "clothes_dryer")},
+        {"task": "take the stapler and the envelope out of the private office bottom "
+                 "cabinet and put them both on the breakfast table",
+         "extraction": {"uncertain": ["bottom_cabinet", "breakfast_table"],
+                        "dependent": [inside("stapler", "bottom_cabinet"),
+                                      inside("envelope", "bottom_cabinet")]},
+         "rooms": {"bottom_cabinet": "private_office_0"},
+         **unload_two("stapler", "envelope", "bottom_cabinet", "breakfast_table")},
 
         {"task": "put the mug and the water glass away in the top cabinet, closing it each time",
          "extraction": {"uncertain": ["mug", "water_glass", "top_cabinet", "countertop"],
@@ -120,7 +121,7 @@ TASKS = {
                       ["breakfast_table", "breakfast_table", "breakfast_table"],
                       "bookcase")},
 
-        {"task": "take the bath towel and the hand bath towel out of the top cabinet and leave them "
+        {"task": "take the bath towel and the hand towel out of the top cabinet and leave them "
                  "on the bathroom countertop",
          "extraction": {"uncertain": ["top_cabinet", "countertop"],
                         "dependent": [inside("bath_towel", "top_cabinet"),
@@ -143,8 +144,8 @@ TASKS = {
          "rooms": {"bed": "childs_room_0", "bottom_cabinet": "childs_room_0"},
          **two_into_container("toy_car", "baseball", "bed", "bottom_cabinet")},
 
-        {"task": "take the mug out of the top cabinet, put it on the tray, then store the "
-                 "tray in the bottom cabinet and close it",
+        {"task": "take the mug out of the child's room top cabinet, put it on the tray, "
+                 "then store the tray in the playroom bottom cabinet and close it",
          "extraction": {"uncertain": ["mug", "tray", "bottom_cabinet", "breakfast_table",
                                       "countertop"],
                         "dependent": []},
@@ -163,8 +164,8 @@ TASKS = {
          **swap_places("lampshade", "picture_frame", "bookcase", "breakfast_table",
                        "armchair")},
 
-        {"task": "take the folder and the envelope out of the bottom cabinet and put "
-                 "them on the breakfast table",
+        {"task": "take the folder and the envelope out of the playroom bottom cabinet "
+                 "and put them on the breakfast table",
          "extraction": {"uncertain": ["bottom_cabinet", "breakfast_table"],
                         "dependent": [inside("folder", "bottom_cabinet"),
                                       inside("envelope", "bottom_cabinet")]},
@@ -178,7 +179,7 @@ TASKS = {
          **move_three(["t_shirt", "sock", "hat"],
                       ["bottom_cabinet", "bottom_cabinet", "bottom_cabinet"], "bed")},
 
-        {"task": "put the comic book and the notebook in the bookcase's cabinet in the closet, "
+        {"task": "put the comic book and the notebook in the closet bottom cabinet, "
                  "closing it each time",
          "extraction": {"uncertain": ["comic_book", "notebook", "bottom_cabinet", "bookcase"],
                         "dependent": []},
@@ -307,7 +308,7 @@ TASKS = {
         # A `cedar_chest` is not in `planner.OPENABLE`, so `unload_two` cannot use it -
         # the shape opens the container. The verifier caught it; the bedroom's bottom
         # cabinet does have a door.
-        {"task": "take the sweatshirt and the scarf out of the bottom cabinet and put them "
+        {"task": "take the sweatshirt and the scarf out of the bedroom bottom cabinet and put them "
                  "on the bed",
          "extraction": {"uncertain": ["bottom_cabinet", "bed"],
                         "dependent": [inside("sweatshirt", "bottom_cabinet"),
@@ -380,8 +381,8 @@ TASKS = {
          "rooms": {"bed": "bedroom_0"},
          **move_three(["sock", "t_shirt", "bath_towel"], ["bed", "bed", "bed"], "hamper")},
 
-        {"task": "carry the gaming controller and the magazine from the coffee table to the child's "
-                 "bed, then switch the table lamp on and off again",
+        {"task": "carry the gaming controller and the magazine from the coffee table to the "
+                 "bed in the child's room, then switch the table lamp on and off again",
          "extraction": {"uncertain": ["gaming_controller", "magazine", "coffee_table", "bed",
                                       "table_lamp"],
                         "dependent": []},
@@ -397,20 +398,20 @@ TASKS = {
          "rooms": {"top_cabinet": "bathroom_0", "furniture_sink": "bathroom_0"},
          **two_into_container("bar_soap", "shampoo_bottle", "furniture_sink", "top_cabinet")},
 
-        {"task": "take the plate and the bowls out of the bottom cabinet and put them "
-                 "on the breakfast table",
+        {"task": "take the plate and the bowls out of the kitchen bottom cabinet and "
+                 "put them on the breakfast table",
          "extraction": {"uncertain": ["bottom_cabinet", "breakfast_table"],
                         "dependent": [inside("plate", "bottom_cabinet"),
                                       inside("bowl", "bottom_cabinet")]},
          "rooms": {"bottom_cabinet": "kitchen_0"},
          **unload_two("plate", "bowl", "bottom_cabinet", "breakfast_table")},
 
-        {"task": "take the mug out of the top cabinet, put it on the tray, then store the "
+        {"task": "take the mug out of the kitchen top cabinet, put it on the tray, then store the "
                  "tray in the kitchen bottom cabinet and close it",
          "extraction": {"uncertain": ["mug", "tray", "bottom_cabinet", "breakfast_table",
                                       "coffee_table"],
                         "dependent": []},
-         "rooms": {"bottom_cabinet": "kitchen_0"},
+         "rooms": {"bottom_cabinet": "kitchen_0", "top_cabinet": "kitchen_0"},
          **stack_then_store("mug", "tray", "top_cabinet", "breakfast_table",
                             "bottom_cabinet")},
 
@@ -476,12 +477,12 @@ TASKS = {
          **two_into_container("cardstock", "folder", "breakfast_table",
                               "bottom_cabinet")},
 
-        {"task": "swap the pillow on the sofa with the blanket on the armchair, using the "
-                 "coffee table to set one down while you move the other",
-         "extraction": {"uncertain": ["pillow", "blanket", "sofa", "armchair",
+        {"task": "swap the pillow on the sofa with the blanket on the straight chair, "
+                 "using the coffee table to set one down while you move the other",
+         "extraction": {"uncertain": ["pillow", "blanket", "sofa", "straight_chair",
                                       "coffee_table"],
                         "dependent": []},
-         **swap_places("pillow", "blanket", "sofa", "armchair", "coffee_table")},
+         **swap_places("pillow", "blanket", "sofa", "straight_chair", "coffee_table")},
 
         {"task": "bring the pillow, the blanket and the bath towel to the bed in the bedroom",
          "extraction": {"uncertain": ["pillow", "blanket", "bath_towel", "bed", "sofa"],
@@ -527,7 +528,7 @@ TASKS = {
          "rooms": {"countertop": "kitchen_0"},
          **heat_and_serve("cinnamon_roll", "countertop", "oven", "breakfast_table")},
 
-        {"task": "take the casserole out of the fridge, heat them in the microwave, and "
+        {"task": "take the casserole out of the kitchen fridge, heat them in the microwave, and "
                  "leave them on the breakfast table",
          "extraction": {"uncertain": ["fridge", "microwave", "breakfast_table"],
                         "dependent": [inside("casserole", "fridge")]},
@@ -579,12 +580,13 @@ TASKS = {
          **carry_two_and_switch("mug", "bowl", ["countertop", "countertop"],
                                 "coffee_table", "furniture_sink")},
 
-        {"task": "take the fruitcake out of the fridge, put it on the tray, then store the "
+        {"task": "take the fruitcake out of the kitchen fridge, put it on the tray, then store the "
                  "tray in the kitchen bottom cabinet and shut it",
          "extraction": {"uncertain": ["fruitcake", "tray", "bottom_cabinet",
                                       "breakfast_table", "countertop"],
                         "dependent": []},
-         "rooms": {"countertop": "kitchen_0", "bottom_cabinet": "kitchen_0"},
+         "rooms": {"countertop": "kitchen_0", "bottom_cabinet": "kitchen_0",
+                   "fridge": "kitchen_0"},
          **stack_then_store("fruitcake", "tray", "fridge", "countertop",
                             "bottom_cabinet")},
 
@@ -652,7 +654,7 @@ TASKS = {
          **carry_two_and_switch("notebook", "notepad", ["countertop", "countertop"],
                                 "breakfast_table", "floor_lamp")},
 
-        {"task": "put the gym shoe away in the entrance cabinet along with the umbrella, "
+        {"task": "put the gym shoe away in the entrance bottom cabinet along with the umbrella, "
                  "closing it each time",
          "extraction": {"uncertain": ["gym_shoe", "umbrella", "bottom_cabinet", "ottoman"],
                         "dependent": []},
@@ -748,7 +750,7 @@ TASKS = {
                    "coffee_table": "living_room_1"},
          **swap_places("pillow", "blanket", "sofa", "armchair", "coffee_table")},
 
-        {"task": "put the place mat and the dinner napkin away in the dining room cabinet, "
+        {"task": "put the place mat and the dinner napkin away in the dining room bottom cabinet, "
                  "shutting it each time",
          "extraction": {"uncertain": ["place_mat", "dinner_napkin", "bottom_cabinet",
                                       "breakfast_table"],
@@ -794,8 +796,8 @@ TASKS = {
                       ["breakfast_table", "breakfast_table", "breakfast_table"],
                       "pool_table")},
 
-        {"task": "take the toothbrush and the tube of toothpaste out of the bathroom cabinet and "
-                 "leave them on the countertop",
+        {"task": "take the toothbrush and the tube of toothpaste out of the bathroom "
+                 "bottom cabinet and leave them on the countertop",
          "extraction": {"uncertain": ["bottom_cabinet", "countertop"],
                         "dependent": [inside("toothbrush", "bottom_cabinet"),
                                       inside("tube_of_toothpaste", "bottom_cabinet")]},
@@ -811,14 +813,14 @@ TASKS = {
          **carry_two_and_switch("water_bottle", "bath_towel", ["breakfast_table", "breakfast_table"],
                                 "treadmill", "table_lamp")},
 
-        {"task": "put the pillow and the blanket away in the bedroom cabinet, shutting "
+        {"task": "put the pillow and the blanket away in the bedroom bottom cabinet, shutting "
                  "it each time",
          "extraction": {"uncertain": ["pillow", "blanket", "bottom_cabinet", "bed"],
                         "dependent": []},
          "rooms": {"bottom_cabinet": "bedroom_1", "bed": "bedroom_1"},
          **two_into_container("pillow", "blanket", "bed", "bottom_cabinet")},
 
-        {"task": "take the bar soap out of the top cabinet, put it on the tray, then store "
+        {"task": "take the bar soap out of the utility room top cabinet, put it on the tray, then store "
                  "the tray in the bathroom bottom cabinet and close it",
          "extraction": {"uncertain": ["bar_soap", "tray", "bottom_cabinet", "furniture_sink",
                                       "countertop"],

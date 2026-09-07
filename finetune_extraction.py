@@ -54,6 +54,28 @@ Name whole objects, not parts.
 Task: {task}"""
 
 
+GOAL_INSTRUCTION = """State the GOAL of this household task: the conditions that must hold
+when it is done. Use only these forms, one per line:
+
+  on_top(object, surface)       the object ends resting on that surface
+  inside(object, container)     the object ends inside that container
+  cooked(object, true)          the object was heated in an oven, microwave or hob
+  washed(object, true)          the object went through a washer or dishwasher
+  dried(object, true)           the object went through a dryer
+
+Say where each object the task moves ends up, and what was done to it. Do NOT say anything
+about doors being shut or switches being off - that is checked separately, from what the
+plan disturbs.
+
+Task: {task}"""
+
+
+def goal_target(row):
+    """The goal, in the language `GraphMachine.unmet` tests."""
+    return "\n".join(f"{k}({a}, {str(b).lower() if isinstance(b, bool) else b})"
+                      for k, a, b in row["goal"])
+
+
 def target(row):
     """The answer, in the format `task_objects.parse` reads.
 
@@ -72,7 +94,7 @@ def target(row):
             f"UNCERTAIN: {', '.join(e['uncertain'])}")
 
 
-def encode(rows, tok, max_len=512):
+def encode(rows, tok, max_len=512, kind="extraction"):
     """Tokenize into (ids, labels), with the prompt masked out of the loss.
 
     Training on the prompt tokens as well would spend most of the gradient teaching the
@@ -80,9 +102,12 @@ def encode(rows, tok, max_len=512):
     """
     import torch
 
+    prompt_of = (GOAL_INSTRUCTION if kind == "goal" else INSTRUCTION)
+    answer_of = (goal_target if kind == "goal" else target)
+
     out = []
     for row in rows:
-        messages = [{"role": "user", "content": INSTRUCTION.format(task=row["task"])}]
+        messages = [{"role": "user", "content": prompt_of.format(task=row["task"])}]
         try:
             prompt = tok.apply_chat_template(messages, add_generation_prompt=True,
                                              tokenize=False, enable_thinking=False)
@@ -90,7 +115,8 @@ def encode(rows, tok, max_len=512):
             prompt = tok.apply_chat_template(messages, add_generation_prompt=True,
                                              tokenize=False)
         p_ids = tok(prompt, add_special_tokens=False)["input_ids"]
-        a_ids = tok(target(row) + tok.eos_token, add_special_tokens=False)["input_ids"]
+        a_ids = tok(answer_of(row) + tok.eos_token,
+                    add_special_tokens=False)["input_ids"]
         ids = (p_ids + a_ids)[:max_len]
         labels = ([-100] * len(p_ids) + a_ids)[:max_len]
         out.append((torch.tensor(ids), torch.tensor(labels)))
@@ -149,6 +175,9 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--rank", type=int, default=16)
     parser.add_argument("--limit", type=int, help="train on this many examples only")
+    parser.add_argument("--target", choices=("extraction", "goal"), default="extraction",
+                        help="what to learn: the objects a task names, or the state it "
+                             "should end in")
     args = parser.parse_args()
 
     import torch
@@ -162,8 +191,8 @@ def main():
     if args.limit:
         train_rows = train_rows[:args.limit]
     val_rows = json.load(open(args.val))
-    train = encode(train_rows, tok)
-    val = encode(val_rows, tok)
+    train = encode(train_rows, tok, kind=args.target)
+    val = encode(val_rows, tok, kind=args.target)
 
     model = AutoModelForCausalLM.from_pretrained(args.model, dtype=torch.bfloat16)
     model = model.to("cuda" if torch.cuda.is_available() else "cpu")
@@ -221,7 +250,8 @@ def main():
     model.save_pretrained(args.out)
     tok.save_pretrained(args.out)
     with open(os.path.join(args.out, "training.json"), "w") as f:
-        json.dump({"base": args.model, "examples": len(train), "epochs": args.epochs,
+        json.dump({"base": args.model, "target": args.target,
+                   "examples": len(train), "epochs": args.epochs,
                    "lr": args.lr, "rank": args.rank, "val_loss": val_loss,
                    "minutes": (time.time() - started) / 60}, f, indent=1)
     print(f"\nfinal val loss {val_loss:.4f} after {(time.time()-started)/60:.1f} min")

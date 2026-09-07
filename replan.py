@@ -28,20 +28,37 @@ import argparse
 import json
 
 from graph_machine import GraphMachine
-from planner import PRIMITIVES, build_prompt, get_generator, parse_plan
+from planner import (PRIMITIVES, build_prompt, get_generator, parse_goal, parse_plan)
 from world_graph import WorldGraph
 
 DEFAULT_ATTEMPTS = 5
 
-# The first ask is greedy - one question, one answer. Retries sample, because greedy
-# decoding makes a repair loop pointless: measured, a rejected plan came back
-# byte-identical on all five attempts, the model having already given its best answer to a
-# prompt it was not persuaded by. Rising temperature widens the search as the obvious
-# repairs run out.
-TEMPERATURES = (0.0, 0.5, 0.7, 0.9, 1.0)
+
+# One refusal is not about the plan's *order* but about the argument: a closet is a room
+# however carefully you drive to it. For it the primitive's own contract is no help and is
+# worse than none - NAVIGATE_TO's reads "requires: nothing", directly beneath a rejected
+# NAVIGATE_TO. So it gets its own note and the generic contract is suppressed.
+FAULT_NOTES = {
+    "no_door": ("{name} has no door or lid, so it can never be opened or closed. Not "
+                "every container opens: an open-topped bin, a bowl, a sink, a basket all "
+                "take PLACE_INSIDE directly, with no OPEN before and no CLOSE after. "
+                "Remove this step and the one that matches it."),
+    "no_switch": ("{name} has no switch and can never be toggled on or off. Remove this "
+                  "step and the one that matches it."),
+    "not_graspable": ("{name} is fixed to the building and can never be picked up, no "
+                      "matter what the plan does first. Only movable objects are grasped. "
+                      "If {name} is where something is meant to go, drive to it and use "
+                      "PLACE_ON_TOP({name}) or PLACE_INSIDE({name}) - the destination is "
+                      "never grasped, and what gets put down is whatever the robot is "
+                      "already holding."),
+    "room": ("{name} is a room, not an object. NAVIGATE_TO drives to the thing the robot "
+             "is about to act on - name that thing instead. If the step after this one "
+             "already drives to it, this step is simply unnecessary: drop it."),
+}
 
 
-def repair_prompt(task, graph, steps, outcome):
+
+def repair_prompt(task, graph, steps, outcome, mended=()):
     """The planning prompt again, plus the plan that failed and the step that failed it.
 
     The whole plan is quoted back with the refused step marked, rather than only the
@@ -50,7 +67,12 @@ def repair_prompt(task, graph, steps, outcome):
     back whole instead of as a fragment to splice in.
     """
     lines = []
-    abandoned = set(outcome.left_open) | set(outcome.left_on)
+    # Only when the plan ran to the end. `left_open` is read off the execution, and an
+    # execution that stopped at step 10 never reached the CLOSE at step 12 - marking that
+    # OPEN "never undone" reports a fault the plan does not have. Eleven of the 4B's 38
+    # rejected plans carried at least one such false mark, on top of the real refusal.
+    abandoned = (set(outcome.left_open) | set(outcome.left_on)
+                 if outcome.failed_at is None else set())
     for index, step in enumerate(steps):
         arg = step.get("object") or ""
         mark = ""
@@ -62,24 +84,31 @@ def repair_prompt(task, graph, steps, outcome):
             mark = "   ok"
         lines.append(f"  {index + 1:2d}. {step['action']}({arg}){mark}")
 
-    if outcome.failed_at is None and not outcome.safe:
-        # The one thing the loop can fault a *runnable* plan for without being told what
-        # the task wants. The machine already knows what this plan opened and did not
-        # shut, and what it switched on and did not switch off - no goal required, because
-        # "put back what you disturbed" is not a property of the task, it is a property of
-        # every task.
-        left = ([f"    still open:        {n}" for n in outcome.left_open]
-                + [f"    still switched on: {n}" for n in outcome.left_on])
-        complaint = ("Every action was applicable, but the plan leaves the house in a "
-                     "state it should not:\n" + "\n".join(left)
-                     + "\n\nAnything the robot opens it must close again, and anything "
-                       "it switches on it must switch off. Add the missing CLOSE and "
-                       "TOGGLE_OFF actions, at the right points - a door has to stay open "
-                       "while something is being put in or taken out.")
-    elif outcome.failed_at is None:
-        complaint = ("Every action was applicable, but the plan does not achieve the "
-                     "task. These are still missing at the end:\n"
-                     + "\n".join(f"    {t}({a}, {b})" for t, a, b in outcome.missing))
+    if outcome.failed_at is None:
+        # A runnable plan can be wrong in two ways at once, and they used to be an if/elif:
+        # a plan that left the oven on *and* missed the goal was told only about the oven,
+        # fixed that, and learned about the goal on the next attempt. Two of five attempts
+        # spent on what is one message. Both faults are known at the same moment, so both
+        # are said at the same moment.
+        faults = []
+        if not outcome.safe:
+            left = ([f"    still open:        {n}" for n in outcome.left_open]
+                    + [f"    still switched on: {n}" for n in outcome.left_on])
+            faults.append("it leaves the house in a state it should not:\n"
+                          + "\n".join(left)
+                          + "\n  Anything the robot opens it must close again, and "
+                            "anything it switches on it must switch off - at the right "
+                            "points, since a door has to stay open while something is "
+                            "being put in or taken out.")
+        if outcome.missing:
+            faults.append("it does not achieve the task. These are still missing at the "
+                          "end:\n"
+                          + "\n".join(f"    {t}({a}, {b})" for t, a, b in outcome.missing))
+        complaint = ("Every action was applicable, but the plan has "
+                     + ("two problems" if len(faults) > 1 else "a problem") + ".\n\n"
+                     + "\n\n".join(f"  {i}. {f}" for i, f in enumerate(faults, 1))
+                     + "\n\nFix "
+                     + ("both" if len(faults) > 1 else "it") + " in one plan.")
     else:
         # Quote the failed action's own contract back. Knowing *that* a step is wrong is
         # not the same as knowing what to write instead: told "cannot place 'potato' on
@@ -88,51 +117,126 @@ def repair_prompt(task, graph, steps, outcome):
         # is implicit.
         action = steps[outcome.failed_at]["action"]
         spec = PRIMITIVES.get(action, {})
-        signature = f"{action}({'object' if spec.get('takes_object') else ''})"
-        contract = (f"\n\nRemember what {signature} needs:\n"
-                    f"  requires: {spec.get('requires', '')}\n"
-                    f"  then:     {spec.get('effect', '')}")
-        if action in ("PLACE_ON_TOP", "PLACE_INSIDE"):
-            contract += ("\nThe argument is the *destination* - the surface or container "
-                         "being placed onto or into. What is being put down is whatever "
-                         "the robot is already holding, and is never named.")
-        complaint = ("The plan was rejected at the marked step. Everything before it is "
-                     "fine; fix that step and anything after it that depended on it."
-                     + contract)
+        kind, subject = (outcome.steps[outcome.failed_at].fault or (None, None))
+        if kind in FAULT_NOTES:
+            contract = "\n\n" + FAULT_NOTES[kind].format(name=f"'{subject}'")
+        else:
+            signature = f"{action}({'object' if spec.get('takes_object') else ''})"
+            contract = (f"\n\nRemember what {signature} needs:\n"
+                        f"  requires: {spec.get('requires', '')}\n"
+                        f"  then:     {spec.get('effect', '')}")
+            if action in ("PLACE_ON_TOP", "PLACE_INSIDE"):
+                contract += ("\nThe argument is the *destination* - the surface or "
+                             "container being placed onto or into. What is being put down "
+                             "is whatever the robot is already holding, and is never "
+                             "named.")
+        # Not "everything before it is fine". The machine checked applicability, and a
+        # step can be applicable and still be the wrong thing to do - one rejected plan
+        # was told its first eleven steps were fine when two of them put the milk back in
+        # the fridge the task had asked to take it out of.
+        complaint = ("The plan was rejected at the marked step. Every step before it was "
+                     "applicable, which means only that the robot could carry it out - if "
+                     "the plan up to there does not actually do what the task asked, fix "
+                     "that too. Then fix the marked step and anything after it that "
+                     "depended on it." + contract)
+
+    # The plan quoted back is the mended one, so say so. A model shown steps it did not
+    # write, with no explanation, has to work out whether it misremembers its own answer -
+    # and the inserted drives are exactly the steps it keeps forgetting, so it is worth its
+    # seeing that they were needed.
+    preface = "Your previous attempt:"
+    if mended:
+        preface = ("Your previous attempt, with the missing steps already filled in for "
+                   "you:\n" + "\n".join(f"  - {note}" for note in mended)
+                   + "\n\nDo not undo those. What is left is the part they cannot fix:")
 
     return (f"{build_prompt(task, graph)}\n\n"
             f"---\n\n"
-            f"Your previous attempt:\n\n" + "\n".join(lines) + "\n\n"
+            f"{preface}\n\n" + "\n".join(lines) + "\n\n"
             f"{complaint}\n\n"
             f"Reply with ONLY the corrected action sequence, one action per line.")
 
 
 def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
-        max_new_tokens=512, verbose=True):
-    """Ask, check, complain, ask again. Returns the transcript of every attempt.
+        max_new_tokens=512, verbose=True, declare_goal=False, mend="loop"):
+    """Ask, mend, complain, ask again. The whole transcript.
+
+    One attempt is: the model writes a plan, and the machine then validates and mends it
+    over and over until it has nothing left to do - either the plan holds, or what is left
+    is a fault the machine cannot derive an edit for. Only then is the model asked again,
+    and it is asked about what survived the mending rather than about what it wrote.
+
+    That ordering is the point. Mending only after the last attempt - which is what this
+    did first - spends every retry on faults the machine could have removed itself, so the
+    model is asked five times to insert a NAVIGATE_TO and never once about the thing that
+    actually defeats it. Mending inside the loop means each retry is spent on a question
+    only the model can answer.
 
     `goal` is optional. Without it the machine only asks whether every action was
     applicable, which is the question the pipeline can pose on its own - nothing upstream
     produces goal edges from a task description, and inventing them here would be checking
     the plan against a target nobody stated.
+
+    `mend` says where the machine may edit: "loop" (the default, above), "end" to mend
+    only the plan the attempts settled on, or False not at all. "end" is what this used to
+    do, kept so the two placements can be measured against each other.
+
+    Mending at all is on by default because measuring said so. Over the hundred-task benchmark the
+    machine's own repairs are worth +22 tasks to the 4B and +17 to the 8B on top of five
+    attempts of complaining, and break none; and a single plan mended once beats five
+    attempts unmended for both models - 67 against 56, and 74 against 71 - at a third of
+    the wall clock. Asking the model again is the expensive way to fix a missing
+    NAVIGATE_TO.
     """
+    from repair import repair
+
     generator = get_generator(model_name) if model_name else get_generator()
     seed = WorldGraph.from_scene_graph(graph)
     history = []
-    prompt = build_prompt(task, graph)
+    prompt = build_prompt(task, graph, with_goal=declare_goal)
 
     for attempt in range(1, attempts + 1):
-        temperature = TEMPERATURES[min(attempt - 1, len(TEMPERATURES) - 1)]
-        reply = generator(prompt, max_new_tokens, temperature)
+        reply = generator(prompt, max_new_tokens)
         steps = parse_plan(reply)
+        if declare_goal:
+            # The model's own reading of what "done" means. It is checked against the
+            # plan, never against ground truth, so a wrong goal is the model's mistake to
+            # make - and a plan that satisfies its own stated goal is at least internally
+            # consistent, which is more than the loop could ask before.
+            stated = parse_goal(reply)
+            if stated:
+                goal = stated
+
+        if not steps:
+            history.append({"attempt": attempt, "steps": [], "outcome": None})
+            prompt = build_prompt(task, graph, with_goal=declare_goal)   # ask again cleanly
+            continue
+
         plan = [(s["action"], s.get("object")) for s in steps]
-        outcome = GraphMachine(seed.copy(), allow_search=True).run(plan, goal)
-        record = {"attempt": attempt, "steps": steps, "outcome": outcome}
+        written = list(steps)
+        # `repair` is itself the iteration: it validates, edits, re-validates, and stops
+        # when the plan holds or the fault that remains is one it has no edit for. It
+        # hands back the best plan it saw, which is the original if nothing helped.
+        notes = []
+        if mend == "loop" or mend is True:
+            plan, notes = repair(seed, plan, goal)
+            if notes:
+                steps = [{"action": a, "object": o} for a, o in plan]
+        outcome = GraphMachine(seed.copy()).run(plan, goal)
+        # `written` is what the model actually returned, before any mending. The unchecked
+        # arm is read off attempt 1, and mending overwrote `steps` in place - so the
+        # "model's first answer, kept whatever it says" was in fact a repaired plan on 60 of
+        # the 4B's 75 successes, and the checker's measured contribution was that much too
+        # small.
+        record = {"attempt": attempt, "steps": steps, "written": written,
+                  "outcome": outcome}
+        if notes:
+            record["mended"] = notes
         history.append(record)
 
         if verbose:
-            print(f"\nattempt {attempt} (temperature {temperature}): "
-                  f"{len(steps)} actions")
+            print(f"\nattempt {attempt}: {len(steps)} actions"
+                  + (f", mended: {'; '.join(notes)}" if notes else ""))
             for index, step in enumerate(steps):
                 arg = step.get("object") or ""
                 flag = ""
@@ -140,16 +244,32 @@ def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
                     flag = f"   REJECTED: {outcome.steps[index].reason}"
                 print(f"  {index + 1:2d}. {step['action']}({arg}){flag}")
 
-        if not steps:
-            prompt = build_prompt(task, graph)      # nothing parsed; ask again cleanly
-            continue
         # A plan is only accepted if it applies, tidies up after itself, and - where a
         # goal was given - reaches it. Leaving the oven on used to count as success,
         # because the loop had nothing to check but preconditions.
         if outcome.failed_at is None and outcome.safe and (not goal or outcome.goal_met):
             record["accepted"] = True
             return history
-        prompt = repair_prompt(task, graph, steps, outcome)
+        # Complain about the mended plan, not the written one. The steps the machine
+        # inserted are part of what the model is being asked to fix now, and quoting the
+        # plan without them would mark a step number that is no longer there.
+        prompt = repair_prompt(task, graph, steps, outcome, mended=notes)
+
+    # The old placement, kept so the two can be measured against each other: the attempts
+    # are spent, and only now does the machine get to touch the plan they settled on. Every
+    # retry above was therefore spent on faults it could have removed itself.
+    if mend == "end" and history and history[-1]["steps"]:
+        steps = history[-1]["steps"]
+        fixed, notes = repair(seed, [(s["action"], s.get("object")) for s in steps], goal)
+        if notes:
+            outcome = GraphMachine(seed.copy()).run(fixed, goal)
+            record = {"attempt": len(history) + 1, "mended": notes, "outcome": outcome,
+                      "steps": [{"action": a, "object": o} for a, o in fixed]}
+            if outcome.failed_at is None and outcome.safe and (not goal or outcome.goal_met):
+                record["accepted"] = True
+            history.append(record)
+            if verbose:
+                print(f"\nmended by the graph machine: {'; '.join(notes)}")
 
     return history
 

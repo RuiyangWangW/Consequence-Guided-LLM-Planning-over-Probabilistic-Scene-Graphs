@@ -67,6 +67,7 @@ ROOM_SYNONYMS = {
     "washroom": "bathroom", "toilet": "bathroom", "laundry": "utility_room",
     "laundry_room": "utility_room", "storage": "storage_room", "foyer": "entryway",
     "hallway_corridor": "corridor", "basement": "storage_room", "cellar": "storage_room",
+    "entrance": "entryway", "front_hall": "entryway", "vestibule": "entryway",
 }
 
 

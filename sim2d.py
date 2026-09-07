@@ -192,12 +192,12 @@ class Sim2D:
         # What the robot knows: the rooms and their connectivity, and nothing else. Every
         # object in it got there by being seen.
         self.graph = WorldGraph.from_room_graph(world.room_graph)
-        self.machine = GraphMachine(self.graph, allow_search=True, copy=False)
+        self.machine = GraphMachine(self.graph, copy=False)
 
         # And the same effect model over what is actually true. Pointing the machine's
         # own open/toggled dicts at the world's makes `OPEN(fridge)` change the world
         # rather than a private copy of it.
-        self.truth_machine = GraphMachine(world.truth, allow_search=False, copy=False)
+        self.truth_machine = GraphMachine(world.truth, copy=False)
         self.truth_machine.open = world.open
         self.truth_machine.toggled = world.toggled
 

@@ -22,6 +22,7 @@ disagree the robot has to discover it the way it would in the house.
 import json
 
 from floor_world import FloorWorld
+from object_names import match
 from sim2d import Sim2D
 
 
@@ -83,25 +84,85 @@ def build_world(task, graph, plan_objects=(), rng=None):
                    or next((i for i in instances if reachable(i)), None)
                    or (here[0] if here else instances[0]))
         key = "inside" if spawn["relation"].upper() == "INSIDE" else "on_top"
-        world.add_object(spawn["name"], spawn["name"], **{key: support})
+        # Where *on* the support. `reachable_point_on` defaults to the edge cell nearest
+        # the support's centre, which keeps the object on the furniture but says nothing
+        # about the side the robot will approach from. On a bed that is the difference
+        # between a task and an impossible one: the robot drove to the bed, stopped at a
+        # routable stance, and the cardstock sat 2.20 m away across the mattress - past the
+        # 1.50 m arm - so `NAVIGATE_TO(bed)` could never make `GRASP(cardstock)` work.
+        # Anchoring the placement at a stance the robot can actually reach the support from
+        # makes "drive to the support, then take the thing off it" hold for large furniture
+        # as well as for a countertop.
+        stance = next((world.to_world(*st) for st in probe.stances_for(support)
+                       if probe.route_to(st) is not None), None)
+        where = world.reachable_point_on(support, near=stance) if stance else None
+        world.add_object(spawn["name"], spawn["name"], position=where, **{key: support})
         placed.append(spawn["name"])
     return world, placed
+
+
+def _same_name(a, b):
+    """Two spellings of one name, for reading the belief's own relation records."""
+    return a is not None and b is not None and (a == b or match(a, [b]) is not None)
 
 
 def ground(name, world, graph):
     """A category name from the plan onto an instance in this world.
 
-    The planner names categories because that is what the RSN predicts; the house holds
-    instances, and Beechwood has nine countertops. Prefer the instance in the room the
-    belief expects - picking the wrong one sends the robot to a counter in another room and
-    the failure looks like navigation rather than grounding.
+    Two questions, and the belief answers both. *Which category* did the plan mean -
+    `object_names.match` decides that, and the world's own categories are the pool, so the
+    simulator is no stricter about names than the scorer is. Then *which instance* - the
+    house holds nine countertops and three top cabinets.
+
+    The believed room settles both. Where several categories fit the name equally well
+    (`cabinet` is as much a `top_cabinet` as a `bottom_cabinet`), the one with an instance
+    in the room the belief names wins; picking the shorter string instead is a coin flip
+    dressed up as a rule. And within a category the instance in that room wins, because
+    going to a counter in another room is a failure that reads as navigation rather than as
+    grounding.
     """
     if name is None or name in world.truth.objects:
         return name
-    instances = world.truth.by_category(name)
+
+    # The belief may hold this object under a different spelling of the same name - the
+    # task says "the bedroom cabinet", so the belief has `cabinet`, while the goal it is
+    # being scored against says `bottom_cabinet`. Looking the room up by exact key misses
+    # that, and a missing room drops the preference below and grounds the goal to an
+    # arbitrary instance: all four "put it away in the <room> cabinet" tasks were scored
+    # against a cabinet in a different room entirely - one of them in the utility room, for
+    # a task about a bedroom - which no plan could have satisfied. The same matching rule
+    # the plan is grounded with settles it.
+    objects = graph.get("objects") or {}
+    believed = (objects.get(name) or {}).get("room")
+    if believed is None:
+        key = match(name, list(objects))
+        if key:
+            believed = (objects.get(key) or {}).get("room")
+
+    def in_believed_room(category):
+        return any(world.room_of(i) == believed for i in world.truth.by_category(category))
+
+    pool = {world.truth.objects[o]["category"] for o in world.truth.object_names()}
+    category = match(name, pool, prefer=in_believed_room if believed else None)
+    instances = world.truth.by_category(category) if category else []
     if not instances:
         return name
-    believed = ((graph.get("objects") or {}).get(name) or {}).get("room")
+
+    # Which instance. The room is only the RSN's guess and it is wrong often enough to
+    # matter - it put a top cabinet in the bathroom when the mug's was in the child's room,
+    # and the plan then opened a cabinet in the wrong house-half. The *relations* are not a
+    # guess: the task says the toothbrush is in the bathroom cabinet, and the setup put it
+    # in one particular cabinet, so the cabinet holding the toothbrush is the one the task
+    # is about. Ask that first, and fall back to the room only when no relation names it.
+    held = [rel for rel in (graph.get("relations") or [])
+            if rel.get("to") == name or _same_name(rel.get("to"), name)]
+    for rel in held:
+        moved = rel.get("from")
+        edge = "object_inside" if str(rel.get("relation", "")).upper() == "INSIDE" else "on_top"
+        for _, support in world.truth.edges_of(edge, src=moved):
+            if support in instances:
+                return support
+
     return next((i for i in instances if world.room_of(i) == believed), instances[0])
 
 
@@ -121,6 +182,18 @@ def run_plan(task, graph, steps, start_room=None, verbose=False):
     world, _ = build_world(task, graph, [a for _, a in plan])
 
     bound = [(action, ground(arg, world, graph)) for action, arg in plan]
+    # The goal is grounded **here**, before a single action runs, for the same reason the
+    # plan is. `ground` picks between several instances of a category by asking which one
+    # the task's relations name - the coffee table the vase is on - and running the plan
+    # moves the vase off it. Grounding the goal afterwards therefore asked a question whose
+    # answer the plan had already changed: on all four swap tasks the plan bound
+    # `coffee_table` to the table the vase started on and the goal bound it to a different
+    # one, so a run that did exactly what was asked was marked as missing it.
+    goal = []
+    for entry in task.get("goal", ()):
+        edge_type, src, dst = entry
+        dst = ground(dst, world, graph) if isinstance(dst, str) else dst
+        goal.append((edge_type, ground(src, world, graph), dst))
     # What the robot believes, and where it should look first. The ranking behind each
     # first choice is what makes a wrong belief survivable.
     hints = {}
@@ -144,11 +217,6 @@ def run_plan(task, graph, steps, start_room=None, verbose=False):
     # The goal names categories (`breakfast_table`) and the house holds instances
     # (`breakfast_table_skczfi_1`); grounding the plan but not the goal marks a run that
     # put the pie exactly where it was asked as having missed.
-    goal = []
-    for entry in task.get("goal", ()):
-        edge_type, src, dst = entry
-        dst = ground(dst, world, graph) if isinstance(dst, str) else dst
-        goal.append((edge_type, ground(src, world, graph), dst))
     missing = sim.truth_machine.unmet(goal)
     goal_met = not missing
     driven = sim.distance
