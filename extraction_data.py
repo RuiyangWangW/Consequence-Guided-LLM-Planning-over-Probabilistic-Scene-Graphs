@@ -53,8 +53,9 @@ BDDL_DATA = "/mnt/check/ruiyangw/omnigibson/BEHAVIOR-1K/bddl3/bddl/generated_dat
 
 # Slot kinds. The last four are distinguished by *affordance*, not by wording: a template
 # that opens something needs an openable, and one that runs something needs a toggleable.
-MOVABLE, SURFACE, CONTAINER, MACHINE, HEATER, SWITCH, WASHER, DRYER = (
-    "movable", "surface", "container", "machine", "heater", "switch", "washer", "dryer")
+MOVABLE, SURFACE, CONTAINER, OPEN_CONTAINER, MACHINE, HEATER, SWITCH, WASHER, DRYER = (
+    "movable", "surface", "container", "open_container", "machine", "heater", "switch",
+    "washer", "dryer")
 
 # A slot that may be either, drawn fresh each time. This is what keeps the model reading the
 # sentence instead of the template: a shape whose source is always a SURFACE teaches that
@@ -179,10 +180,10 @@ SHAPES = [
      {"a": MOVABLE, "b": MOVABLE, "c": SUPPORT, "t": SUPPORT},
      [("a", AT, "c"), ("b", AT, "c")]),
 
-    (["carry the {a} and the {b} to the {t}, then switch the {p} on and off again",
-      "move the {a} and the {b} onto the {t}, then turn the {p} on and back off",
-      "bring the {a} and the {b} to the {t} and cycle the {p} on and off",
-      "put the {a} and the {b} on the {t}, then run the {p} briefly and shut it off"],
+    (["carry the {a} and the {b} to the {t}, then switch the {p} on",
+      "move the {a} and the {b} onto the {t}, then turn the {p} on",
+      "bring the {a} and the {b} to the {t} and switch the {p} on",
+      "put the {a} and the {b} on the {t}, then leave the {p} switched on"],
      {"a": MOVABLE, "b": MOVABLE, "t": SURFACE, "p": SWITCH}, []),
 
     (["take the {a} {a_from_c}, put it on the {b}, then store the {b} in the {e} and shut it",
@@ -222,9 +223,9 @@ SHAPES = [
       "get the {a} out of the {c} onto the {t}, and close the {c} when you are done"],
      {"a": MOVABLE, "c": CONTAINER, "t": SURFACE}, [("a", "INSIDE", "c")]),
 
-    (["turn the {p} on, wait, and turn it off, then put the {a} on the {t}",
-      "switch the {p} on and off, then set the {a} down on the {t}",
-      "run the {p} briefly, shut it off, and leave the {a} on the {t}"],
+    (["turn the {p} on, then put the {a} on the {t}",
+      "switch the {p} on, then set the {a} down on the {t}",
+      "leave the {p} switched on, and the {a} on the {t}"],
      {"p": SWITCH, "a": MOVABLE, "t": SURFACE}, []),
 
     # UNDER and NEXT_TO. Both are edge types the world graph carries, so a task that states
@@ -239,8 +240,8 @@ SHAPES = [
       "move the {a} {a_from_b} into the {c} and close it"],
      {"a": MOVABLE, "b": MOVABLE, "c": CONTAINER}, [("a", AT, "b")]),
 
-    (["put the {a} {a_from_s} on the {t}, then switch the {p} on and off",
-      "the {a} is {a_at_s} - move it to the {t} and cycle the {p} on and off"],
+    (["put the {a} {a_from_s} on the {t}, then switch the {p} on",
+      "the {a} is {a_at_s} - move it to the {t} and switch the {p} on"],
      {"a": MOVABLE, "s": SUPPORT, "t": SUPPORT, "p": SWITCH},
      [("a", AT, "s")]),
 ]
@@ -268,17 +269,17 @@ GOALS = [
      ("heated", "a", "p"), ("heated", "b", "p")],
     [("at", "a", "t"), ("at", "b", "t"), ("at", "d", "t")],
     [("on_top", "a", "t"), ("on_top", "b", "t")],
-    [("on_top", "a", "t"), ("on_top", "b", "t")],
+    [("on_top", "a", "t"), ("on_top", "b", "t"), ("toggled", "p", True)],
     [("on_top", "a", "b"), ("object_inside", "b", "e")],
     [("at", "a", "t"), ("at", "b", "s")],
     [("object_inside", "a", "q"), ("heated", "a", "p"), ("heated", "a", "q")],
     [("at", "a", "t")],
     [("object_inside", "a", "c"), ("on_top", "b", "t")],
     [("on_top", "a", "t")],
-    [("on_top", "a", "t")],
+    [("on_top", "a", "t"), ("toggled", "p", True)],
     [("on_top", "a", "t")],
     [("object_inside", "a", "c")],
-    [("on_top", "a", "t")],
+    [("on_top", "a", "t"), ("toggled", "p", True)],
 ]
 
 # Categories that are parts of things rather than things. No instruction names them.
@@ -315,8 +316,14 @@ def with_property(name, dataset_root=DEFAULT_DATASET):
 def movable_pool(dataset_root=DEFAULT_DATASET):
     """Whole objects a robot could pick up, from the categories the dataset ships."""
     cats = os.listdir(os.path.join(dataset_root, "objects"))
+    from planner import NOT_GRASPABLE
+
+    # `NOT_GRASPABLE` is the same affordance `GraphMachine` uses to refuse GRASP(bookcase).
+    # Without it this pool called a bookcase, a bathtub and a crib "movable", so they were
+    # only ever drawn as cargo and never as somewhere to put things - and the goal model
+    # then met `bookcase` for the first time at test time, on 22 benchmark tasks.
     fixed = (with_property("openable", dataset_root) | with_property("toggleable", dataset_root)
-             | with_property("heatSource", dataset_root))
+             | with_property("heatSource", dataset_root) | NOT_GRASPABLE)
     return sorted(c for c in cats if not _PART.search(c) and c not in fixed
                   and not _STRUCTURAL.search(c) and not re.search(SURFACE_PAT, c))
 
@@ -324,6 +331,21 @@ def movable_pool(dataset_root=DEFAULT_DATASET):
 def house_fixtures():
     """Every category a household task may name, derived rather than surveyed by hand."""
     return set(household().get("categories") or ())
+
+
+def _open_containers():
+    """Fillable, no door, and actually installed in houses.
+
+    All three conditions are read rather than listed: `fillable` and `openable` from BDDL,
+    and "installed in houses" from what the residential scenes are furnished with. Dropping
+    the last one admits beakers and chalices from the chemistry-lab scenes; dropping the
+    first admits every surface.
+    """
+    from planner import FILLABLE, OPENABLE
+    from derive_vocab import house_rooms, scene_fixtures
+
+    installed = set(scene_fixtures(indoor=house_rooms(), houses_only=True))
+    return sorted(c for c in installed if c in FILLABLE and c not in OPENABLE)
 
 
 def pools(dataset_root=DEFAULT_DATASET):
@@ -351,11 +373,21 @@ def pools(dataset_root=DEFAULT_DATASET):
     return {
         MOVABLE: domestic_only(movable_pool(dataset_root)),
         SURFACE: domestic_only(sorted(c for c in cats if re.search(SURFACE_PAT, c))),
+        # Everywhere a thing can end up: surfaces, storage with a door, and storage
+        # without one. The third was missing, so "bring the notebook to the bookcase" was a
+        # sentence the generator could not write and the goal model never read.
         SUPPORT: sorted(set(domestic_only(c for c in cats if re.search(SURFACE_PAT, c)))
                         | set(domestic_only(c for c in openable
-                                            if re.search(STORAGE_PAT, c)))),
+                                            if re.search(STORAGE_PAT, c)))
+                        | {c for c in _open_containers() if not re.search(SURFACE_PAT, c)}),
         # Closed by the instruction, so it has to open.
         CONTAINER: domestic_only(sorted(c for c in openable if re.search(STORAGE_PAT, c))),
+        # Things go *in* it but it has no door - a bookcase, a bin, a hamper, a sink. These
+        # fell through every pool: not a surface, not an openable container, and (once
+        # `movable_pool` stopped calling them cargo) not movable either. 35 of the
+        # benchmark's 102 `object_inside` conditions name one.
+        OPEN_CONTAINER: sorted(c for c in _open_containers()
+                               if not re.search(SURFACE_PAT, c)),
         # Loaded *and* run, so it has to do both.
         MACHINE: sorted(c for c in openable & toggleable if re.search(MACHINE_PAT, c)),
         HEATER: domestic_only(sorted(heat)),
@@ -548,6 +580,8 @@ def generate(n, seed=0, exclude=(), dataset_root=DEFAULT_DATASET, qualify=0.35,
         placed = {d["object"] for d in dependent}
         stated_rooms = {o: r for o, r in rooms.items() if o not in placed}
         uncertain = sorted(set(chosen.values()) - placed - set(stated_rooms))
+        from build_tasks import stated_preposition
+
         goal = []
         for kind, left, right in GOALS[index]:
             obj = chosen.get(left)
@@ -561,15 +595,21 @@ def generate(n, seed=0, exclude=(), dataset_root=DEFAULT_DATASET, qualify=0.35,
                 if state:
                     goal.append([state, obj, True])
                 continue
-            if kind == "at":
-                # The goal says where it ends up, in whichever relation the destination
-                # implies - and a container the task opens has to be shut again, which the
-                # surface case has nothing to say about.
+            if kind in ("at", "on_top", "object_inside"):
+                # In-versus-on is decided by ONE rule, the same one `build_tasks` applies to
+                # the benchmark: the sentence decides when it commits to a preposition, and
+                # BEHAVIOR's `fillable` annotation decides when it does not.
+                #
+                # The shapes used to hardcode `on_top` in the table above and only the `at`
+                # relation consulted the annotation, so any fillable category drawn into a
+                # surface slot was labelled wrong: 875 rows said things end on top of a
+                # fridge or a cabinet. The model learned it, and then read "bring the
+                # notebook to the bookcase" as `on_top`, which the benchmark scores wrong.
+                # Deriving both from the same function is what keeps the two in step.
                 target = chosen[right]
-                inside = target in containers
-                goal.append(["object_inside" if inside else "on_top", obj, target])
-                if inside and ["open", target, False] not in goal:
-                    goal.append(["open", target, False])
+                said = stated_preposition(instruction, target)
+                want = said or ("INSIDE" if target in containers else "ON_TOP")
+                goal.append(["object_inside" if want == "INSIDE" else "on_top", obj, target])
                 continue
             goal.append([kind, obj, right if isinstance(right, bool) else chosen[right]])
 

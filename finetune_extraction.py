@@ -62,10 +62,11 @@ when it is done. Use only these forms, one per line:
   cooked(object, true)          the object was heated in an oven, microwave or hob
   washed(object, true)          the object went through a washer or dishwasher
   dried(object, true)           the object went through a dryer
+  toggled(object, true)         it is left switched on
 
-Say where each object the task moves ends up, and what was done to it. Do NOT say anything
-about doors being shut or switches being off - that is checked separately, from what the
-plan disturbs.
+Say where each object the task moves ends up, and what was done to it, and say when the task
+leaves something switched on. Do NOT say anything about doors being shut, or about anything
+ending switched off - those are checked separately, from what the plan disturbs.
 
 Task: {task}"""
 

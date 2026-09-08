@@ -37,8 +37,3 @@ data/pre-*/
 data/prompted-extractor/
 data/*.bak
 data/tasks.json.*
-
-# Superseded measurements, moved here rather than deleted: nothing under data/ is
-# tracked, so git holds no copy to restore from. Everything in here predates the
-# benchmark regeneration and is not comparable to anything current.
-data/archive/

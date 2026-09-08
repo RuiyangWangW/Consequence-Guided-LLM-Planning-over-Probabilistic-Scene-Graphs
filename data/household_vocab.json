@@ -1,0 +1,4534 @@
+{
+ "categories": [
+  "address",
+  "air_filter",
+  "allen_wrench",
+  "aluminum_foil",
+  "antlers",
+  "apple",
+  "apple_pie",
+  "apron",
+  "arepa",
+  "armchair",
+  "ashtray",
+  "asparagus",
+  "avocado",
+  "baby_bottle",
+  "baby_shoe",
+  "bacon",
+  "bag_of_chips",
+  "bag_of_jerky",
+  "bag_of_rubbish",
+  "bagel",
+  "baguette",
+  "bait",
+  "baking_powder_jar",
+  "baking_sheet",
+  "banana",
+  "bap",
+  "bar",
+  "bar_soap",
+  "baseball",
+  "baseball_cap",
+  "baseball_glove",
+  "basil",
+  "basil_jar",
+  "bath_towel",
+  "bathtub",
+  "battery",
+  "batting_gloves",
+  "bed",
+  "bed_sheet",
+  "beef_broth_carton",
+  "beefsteak_tomato",
+  "beer_bottle",
+  "beer_glass",
+  "beer_keg",
+  "beet",
+  "bell",
+  "bell_pepper",
+  "belt",
+  "bicycle",
+  "bicycle_chain",
+  "bird_feed_bag",
+  "birdcage",
+  "biscuit",
+  "blackberry",
+  "blanket",
+  "blouse",
+  "board_game",
+  "bobby_pin",
+  "bok_choy",
+  "bookcase",
+  "booth",
+  "bottle_of_apple_juice",
+  "bottle_of_beer",
+  "bottle_of_bleach_agent",
+  "bottle_of_catsup",
+  "bottle_of_champagne",
+  "bottle_of_coffee",
+  "bottle_of_cooking_oil",
+  "bottle_of_detergent",
+  "bottle_of_glue",
+  "bottle_of_hot_sauce",
+  "bottle_of_lemonade",
+  "bottle_of_liquid_soap",
+  "bottle_of_lotion",
+  "bottle_of_mayonnaise",
+  "bottle_of_medicine",
+  "bottle_of_mustard",
+  "bottle_of_olive_oil",
+  "bottle_of_peanut_butter",
+  "bottle_of_perfume",
+  "bottle_of_shampoo",
+  "bottle_of_soda",
+  "bottle_of_soup",
+  "bottle_of_sunscreen",
+  "bottle_of_tea",
+  "bottle_of_tonic",
+  "bottle_of_vinegar",
+  "bottle_of_vodka",
+  "bottle_of_whiskey",
+  "bottle_of_wine",
+  "bottom_cabinet",
+  "bottom_cabinet_no_top",
+  "bow",
+  "bowl",
+  "bowling_ball",
+  "box_of_baking_soda",
+  "box_of_candy",
+  "box_of_cereal",
+  "box_of_chocolates",
+  "box_of_cookies",
+  "box_of_corn_flakes",
+  "box_of_cream",
+  "box_of_lasagna",
+  "box_of_oatmeal",
+  "box_of_sanitary_napkins",
+  "boxers",
+  "boxing_gloves",
+  "bra",
+  "bracelet",
+  "bratwurst",
+  "bread_slice",
+  "breakfast_table",
+  "briefcase",
+  "brisket",
+  "broccoli",
+  "broccolini",
+  "broken_glass",
+  "broken_light_bulb",
+  "broom",
+  "brown_rice_sack",
+  "brown_sugar_sack",
+  "brownie",
+  "brussels_sprouts",
+  "bucket",
+  "bunch_of_bananas",
+  "burner",
+  "burrito",
+  "butter",
+  "butter_cookie",
+  "butter_package",
+  "buttermilk_pancake",
+  "butternut_squash",
+  "cactus",
+  "camera_tripod",
+  "can_of_soda",
+  "candied_yam",
+  "candle_holder",
+  "candy_cane",
+  "canister",
+  "canned_food",
+  "canteen",
+  "canvas",
+  "carafe",
+  "carpet",
+  "carrot",
+  "carton_of_milk",
+  "carton_of_orange_juice",
+  "carving_knife",
+  "cash_register",
+  "casserole",
+  "cast",
+  "cat_food_tin",
+  "catalog",
+  "cauldron",
+  "cauliflower",
+  "cedar_chest",
+  "ceilings",
+  "celery",
+  "ceramic_tile",
+  "chalice",
+  "chard",
+  "cheddar",
+  "cheese_danish",
+  "cheese_tart",
+  "cherry",
+  "cherry_tomato",
+  "chia_seed_bag",
+  "chicken",
+  "chicken_breast",
+  "chicken_broth_carton",
+  "chicken_soup_carton",
+  "chicken_wing",
+  "chickpea_can",
+  "chili",
+  "chip",
+  "chisel",
+  "chlorine_bottle",
+  "chocolate_bar",
+  "chocolate_biscuit",
+  "chocolate_chip_cookie",
+  "chopping_block",
+  "chopping_board",
+  "chorizo",
+  "christmas_tree",
+  "christmas_tree_decorated",
+  "cigarette",
+  "clam",
+  "clipper",
+  "clothes_dryer",
+  "clothesline_pole",
+  "clothesline_rope",
+  "clove_jar",
+  "club_sandwich",
+  "cocktail_glass",
+  "cocoa_powder_jar",
+  "coconut_oil_jar",
+  "coffee_bean_jar",
+  "coffee_cup",
+  "coffee_maker",
+  "coffee_table",
+  "cola_bottle",
+  "colander",
+  "colored_pencil",
+  "comic_book",
+  "compost_bin",
+  "conch",
+  "console_table",
+  "cooking_oil_bottle",
+  "copper_pot",
+  "copper_wire",
+  "cork",
+  "cornstarch_jar",
+  "countertop",
+  "crab",
+  "crawfish",
+  "crayon",
+  "cream_carton",
+  "cream_cheese_box",
+  "crib",
+  "cubicle",
+  "cucumber",
+  "cup_holder",
+  "cup_of_yogurt",
+  "cupcake",
+  "curtain",
+  "curtain_rod",
+  "cutting_board",
+  "cymbal",
+  "daffodil_bulb",
+  "dart",
+  "dartboard",
+  "decanter",
+  "denture",
+  "desk",
+  "desk_bracket",
+  "desk_organizer",
+  "detergent_bottle",
+  "diamond",
+  "diaper",
+  "dice",
+  "dinner_napkin",
+  "dip_candle",
+  "dishtowel",
+  "dishwasher",
+  "disinfectant_bottle",
+  "dog_collar",
+  "dog_food_can",
+  "doily",
+  "doll",
+  "door",
+  "dress",
+  "drill",
+  "duck",
+  "dumpling",
+  "dustpan",
+  "dutch_oven",
+  "dvd",
+  "edible_cookie_dough",
+  "egg",
+  "eggplant",
+  "electric_switch",
+  "emery_paper",
+  "envelope",
+  "erlenmeyer_flask",
+  "fabric_softener_bottle",
+  "feta",
+  "feta_box",
+  "firewood",
+  "fishing_rod",
+  "floor_lamp",
+  "floor_wax_bottle",
+  "floors",
+  "flour_sack",
+  "folder",
+  "french_fries",
+  "french_press",
+  "french_toast",
+  "fridge",
+  "frosting_jar",
+  "fruitcake",
+  "frying_pan",
+  "funnel",
+  "fur_coat",
+  "furniture_sink",
+  "garlic_clove",
+  "gelatin",
+  "gelatin_box",
+  "geode",
+  "gift_box",
+  "glass_lantern",
+  "globe",
+  "glue_stick",
+  "goalkeeper_gloves",
+  "goblet",
+  "golf_club",
+  "gourd",
+  "grandfather_clock",
+  "granola_bar",
+  "granola_box",
+  "granulated_sugar_jar",
+  "granulated_sugar_sack",
+  "grape",
+  "grated_cheese_sack",
+  "gravy_boat",
+  "green_bean",
+  "green_onion",
+  "green_onion_stalk",
+  "griddle_pan",
+  "ground_beef_package",
+  "guitar",
+  "gym_shoe",
+  "hall_tree",
+  "ham_hock",
+  "hamburger",
+  "hammer",
+  "hamper",
+  "hamster_wheel",
+  "hand_towel",
+  "hanger",
+  "hanging_basket",
+  "hanging_plant",
+  "hardback",
+  "hat",
+  "head_cabbage",
+  "headstone",
+  "hiking_boot",
+  "hingeless_jar",
+  "hitch",
+  "hockey_puck",
+  "hockey_stick",
+  "holly_decoration",
+  "honey_jar",
+  "hotdog",
+  "hotdog_bun",
+  "hummus_box",
+  "hutch",
+  "hydrogen_peroxide_bottle",
+  "ice_bucket",
+  "ice_cream_carton",
+  "ice_cube",
+  "ice_lolly",
+  "ice_tray",
+  "icicle_lights",
+  "infant_car_seat",
+  "inhaler",
+  "ink_bottle",
+  "instant_coffee_jar",
+  "ironing_board",
+  "jade",
+  "jar_of_honey",
+  "jar_of_jam",
+  "jar_of_spaghetti_sauce",
+  "jar_of_sugar",
+  "jelly_bean_jar",
+  "jelly_jar",
+  "jersey",
+  "jigger",
+  "jigsaw_puzzle",
+  "jimmies_jar",
+  "jug",
+  "kabob",
+  "kale",
+  "kayak",
+  "kebab",
+  "kettle",
+  "keyboard",
+  "kielbasa",
+  "kiwi",
+  "knife_block",
+  "lace",
+  "lamb",
+  "lampshade",
+  "laptop",
+  "lasagna",
+  "leek",
+  "legal_document",
+  "lemon",
+  "lemon_juice_bottle",
+  "lemon_peel",
+  "lemonade_bottle",
+  "lens",
+  "leotard",
+  "letter",
+  "lettuce",
+  "license_plate",
+  "lid",
+  "life_jacket",
+  "light_bulb",
+  "lime",
+  "lime_juice_bottle",
+  "lint_screen",
+  "lip_balm",
+  "liquid_soap_bottle",
+  "litter_box",
+  "lobster",
+  "log",
+  "lollipop",
+  "longboard",
+  "loofah",
+  "loudspeaker",
+  "low_resolution_tree",
+  "lubricant_bottle",
+  "mac_and_cheese",
+  "magazine",
+  "magnetic_stirrer",
+  "mail",
+  "makeup_mirror",
+  "mango",
+  "maple_syrup_jar",
+  "marinara_jar",
+  "marker",
+  "marshmallow",
+  "mat",
+  "mattress",
+  "meat_loaf",
+  "meatball",
+  "microwave",
+  "milk_carton",
+  "mint",
+  "mirror",
+  "mixing_bowl",
+  "money",
+  "monitor",
+  "mop",
+  "mop_bucket",
+  "mouse",
+  "mousepad",
+  "mousetrap",
+  "muffin",
+  "mug",
+  "multi_station_furniture_sink",
+  "mushroom",
+  "mussel",
+  "mustard_leaf",
+  "necklace",
+  "necktie",
+  "newspaper",
+  "nickel",
+  "noodle_jar",
+  "notebook",
+  "oat_box",
+  "olive_oil_bottle",
+  "openable_window",
+  "orange",
+  "orange_juice_carton",
+  "ottoman",
+  "oven",
+  "oyster",
+  "pack_of_chocolate_bar",
+  "pack_of_ground_beef",
+  "package",
+  "packing_box",
+  "paintbrush",
+  "painting",
+  "pants",
+  "paper_bag",
+  "paper_coffee_filter",
+  "paper_liners",
+  "paper_sheet",
+  "paper_towel",
+  "paperback_book",
+  "parer",
+  "parsley",
+  "pasta_box",
+  "pastry",
+  "pea_pod",
+  "peach",
+  "peanut_butter_jar",
+  "pear",
+  "pearl",
+  "pebble",
+  "pedestal_sink",
+  "pellet",
+  "pellet_food_bag",
+  "pen",
+  "pencil",
+  "pencil_case",
+  "penny",
+  "pepperoni",
+  "petfood_bag",
+  "pewter_teapot",
+  "piano",
+  "pickle",
+  "pickup_truck",
+  "picture",
+  "pill_bottle",
+  "pillar_candle",
+  "pillow",
+  "pillowcase",
+  "pine_cone",
+  "pineapple",
+  "pineapple_juice_carton",
+  "pipe_cleaner",
+  "pitcher",
+  "pizza",
+  "pizza_box",
+  "pizza_dough",
+  "place_mat",
+  "plant_pot",
+  "plastic_bag",
+  "plastic_wrap",
+  "plate",
+  "platter",
+  "plier",
+  "plum",
+  "plywood",
+  "poinsettia",
+  "polish_bottle",
+  "pomegranate",
+  "pool_table",
+  "popcorn_bag",
+  "pork_chop",
+  "pork_rib",
+  "postage_stamp",
+  "postcard",
+  "poster",
+  "pot_plant",
+  "potato",
+  "power_drill",
+  "pretzel",
+  "price_tag",
+  "pruner",
+  "public_trash_can",
+  "pumpkin",
+  "pumpkin_seed_bag",
+  "punching_bag",
+  "quail_breast",
+  "quail_breast_raw",
+  "quarter",
+  "quiche",
+  "quilt",
+  "radiator",
+  "rag",
+  "rail_fence",
+  "raincoat",
+  "raisin_box",
+  "ramen",
+  "range_hood",
+  "raspberry",
+  "raw_egg",
+  "razor",
+  "reagent_bottle",
+  "refried_beans_can",
+  "retainer",
+  "rib",
+  "ribbon",
+  "ring",
+  "rose",
+  "rubber_boot",
+  "rubber_eraser",
+  "rum_bottle",
+  "saddle_soap_bottle",
+  "salad",
+  "salmon",
+  "salt_bottle",
+  "sandal",
+  "satchel",
+  "saucepan",
+  "saucepot",
+  "saucer",
+  "sauna_suit",
+  "saxophone",
+  "scallop",
+  "schnitzel",
+  "scone",
+  "scoop_of_ice_cream",
+  "scraper",
+  "screwdriver",
+  "scrub_brush",
+  "seashell",
+  "sesame_oil_bottle",
+  "shampoo_bottle",
+  "shears",
+  "shortening_carton",
+  "shorts",
+  "shovel",
+  "shower",
+  "shower_stall",
+  "shrimp",
+  "shutter",
+  "sieve",
+  "silver_coin",
+  "skateboard_deck",
+  "skateboard_wheel",
+  "skateboard_wheel_assembly",
+  "skates",
+  "ski",
+  "skirt",
+  "sleeping_bag",
+  "soap_dish",
+  "soccer_ball",
+  "sock",
+  "soda_water_bottle",
+  "sodium_carbonate_jar",
+  "sofa",
+  "softball",
+  "solvent_bottle",
+  "soup_ladle",
+  "sourdough",
+  "spatula",
+  "spice_cookie",
+  "spinach",
+  "sponge",
+  "squeegee",
+  "standing_loudspeaker",
+  "standing_mirror",
+  "standing_tv",
+  "stapler",
+  "star_anise",
+  "steak",
+  "steamer_basket",
+  "sticker",
+  "stockpot",
+  "storage_box",
+  "stove",
+  "straight_chair",
+  "straw",
+  "strawberry",
+  "sugar_cookie",
+  "sugar_cookie_dough",
+  "sugar_sack",
+  "suitcase",
+  "sunflower_seed_bag",
+  "sunglasses",
+  "sushi",
+  "sweet_corn",
+  "swiss_cheese",
+  "swivel_chair",
+  "t_shirt",
+  "table_knife",
+  "table_lamp",
+  "table_runner",
+  "tablecloth",
+  "tablefork",
+  "tablespoon",
+  "tackle_box",
+  "taco",
+  "tarp",
+  "tea_bag",
+  "teacup",
+  "teapot",
+  "teaspoon",
+  "teddy_bear",
+  "tennis_ball",
+  "tennis_racket",
+  "tent",
+  "test_tube_holder",
+  "textbook",
+  "tights",
+  "tile",
+  "tiramisu",
+  "tissue_dispenser",
+  "toast",
+  "tobacco_pipe",
+  "tofu",
+  "toilet",
+  "toilet_paper",
+  "toilet_soap_bottle",
+  "tomato_paste_can",
+  "tomato_sauce_jar",
+  "tongs",
+  "toothbrush",
+  "top_cabinet",
+  "tortilla",
+  "tortilla_chips",
+  "tote",
+  "towel_rack",
+  "toy_box",
+  "toy_dice",
+  "toy_figure",
+  "toy_train",
+  "trash_can",
+  "tray",
+  "treadmill",
+  "tree",
+  "trombone",
+  "trout",
+  "trowel",
+  "trumpet",
+  "tube_of_toothpaste",
+  "tulip",
+  "tupperware",
+  "turkey",
+  "twine",
+  "valentine_wreath",
+  "vase",
+  "veal",
+  "vest",
+  "vidalia_onion",
+  "vinegar_bottle",
+  "violin",
+  "virginia_ham",
+  "vodka_bottle",
+  "wafer",
+  "waffle",
+  "walker",
+  "wall_mounted_sink",
+  "wall_mounted_tv",
+  "wall_nail",
+  "wallet",
+  "walnut",
+  "wardrobe",
+  "washer",
+  "watch",
+  "water_bottle",
+  "water_filter",
+  "water_glass",
+  "watermelon",
+  "wax_paper",
+  "wheelbarrow",
+  "whisk",
+  "whiskey_bottle",
+  "whiskey_stone",
+  "white_chocolate",
+  "white_rice_sack",
+  "wicker_basket",
+  "window_blind",
+  "wine_bottle",
+  "wineglass",
+  "wire_cutter",
+  "wok",
+  "wood_fireplace",
+  "wooden_spoon",
+  "wool_coat",
+  "work_helmet",
+  "wrapped_hamburger",
+  "wrapping_paper",
+  "wreath",
+  "yeast_jar",
+  "yogurt_carton",
+  "zucchini"
+ ],
+ "dropped_outdoor_activities": 187,
+ "kept_activities": 829,
+ "rooms": {
+  "address": {
+   "living_room": 1.0
+  },
+  "air_filter": {
+   "living_room": 1.0
+  },
+  "allen_wrench": {
+   "utility_room": 1.0
+  },
+  "aluminum_foil": {
+   "kitchen": 4.0
+  },
+  "antlers": {
+   "corridor": 1.0
+  },
+  "apple": {
+   "dining_room": 2.0,
+   "kitchen": 9.0
+  },
+  "apple_pie": {
+   "kitchen": 2.0
+  },
+  "apron": {
+   "dining_room": 1.0
+  },
+  "arepa": {
+   "kitchen": 1.0
+  },
+  "armchair": {
+   "bathroom": 1.0,
+   "bedroom": 4.0,
+   "childs_room": 3,
+   "dining_room": 1,
+   "living_room": 12.0,
+   "playroom": 1
+  },
+  "ashtray": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "asparagus": {
+   "kitchen": 3.0
+  },
+  "avocado": {
+   "kitchen": 3.0
+  },
+  "baby_bottle": {
+   "kitchen": 1.0
+  },
+  "baby_shoe": {
+   "childs_room": 1.0
+  },
+  "bacon": {
+   "kitchen": 1.0
+  },
+  "bag_of_chips": {
+   "kitchen": 1.0
+  },
+  "bag_of_jerky": {
+   "bedroom": 1.0
+  },
+  "bag_of_rubbish": {
+   "living_room": 1.0
+  },
+  "bagel": {
+   "kitchen": 1.0
+  },
+  "baguette": {
+   "kitchen": 1.0
+  },
+  "bait": {
+   "bathroom": 1.0
+  },
+  "baking_powder_jar": {
+   "kitchen": 8.0
+  },
+  "baking_sheet": {
+   "empty_room": 1.0,
+   "kitchen": 28.0
+  },
+  "banana": {
+   "dining_room": 0.5,
+   "kitchen": 0.5
+  },
+  "bap": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "bar": {
+   "bathroom": 2.333333333333333,
+   "bedroom": 0.3333333333333333,
+   "corridor": 0.3333333333333333,
+   "dining_room": 3.3333333333333335,
+   "entryway": 0.6666666666666666,
+   "garage": 0.3333333333333333,
+   "kitchen": 103.66666666666627,
+   "living_room": 1.9999999999999998,
+   "private_office": 0.3333333333333333,
+   "utility_room": 3.3333333333333335
+  },
+  "bar_soap": {
+   "bathroom": 5.0,
+   "bedroom": 2.0,
+   "dining_room": 1.0,
+   "kitchen": 6.0,
+   "living_room": 1.0
+  },
+  "baseball": {
+   "bathroom": 1.0,
+   "living_room": 1.0
+  },
+  "baseball_cap": {
+   "utility_room": 1.0
+  },
+  "baseball_glove": {
+   "bathroom": 1.0,
+   "living_room": 1.0
+  },
+  "basil": {
+   "kitchen": 3.0
+  },
+  "basil_jar": {
+   "kitchen": 1.0
+  },
+  "bath_towel": {
+   "bathroom": 3.0,
+   "bedroom": 2.0,
+   "childs_room": 1.0,
+   "closet": 1.0,
+   "empty_room": 1.0,
+   "garage": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0,
+   "utility_room": 3.0
+  },
+  "bathtub": {
+   "bathroom": 10.0,
+   "utility_room": 1.0
+  },
+  "battery": {
+   "kitchen": 1.0,
+   "living_room": 2.0,
+   "private_office": 1.0
+  },
+  "batting_gloves": {
+   "utility_room": 1.0
+  },
+  "bed": {
+   "bathroom": 2.6666666666666665,
+   "bedroom": 27.66666666666667,
+   "childs_room": 6.0,
+   "closet": 3.0,
+   "garage": 0.3333333333333333,
+   "kitchen": 0.6666666666666666,
+   "utility_room": 0.6666666666666666
+  },
+  "bed_sheet": {
+   "bedroom": 4.0,
+   "closet": 1.0,
+   "kitchen": 2.0,
+   "living_room": 3.0,
+   "utility_room": 3.0
+  },
+  "beef_broth_carton": {
+   "kitchen": 1.0
+  },
+  "beefsteak_tomato": {
+   "dining_room": 1.0,
+   "garage": 1.0,
+   "kitchen": 12.0
+  },
+  "beer_bottle": {
+   "bathroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 3.0,
+   "living_room": 1.0
+  },
+  "beer_glass": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "beer_keg": {
+   "kitchen": 1.0
+  },
+  "beet": {
+   "kitchen": 1.0
+  },
+  "bell": {
+   "living_room": 1.0
+  },
+  "bell_pepper": {
+   "kitchen": 11.0
+  },
+  "belt": {
+   "bedroom": 1.0,
+   "closet": 1.0,
+   "utility_room": 1.0
+  },
+  "bicycle": {
+   "garage": 5.0,
+   "utility_room": 1.0
+  },
+  "bicycle_chain": {
+   "utility_room": 1.0
+  },
+  "bird_feed_bag": {
+   "living_room": 1.0
+  },
+  "birdcage": {
+   "bathroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "biscuit": {
+   "kitchen": 1.0
+  },
+  "blackberry": {
+   "kitchen": 1.0
+  },
+  "blanket": {
+   "bedroom": 3.0,
+   "childs_room": 1.0,
+   "garage": 2.0,
+   "kitchen": 1.0
+  },
+  "blouse": {
+   "bedroom": 3.0,
+   "closet": 1.0,
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "board_game": {
+   "childs_room": 4.0,
+   "living_room": 1.0
+  },
+  "bobby_pin": {
+   "bedroom": 1.0
+  },
+  "bok_choy": {
+   "kitchen": 4.0
+  },
+  "bookcase": {
+   "bathroom": 1,
+   "bedroom": 5.0,
+   "childs_room": 7.0,
+   "closet": 2,
+   "corridor": 3,
+   "garage": 5.0,
+   "kitchen": 5,
+   "living_room": 29.0,
+   "playroom": 2,
+   "private_office": 5.0,
+   "storage_room": 3.0,
+   "television_room": 1
+  },
+  "booth": {
+   "dining_room": 1.0,
+   "empty_room": 3.0,
+   "kitchen": 1.0
+  },
+  "bottle_of_apple_juice": {
+   "kitchen": 2.0
+  },
+  "bottle_of_beer": {
+   "kitchen": 1.0
+  },
+  "bottle_of_bleach_agent": {
+   "utility_room": 1.0
+  },
+  "bottle_of_catsup": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "bottle_of_champagne": {
+   "dining_room": 1.0
+  },
+  "bottle_of_coffee": {
+   "kitchen": 1.0
+  },
+  "bottle_of_cooking_oil": {
+   "kitchen": 1.0
+  },
+  "bottle_of_detergent": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "bottle_of_glue": {
+   "living_room": 1.0
+  },
+  "bottle_of_hot_sauce": {
+   "kitchen": 1.0
+  },
+  "bottle_of_lemonade": {
+   "kitchen": 1.0
+  },
+  "bottle_of_liquid_soap": {
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "bottle_of_lotion": {
+   "living_room": 2.0
+  },
+  "bottle_of_mayonnaise": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "bottle_of_medicine": {
+   "living_room": 1.0
+  },
+  "bottle_of_mustard": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "bottle_of_olive_oil": {
+   "kitchen": 1.0
+  },
+  "bottle_of_peanut_butter": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "bottle_of_perfume": {
+   "bedroom": 1.0,
+   "corridor": 1.0,
+   "living_room": 1.0
+  },
+  "bottle_of_shampoo": {
+   "bedroom": 1.0,
+   "living_room": 1.0
+  },
+  "bottle_of_soda": {
+   "empty_room": 1.0
+  },
+  "bottle_of_soup": {
+   "kitchen": 1.0
+  },
+  "bottle_of_sunscreen": {
+   "empty_room": 1.0
+  },
+  "bottle_of_tea": {
+   "kitchen": 1.0
+  },
+  "bottle_of_tonic": {
+   "kitchen": 1.0
+  },
+  "bottle_of_vinegar": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "bottle_of_vodka": {
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "bottle_of_whiskey": {
+   "kitchen": 1.0
+  },
+  "bottle_of_wine": {
+   "kitchen": 1.0
+  },
+  "bottom_cabinet": {
+   "bathroom": 2.5,
+   "bedroom": 20.25,
+   "childs_room": 5.5,
+   "closet": 1,
+   "corridor": 0.25,
+   "dining_room": 5.25,
+   "entryway": 1.5,
+   "garage": 2.0,
+   "kitchen": 53.0,
+   "living_room": 13.5,
+   "playroom": 2,
+   "private_office": 4.25,
+   "storage_room": 0.25,
+   "television_room": 2,
+   "utility_room": 7.25
+  },
+  "bottom_cabinet_no_top": {
+   "bathroom": 3.5,
+   "bedroom": 1.25,
+   "childs_room": 0.5,
+   "corridor": 0.25,
+   "dining_room": 4.25,
+   "entryway": 0.5,
+   "garage": 1.0,
+   "kitchen": 68.0,
+   "living_room": 4.5,
+   "pantry_room": 2,
+   "playroom": 1,
+   "private_office": 2.25,
+   "storage_room": 0.25,
+   "utility_room": 4.25
+  },
+  "bow": {
+   "living_room": 3.0
+  },
+  "bowl": {
+   "bathroom": 2.0,
+   "bedroom": 1.0,
+   "dining_room": 10.0,
+   "empty_room": 1.0,
+   "kitchen": 106.0,
+   "living_room": 9.0,
+   "utility_room": 3.0
+  },
+  "bowling_ball": {
+   "bathroom": 1.0,
+   "living_room": 1.0,
+   "storage_room": 1.0
+  },
+  "box_of_baking_soda": {
+   "kitchen": 1.0
+  },
+  "box_of_candy": {
+   "corridor": 1.0,
+   "empty_room": 1.0
+  },
+  "box_of_cereal": {
+   "kitchen": 1.0
+  },
+  "box_of_chocolates": {
+   "empty_room": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "box_of_cookies": {
+   "kitchen": 1.0
+  },
+  "box_of_corn_flakes": {
+   "kitchen": 1.0
+  },
+  "box_of_cream": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "box_of_lasagna": {
+   "kitchen": 1.0
+  },
+  "box_of_oatmeal": {
+   "kitchen": 1.0
+  },
+  "box_of_sanitary_napkins": {
+   "bathroom": 1.0,
+   "bedroom": 1.0
+  },
+  "boxers": {
+   "utility_room": 1.0
+  },
+  "boxing_gloves": {
+   "utility_room": 1.0
+  },
+  "bra": {
+   "bedroom": 1.0,
+   "utility_room": 2.0
+  },
+  "bracelet": {
+   "kitchen": 1.0,
+   "utility_room": 1.0
+  },
+  "bratwurst": {
+   "kitchen": 5.0
+  },
+  "bread_slice": {
+   "corridor": 1.0,
+   "kitchen": 5.0
+  },
+  "breakfast_table": {
+   "bathroom": 1,
+   "bedroom": 7.0,
+   "childs_room": 1,
+   "dining_room": 35.0,
+   "kitchen": 28.0,
+   "living_room": 6.0,
+   "playroom": 3,
+   "private_office": 4.0,
+   "storage_room": 1,
+   "utility_room": 2.0
+  },
+  "briefcase": {
+   "garage": 1.0,
+   "living_room": 1.0
+  },
+  "brisket": {
+   "kitchen": 1.0
+  },
+  "broccoli": {
+   "kitchen": 4.0
+  },
+  "broccolini": {
+   "kitchen": 1.0
+  },
+  "broken_glass": {
+   "corridor": 1.0,
+   "dining_room": 1.0
+  },
+  "broken_light_bulb": {
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "living_room": 2.0
+  },
+  "broom": {
+   "bathroom": 3.0,
+   "garage": 2.0,
+   "kitchen": 2.0,
+   "living_room": 1.0,
+   "staircase": 1.0,
+   "storage_room": 1.0,
+   "utility_room": 2.0
+  },
+  "brown_rice_sack": {
+   "kitchen": 1.0
+  },
+  "brown_sugar_sack": {
+   "kitchen": 4.0
+  },
+  "brownie": {
+   "empty_room": 1.0,
+   "kitchen": 3.0
+  },
+  "brussels_sprouts": {
+   "kitchen": 3.0
+  },
+  "bucket": {
+   "bathroom": 5.5,
+   "bedroom": 1.5,
+   "corridor": 0.5,
+   "dining_room": 1.0,
+   "garage": 3.5,
+   "kitchen": 3.0,
+   "living_room": 1.5,
+   "utility_room": 3.5
+  },
+  "bunch_of_bananas": {
+   "dining_room": 0.5,
+   "kitchen": 0.5
+  },
+  "burner": {
+   "bathroom": 0.5,
+   "kitchen": 42.5
+  },
+  "burrito": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "butter": {
+   "kitchen": 22.0
+  },
+  "butter_cookie": {
+   "living_room": 1.0
+  },
+  "butter_package": {
+   "kitchen": 5.0
+  },
+  "buttermilk_pancake": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "butternut_squash": {
+   "kitchen": 2.0
+  },
+  "cactus": {
+   "dining_room": 1.0,
+   "living_room": 1.0
+  },
+  "camera_tripod": {
+   "bedroom": 1.0
+  },
+  "can_of_soda": {
+   "bedroom": 1.0,
+   "kitchen": 3.0,
+   "living_room": 2.0
+  },
+  "candied_yam": {
+   "kitchen": 3.0
+  },
+  "candle_holder": {
+   "dining_room": 1.0,
+   "living_room": 1.0
+  },
+  "candy_cane": {
+   "dining_room": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "canister": {
+   "kitchen": 1.0,
+   "utility_room": 1.0
+  },
+  "canned_food": {
+   "kitchen": 1.0
+  },
+  "canteen": {
+   "kitchen": 1.0
+  },
+  "canvas": {
+   "bedroom": 0.5,
+   "living_room": 1.0,
+   "storage_room": 0.5
+  },
+  "carafe": {
+   "dining_room": 0.5,
+   "kitchen": 2.0
+  },
+  "carpet": {
+   "bathroom": 9.0,
+   "bedroom": 4.0,
+   "childs_room": 2,
+   "corridor": 2,
+   "dining_room": 4,
+   "kitchen": 3.0,
+   "living_room": 15.0,
+   "playroom": 5.0,
+   "private_office": 2,
+   "staircase": 1.0,
+   "utility_room": 3.0
+  },
+  "carrot": {
+   "kitchen": 7.0
+  },
+  "carton_of_milk": {
+   "corridor": 1.0,
+   "dining_room": 1.0,
+   "garage": 1.0,
+   "kitchen": 2.0
+  },
+  "carton_of_orange_juice": {
+   "dining_room": 2.0,
+   "kitchen": 2.0
+  },
+  "carving_knife": {
+   "dining_room": 2.0,
+   "kitchen": 55.0
+  },
+  "cash_register": {
+   "empty_room": 1.0
+  },
+  "casserole": {
+   "dining_room": 3.0,
+   "kitchen": 12.0
+  },
+  "cast": {
+   "kitchen": 1.0
+  },
+  "cat_food_tin": {
+   "living_room": 1.0
+  },
+  "catalog": {
+   "dining_room": 1.0
+  },
+  "cauldron": {
+   "living_room": 1.0
+  },
+  "cauliflower": {
+   "kitchen": 1.0
+  },
+  "cedar_chest": {
+   "bedroom": 3,
+   "childs_room": 2.0,
+   "closet": 2.0,
+   "kitchen": 1,
+   "living_room": 2
+  },
+  "ceilings": {
+   "bathroom": 21,
+   "bedroom": 15,
+   "childs_room": 4,
+   "closet": 12,
+   "corridor": 14,
+   "dining_room": 5,
+   "empty_room": 4,
+   "entryway": 1,
+   "exercise_room": 1,
+   "garage": 1,
+   "kitchen": 6,
+   "living_room": 13,
+   "pantry_room": 2,
+   "playroom": 3,
+   "private_office": 2,
+   "staircase": 2,
+   "storage_room": 23,
+   "television_room": 1,
+   "utility_room": 4
+  },
+  "celery": {
+   "kitchen": 1.0
+  },
+  "ceramic_tile": {
+   "bathroom": 0.5,
+   "corridor": 0.5
+  },
+  "chalice": {
+   "kitchen": 0.3333333333333333
+  },
+  "chard": {
+   "kitchen": 2.0
+  },
+  "cheddar": {
+   "dining_room": 2.0,
+   "kitchen": 3.0
+  },
+  "cheese_danish": {
+   "dining_room": 2.0,
+   "kitchen": 1.0
+  },
+  "cheese_tart": {
+   "kitchen": 1.0
+  },
+  "cherry": {
+   "kitchen": 1.0
+  },
+  "cherry_tomato": {
+   "kitchen": 1.0
+  },
+  "chia_seed_bag": {
+   "kitchen": 2.0
+  },
+  "chicken": {
+   "dining_room": 2.0,
+   "kitchen": 11.0
+  },
+  "chicken_breast": {
+   "kitchen": 2.0
+  },
+  "chicken_broth_carton": {
+   "kitchen": 5.0
+  },
+  "chicken_soup_carton": {
+   "kitchen": 1.0
+  },
+  "chicken_wing": {
+   "kitchen": 1.0
+  },
+  "chickpea_can": {
+   "kitchen": 1.0
+  },
+  "chili": {
+   "kitchen": 6.0
+  },
+  "chip": {
+   "bedroom": 1.0,
+   "living_room": 1.0
+  },
+  "chisel": {
+   "garage": 1.0
+  },
+  "chlorine_bottle": {
+   "bathroom": 1.0
+  },
+  "chocolate_bar": {
+   "bedroom": 1.0,
+   "kitchen": 1.0
+  },
+  "chocolate_biscuit": {
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "chocolate_chip_cookie": {
+   "empty_room": 1.0,
+   "kitchen": 2.0
+  },
+  "chopping_block": {
+   "kitchen": 1.0
+  },
+  "chopping_board": {
+   "dining_room": 1.0,
+   "kitchen": 34.5
+  },
+  "chorizo": {
+   "kitchen": 2.0
+  },
+  "christmas_tree": {
+   "dining_room": 0.5,
+   "living_room": 0.5
+  },
+  "christmas_tree_decorated": {
+   "dining_room": 0.5,
+   "living_room": 0.5
+  },
+  "cigarette": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "clam": {
+   "kitchen": 4.0
+  },
+  "clipper": {
+   "bathroom": 1.0
+  },
+  "clothes_dryer": {
+   "bedroom": 1.0,
+   "corridor": 1,
+   "dining_room": 1.0,
+   "storage_room": 1,
+   "utility_room": 29.0
+  },
+  "clothesline_pole": {
+   "utility_room": 1.0
+  },
+  "clothesline_rope": {
+   "utility_room": 1.0
+  },
+  "clove_jar": {
+   "kitchen": 1.0
+  },
+  "club_sandwich": {
+   "empty_room": 1.0,
+   "kitchen": 2.0,
+   "private_office": 1.0
+  },
+  "cocktail_glass": {
+   "kitchen": 0.3333333333333333
+  },
+  "cocoa_powder_jar": {
+   "kitchen": 7.0
+  },
+  "coconut_oil_jar": {
+   "kitchen": 1.0
+  },
+  "coffee_bean_jar": {
+   "kitchen": 3.0
+  },
+  "coffee_cup": {
+   "kitchen": 1.0
+  },
+  "coffee_maker": {
+   "kitchen": 10.0
+  },
+  "coffee_table": {
+   "bathroom": 0.5,
+   "bedroom": 1.5,
+   "corridor": 1.5,
+   "dining_room": 1.5,
+   "garage": 0.5,
+   "kitchen": 5.5,
+   "living_room": 33.5,
+   "playroom": 1,
+   "utility_room": 0.5
+  },
+  "cola_bottle": {
+   "kitchen": 1.0
+  },
+  "colander": {
+   "kitchen": 5.0
+  },
+  "colored_pencil": {
+   "bedroom": 1.0,
+   "childs_room": 1.5
+  },
+  "comic_book": {
+   "living_room": 1.0,
+   "private_office": 1.0
+  },
+  "compost_bin": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "conch": {
+   "kitchen": 1.0
+  },
+  "console_table": {
+   "bedroom": 2.0,
+   "corridor": 1,
+   "dining_room": 4.0,
+   "kitchen": 1.0,
+   "living_room": 6.0
+  },
+  "cooking_oil_bottle": {
+   "kitchen": 10.0
+  },
+  "copper_pot": {
+   "utility_room": 1.0
+  },
+  "copper_wire": {
+   "kitchen": 1.0
+  },
+  "cork": {
+   "bathroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "cornstarch_jar": {
+   "kitchen": 2.0
+  },
+  "countertop": {
+   "bathroom": 5.333333333333333,
+   "bedroom": 1.3333333333333333,
+   "childs_room": 1,
+   "corridor": 0.3333333333333333,
+   "dining_room": 5.333333333333334,
+   "entryway": 0.6666666666666666,
+   "garage": 0.3333333333333333,
+   "kitchen": 110.66666666666627,
+   "living_room": 4.0,
+   "pantry_room": 1,
+   "playroom": 1,
+   "private_office": 1.3333333333333333,
+   "storage_room": 1,
+   "utility_room": 3.3333333333333335
+  },
+  "crab": {
+   "kitchen": 2.0
+  },
+  "crawfish": {
+   "kitchen": 2.0
+  },
+  "crayon": {
+   "bedroom": 1.0,
+   "childs_room": 1.0
+  },
+  "cream_carton": {
+   "kitchen": 2.0
+  },
+  "cream_cheese_box": {
+   "kitchen": 1.0
+  },
+  "crib": {
+   "bedroom": 1,
+   "childs_room": 1.0
+  },
+  "cubicle": {
+   "corridor": 1.0
+  },
+  "cucumber": {
+   "kitchen": 2.0
+  },
+  "cup_holder": {
+   "kitchen": 1.0
+  },
+  "cup_of_yogurt": {
+   "kitchen": 2.0
+  },
+  "cupcake": {
+   "dining_room": 1.0,
+   "empty_room": 1.0,
+   "kitchen": 1.0
+  },
+  "curtain": {
+   "bedroom": 2.0,
+   "empty_room": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0,
+   "utility_room": 2.0
+  },
+  "curtain_rod": {
+   "bedroom": 2.0,
+   "living_room": 1.0
+  },
+  "cutting_board": {
+   "dining_room": 1.0,
+   "kitchen": 34.5
+  },
+  "cymbal": {
+   "empty_room": 1.0
+  },
+  "daffodil_bulb": {
+   "kitchen": 1.0
+  },
+  "dart": {
+   "living_room": 1.0
+  },
+  "dartboard": {
+   "living_room": 1.0
+  },
+  "decanter": {
+   "dining_room": 0.5,
+   "kitchen": 2.0
+  },
+  "denture": {
+   "kitchen": 2.0
+  },
+  "desk": {
+   "bedroom": 6.0,
+   "childs_room": 5.0,
+   "living_room": 1.0,
+   "private_office": 5.0
+  },
+  "desk_bracket": {
+   "living_room": 1.0
+  },
+  "desk_organizer": {
+   "private_office": 0.5
+  },
+  "detergent_bottle": {
+   "bathroom": 17.0,
+   "bedroom": 5.0,
+   "closet": 1.0,
+   "corridor": 1.0,
+   "dining_room": 2.0,
+   "garage": 4.0,
+   "kitchen": 10.0,
+   "living_room": 3.0,
+   "utility_room": 24.0
+  },
+  "diamond": {
+   "utility_room": 1.0
+  },
+  "diaper": {
+   "childs_room": 1.0
+  },
+  "dice": {
+   "childs_room": 2.0,
+   "living_room": 1.0
+  },
+  "dinner_napkin": {
+   "dining_room": 3.0,
+   "kitchen": 4.0
+  },
+  "dip_candle": {
+   "dining_room": 1.0,
+   "living_room": 1.0
+  },
+  "dishtowel": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 5.0,
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "dishwasher": {
+   "bathroom": 1.0,
+   "dining_room": 2.0,
+   "kitchen": 20.0,
+   "living_room": 1.0
+  },
+  "disinfectant_bottle": {
+   "bathroom": 5.0,
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 8.0,
+   "living_room": 1.0,
+   "playroom": 1.0,
+   "utility_room": 5.0
+  },
+  "dog_collar": {
+   "bathroom": 1.0
+  },
+  "dog_food_can": {
+   "living_room": 1.0
+  },
+  "doily": {
+   "closet": 1.0
+  },
+  "doll": {
+   "childs_room": 1.0,
+   "kitchen": 1.0,
+   "utility_room": 1.0
+  },
+  "door": {
+   "bathroom": 21.0,
+   "bedroom": 22.0,
+   "childs_room": 6,
+   "closet": 2,
+   "corridor": 20.0,
+   "dining_room": 2,
+   "empty_room": 3.5,
+   "entryway": 2,
+   "exercise_room": 1,
+   "garage": 2.5,
+   "kitchen": 8.5,
+   "living_room": 9.5,
+   "playroom": 2,
+   "private_office": 2,
+   "staircase": 2,
+   "storage_room": 12,
+   "television_room": 1,
+   "utility_room": 3.5
+  },
+  "dress": {
+   "bathroom": 1.0,
+   "bedroom": 5.0,
+   "childs_room": 1.0,
+   "closet": 4.0,
+   "empty_room": 1.0
+  },
+  "drill": {
+   "utility_room": 1.0
+  },
+  "duck": {
+   "kitchen": 1.0
+  },
+  "dumpling": {
+   "kitchen": 1.0
+  },
+  "dustpan": {
+   "bathroom": 2.0,
+   "kitchen": 2.0
+  },
+  "dutch_oven": {
+   "kitchen": 1.0
+  },
+  "dvd": {
+   "living_room": 1.0
+  },
+  "edible_cookie_dough": {
+   "kitchen": 1.0
+  },
+  "egg": {
+   "dining_room": 1.0,
+   "kitchen": 6.0
+  },
+  "eggplant": {
+   "kitchen": 1.0
+  },
+  "electric_switch": {
+   "bathroom": 19,
+   "bedroom": 15,
+   "childs_room": 4,
+   "closet": 13,
+   "corridor": 14.0,
+   "dining_room": 7.0,
+   "empty_room": 3,
+   "entryway": 1,
+   "exercise_room": 1,
+   "garage": 1,
+   "kitchen": 8.0,
+   "living_room": 14.0,
+   "pantry_room": 2,
+   "playroom": 3,
+   "private_office": 2,
+   "staircase": 2,
+   "storage_room": 23,
+   "television_room": 1,
+   "utility_room": 5.0
+  },
+  "emery_paper": {
+   "garage": 1.0,
+   "living_room": 1.0,
+   "utility_room": 2.0
+  },
+  "envelope": {
+   "living_room": 2.0
+  },
+  "erlenmeyer_flask": {
+   "kitchen": 1.0
+  },
+  "fabric_softener_bottle": {
+   "utility_room": 1.0
+  },
+  "feta": {
+   "dining_room": 1.0,
+   "kitchen": 4.0
+  },
+  "feta_box": {
+   "kitchen": 2.0
+  },
+  "firewood": {
+   "living_room": 4.0
+  },
+  "fishing_rod": {
+   "bathroom": 1.0,
+   "kitchen": 1.0
+  },
+  "floor_lamp": {
+   "bedroom": 3,
+   "dining_room": 1,
+   "living_room": 8
+  },
+  "floor_wax_bottle": {
+   "kitchen": 1.0
+  },
+  "floors": {
+   "bathroom": 107.0,
+   "bedroom": 81.0,
+   "childs_room": 15.0,
+   "closet": 29.0,
+   "corridor": 28.0,
+   "dining_room": 52.0,
+   "empty_room": 10.0,
+   "entryway": 4.0,
+   "exercise_room": 1,
+   "garage": 40.0,
+   "kitchen": 448.0,
+   "living_room": 130.0,
+   "pantry_room": 2,
+   "playroom": 6.0,
+   "private_office": 16.0,
+   "staircase": 3.0,
+   "storage_room": 27.0,
+   "television_room": 1,
+   "utility_room": 78.0
+  },
+  "flour_sack": {
+   "kitchen": 21.0
+  },
+  "folder": {
+   "bedroom": 2.0,
+   "childs_room": 1.0,
+   "private_office": 1.0
+  },
+  "french_fries": {
+   "kitchen": 2.0
+  },
+  "french_press": {
+   "kitchen": 1.0
+  },
+  "french_toast": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "fridge": {
+   "dining_room": 5.333333333333332,
+   "garage": 0.3333333333333333,
+   "kitchen": 80.00000000000004,
+   "living_room": 0.3333333333333333,
+   "pantry_room": 1,
+   "private_office": 0.3333333333333333
+  },
+  "frosting_jar": {
+   "kitchen": 1.0
+  },
+  "fruitcake": {
+   "kitchen": 1.0
+  },
+  "frying_pan": {
+   "kitchen": 38.0
+  },
+  "funnel": {
+   "kitchen": 1.0
+  },
+  "fur_coat": {
+   "bedroom": 1.0,
+   "closet": 1.0,
+   "utility_room": 1.0
+  },
+  "furniture_sink": {
+   "bathroom": 15.999999999999986,
+   "bedroom": 1.2222222222222225,
+   "closet": 0.1111111111111111,
+   "corridor": 0.2222222222222222,
+   "dining_room": 1.2222222222222225,
+   "garage": 0.8888888888888891,
+   "kitchen": 27.77777777777772,
+   "living_room": 1.0000000000000002,
+   "storage_room": 0.1111111111111111,
+   "utility_room": 2.7777777777777786
+  },
+  "garlic_clove": {
+   "kitchen": 22.0
+  },
+  "gelatin": {
+   "kitchen": 1.0
+  },
+  "gelatin_box": {
+   "kitchen": 1.0
+  },
+  "geode": {
+   "kitchen": 1.0
+  },
+  "gift_box": {
+   "dining_room": 1.0,
+   "living_room": 1.0
+  },
+  "glass_lantern": {
+   "garage": 1.0
+  },
+  "globe": {
+   "living_room": 1.0
+  },
+  "glue_stick": {
+   "bedroom": 1.0
+  },
+  "goalkeeper_gloves": {
+   "bathroom": 1.0,
+   "kitchen": 1.0,
+   "utility_room": 1.0
+  },
+  "goblet": {
+   "kitchen": 0.3333333333333333
+  },
+  "golf_club": {
+   "bathroom": 1.0,
+   "living_room": 1.0
+  },
+  "gourd": {
+   "kitchen": 1.0
+  },
+  "grandfather_clock": {
+   "corridor": 1
+  },
+  "granola_bar": {
+   "bedroom": 1.0,
+   "corridor": 1.0
+  },
+  "granola_box": {
+   "kitchen": 1.0
+  },
+  "granulated_sugar_jar": {
+   "kitchen": 1.0
+  },
+  "granulated_sugar_sack": {
+   "kitchen": 6.0
+  },
+  "grape": {
+   "kitchen": 2.0
+  },
+  "grated_cheese_sack": {
+   "kitchen": 1.0
+  },
+  "gravy_boat": {
+   "dining_room": 1.0
+  },
+  "green_bean": {
+   "kitchen": 3.0
+  },
+  "green_onion": {
+   "kitchen": 1.5
+  },
+  "green_onion_stalk": {
+   "kitchen": 1.5
+  },
+  "griddle_pan": {
+   "kitchen": 3.0
+  },
+  "ground_beef_package": {
+   "kitchen": 2.0
+  },
+  "guitar": {
+   "bedroom": 1,
+   "private_office": 1.0
+  },
+  "gym_shoe": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "corridor": 1.0,
+   "garage": 1.0,
+   "kitchen": 1.0,
+   "living_room": 2.0,
+   "utility_room": 1.0
+  },
+  "hall_tree": {
+   "corridor": 1.0
+  },
+  "ham_hock": {
+   "kitchen": 1.0
+  },
+  "hamburger": {
+   "dining_room": 3.0,
+   "kitchen": 4.0,
+   "living_room": 1.0
+  },
+  "hammer": {
+   "garage": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "hamper": {
+   "bedroom": 4.0,
+   "living_room": 2.0,
+   "utility_room": 7.0
+  },
+  "hamster_wheel": {
+   "living_room": 1.0
+  },
+  "hand_towel": {
+   "bathroom": 9.0,
+   "bedroom": 4.0,
+   "corridor": 2.0,
+   "dining_room": 2.0,
+   "kitchen": 9.0,
+   "living_room": 4.0,
+   "private_office": 1.0,
+   "utility_room": 9.0
+  },
+  "hanger": {
+   "bathroom": 1.0,
+   "bedroom": 6.0,
+   "closet": 7.0,
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "hanging_basket": {
+   "dining_room": 0.6666666666666666,
+   "kitchen": 0.3333333333333333,
+   "living_room": 1.6666666666666665
+  },
+  "hanging_plant": {
+   "dining_room": 0.6666666666666666,
+   "kitchen": 0.3333333333333333,
+   "living_room": 1.6666666666666665
+  },
+  "hardback": {
+   "bedroom": 1.0,
+   "living_room": 3.0
+  },
+  "hat": {
+   "bathroom": 1.0
+  },
+  "head_cabbage": {
+   "kitchen": 2.0
+  },
+  "headstone": {
+   "bathroom": 1.0
+  },
+  "hiking_boot": {
+   "utility_room": 1.0
+  },
+  "hingeless_jar": {
+   "kitchen": 2.0
+  },
+  "hitch": {
+   "garage": 1.0
+  },
+  "hockey_puck": {
+   "bedroom": 1.0
+  },
+  "hockey_stick": {
+   "bedroom": 1.0,
+   "garage": 1.0
+  },
+  "holly_decoration": {
+   "living_room": 1.0
+  },
+  "honey_jar": {
+   "kitchen": 6.0
+  },
+  "hotdog": {
+   "kitchen": 3.0
+  },
+  "hotdog_bun": {
+   "kitchen": 1.0
+  },
+  "hummus_box": {
+   "kitchen": 1.0
+  },
+  "hutch": {
+   "living_room": 2.0,
+   "playroom": 1.0
+  },
+  "hydrogen_peroxide_bottle": {
+   "utility_room": 1.0
+  },
+  "ice_bucket": {
+   "bathroom": 5.5,
+   "bedroom": 1.5,
+   "corridor": 0.5,
+   "dining_room": 1.0,
+   "garage": 3.5,
+   "kitchen": 3.0,
+   "living_room": 1.5,
+   "utility_room": 3.5
+  },
+  "ice_cream_carton": {
+   "kitchen": 2.0
+  },
+  "ice_cube": {
+   "kitchen": 14.0
+  },
+  "ice_lolly": {
+   "kitchen": 1.0
+  },
+  "ice_tray": {
+   "kitchen": 1.0
+  },
+  "icicle_lights": {
+   "garage": 2.0,
+   "living_room": 3.0
+  },
+  "infant_car_seat": {
+   "bathroom": 1.0,
+   "garage": 1.0
+  },
+  "inhaler": {
+   "living_room": 1.0
+  },
+  "ink_bottle": {
+   "living_room": 1.0
+  },
+  "instant_coffee_jar": {
+   "kitchen": 4.0
+  },
+  "ironing_board": {
+   "bedroom": 2.0,
+   "empty_room": 1.0,
+   "utility_room": 3.0
+  },
+  "jade": {
+   "kitchen": 1.0
+  },
+  "jar_of_honey": {
+   "dining_room": 1.0,
+   "entryway": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "jar_of_jam": {
+   "dining_room": 1.0
+  },
+  "jar_of_spaghetti_sauce": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "jar_of_sugar": {
+   "kitchen": 1.0
+  },
+  "jelly_bean_jar": {
+   "kitchen": 1.0
+  },
+  "jelly_jar": {
+   "kitchen": 1.0
+  },
+  "jersey": {
+   "bedroom": 3.0,
+   "closet": 2.0,
+   "empty_room": 0.5,
+   "storage_room": 0.5,
+   "utility_room": 2.0
+  },
+  "jigger": {
+   "kitchen": 1.0
+  },
+  "jigsaw_puzzle": {
+   "childs_room": 3.0,
+   "living_room": 2.0,
+   "storage_room": 1.0
+  },
+  "jimmies_jar": {
+   "kitchen": 1.0
+  },
+  "jug": {
+   "dining_room": 1.5,
+   "empty_room": 0.5,
+   "kitchen": 4.5
+  },
+  "kabob": {
+   "kitchen": 0.3333333333333333
+  },
+  "kale": {
+   "kitchen": 1.0
+  },
+  "kayak": {
+   "garage": 1.0
+  },
+  "kebab": {
+   "kitchen": 0.3333333333333333
+  },
+  "kettle": {
+   "kitchen": 2.0
+  },
+  "keyboard": {
+   "bedroom": 1.0,
+   "private_office": 2.0
+  },
+  "kielbasa": {
+   "kitchen": 1.0
+  },
+  "kiwi": {
+   "kitchen": 1.0
+  },
+  "knife_block": {
+   "kitchen": 1.0
+  },
+  "lace": {
+   "bedroom": 1.0
+  },
+  "lamb": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "lampshade": {
+   "living_room": 2.0
+  },
+  "laptop": {
+   "bedroom": 1.0,
+   "childs_room": 1.0,
+   "living_room": 2.0,
+   "private_office": 1.0
+  },
+  "lasagna": {
+   "kitchen": 4.0
+  },
+  "leek": {
+   "kitchen": 1.0
+  },
+  "legal_document": {
+   "private_office": 2.0
+  },
+  "lemon": {
+   "kitchen": 3.0
+  },
+  "lemon_juice_bottle": {
+   "empty_room": 1.0,
+   "kitchen": 15.0,
+   "living_room": 2.0
+  },
+  "lemon_peel": {
+   "kitchen": 1.0
+  },
+  "lemonade_bottle": {
+   "kitchen": 2.0
+  },
+  "lens": {
+   "kitchen": 1.0
+  },
+  "leotard": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "closet": 1.0
+  },
+  "letter": {
+   "private_office": 1.0
+  },
+  "lettuce": {
+   "dining_room": 1.0,
+   "kitchen": 3.0
+  },
+  "license_plate": {
+   "entryway": 1.0,
+   "kitchen": 1.0
+  },
+  "lid": {
+   "kitchen": 6.0
+  },
+  "life_jacket": {
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "light_bulb": {
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "living_room": 2.0
+  },
+  "lime": {
+   "kitchen": 2.0
+  },
+  "lime_juice_bottle": {
+   "kitchen": 2.0
+  },
+  "lint_screen": {
+   "utility_room": 1.0
+  },
+  "lip_balm": {
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "liquid_soap_bottle": {
+   "bathroom": 23.0,
+   "bedroom": 4.0,
+   "dining_room": 1.0,
+   "garage": 3.0,
+   "kitchen": 41.0,
+   "living_room": 1.0,
+   "playroom": 1.0,
+   "utility_room": 8.0
+  },
+  "litter_box": {
+   "bathroom": 1.0,
+   "bedroom": 1.0
+  },
+  "lobster": {
+   "kitchen": 1.0
+  },
+  "log": {
+   "living_room": 3.0
+  },
+  "lollipop": {
+   "kitchen": 1.0
+  },
+  "longboard": {
+   "garage": 1.0,
+   "kitchen": 1.0
+  },
+  "loofah": {
+   "bathroom": 1.0
+  },
+  "loudspeaker": {
+   "living_room": 1.3333333333333333
+  },
+  "low_resolution_tree": {
+   "living_room": 0.5
+  },
+  "lubricant_bottle": {
+   "utility_room": 1.0
+  },
+  "mac_and_cheese": {
+   "kitchen": 1.0
+  },
+  "magazine": {
+   "bathroom": 1.0,
+   "kitchen": 2.0,
+   "private_office": 2.0
+  },
+  "magnetic_stirrer": {
+   "kitchen": 1.0
+  },
+  "mail": {
+   "living_room": 2.0,
+   "private_office": 2.0
+  },
+  "makeup_mirror": {
+   "bathroom": 0.6666666666666666
+  },
+  "mango": {
+   "kitchen": 2.0
+  },
+  "maple_syrup_jar": {
+   "kitchen": 4.0
+  },
+  "marinara_jar": {
+   "kitchen": 2.0
+  },
+  "marker": {
+   "bedroom": 1.0,
+   "living_room": 1.0,
+   "private_office": 1.0
+  },
+  "marshmallow": {
+   "kitchen": 2.0
+  },
+  "mat": {
+   "bathroom": 1.0,
+   "bedroom": 1.0
+  },
+  "mattress": {
+   "bathroom": 1.0,
+   "bedroom": 1.0
+  },
+  "meat_loaf": {
+   "kitchen": 1.0
+  },
+  "meatball": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "microwave": {
+   "bathroom": 2.0,
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 26.0
+  },
+  "milk_carton": {
+   "kitchen": 18.0
+  },
+  "mint": {
+   "kitchen": 4.0
+  },
+  "mirror": {
+   "bathroom": 15.666666666666666,
+   "bedroom": 4,
+   "corridor": 2,
+   "dining_room": 1,
+   "living_room": 3,
+   "television_room": 1
+  },
+  "mixing_bowl": {
+   "kitchen": 14.0
+  },
+  "money": {
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "monitor": {
+   "bathroom": 2.0,
+   "bedroom": 2.0,
+   "garage": 1.0,
+   "private_office": 1
+  },
+  "mop": {
+   "bathroom": 3.0,
+   "corridor": 1.0,
+   "garage": 1.0,
+   "kitchen": 4.0,
+   "living_room": 2.0,
+   "utility_room": 1.0
+  },
+  "mop_bucket": {
+   "kitchen": 1.0,
+   "utility_room": 1.0
+  },
+  "mouse": {
+   "bedroom": 1.0,
+   "garage": 1.0
+  },
+  "mousepad": {
+   "bathroom": 1.0
+  },
+  "mousetrap": {
+   "bathroom": 1.0
+  },
+  "muffin": {
+   "dining_room": 1.0,
+   "empty_room": 1.0,
+   "kitchen": 3.0,
+   "living_room": 1.0
+  },
+  "mug": {
+   "bedroom": 1.0,
+   "dining_room": 1.0,
+   "kitchen": 17.0,
+   "living_room": 2.0
+  },
+  "multi_station_furniture_sink": {
+   "bathroom": 9.999999999999986,
+   "bedroom": 1.2222222222222225,
+   "closet": 0.1111111111111111,
+   "corridor": 0.2222222222222222,
+   "dining_room": 1.2222222222222225,
+   "garage": 0.8888888888888891,
+   "kitchen": 20.77777777777772,
+   "living_room": 1.0000000000000002,
+   "storage_room": 0.1111111111111111,
+   "utility_room": 2.7777777777777786
+  },
+  "mushroom": {
+   "kitchen": 4.0
+  },
+  "mussel": {
+   "kitchen": 3.0
+  },
+  "mustard_leaf": {
+   "kitchen": 1.0
+  },
+  "necklace": {
+   "kitchen": 1.0
+  },
+  "necktie": {
+   "utility_room": 2.0
+  },
+  "newspaper": {
+   "garage": 2.0,
+   "kitchen": 4.0,
+   "living_room": 5.0,
+   "playroom": 1.0,
+   "private_office": 2.0,
+   "storage_room": 1.0,
+   "utility_room": 2.0
+  },
+  "nickel": {
+   "kitchen": 1.0
+  },
+  "noodle_jar": {
+   "kitchen": 1.0
+  },
+  "notebook": {
+   "bedroom": 1.0,
+   "corridor": 1.0,
+   "dining_room": 1.0,
+   "living_room": 4.0
+  },
+  "oat_box": {
+   "kitchen": 2.0
+  },
+  "olive_oil_bottle": {
+   "kitchen": 22.0
+  },
+  "openable_window": {
+   "bathroom": 9,
+   "bedroom": 15,
+   "childs_room": 4,
+   "corridor": 2,
+   "dining_room": 7,
+   "exercise_room": 1,
+   "garage": 1,
+   "kitchen": 8,
+   "living_room": 14.0,
+   "playroom": 3,
+   "private_office": 1,
+   "storage_room": 1,
+   "television_room": 1,
+   "utility_room": 3
+  },
+  "orange": {
+   "kitchen": 2.0
+  },
+  "orange_juice_carton": {
+   "kitchen": 1.0
+  },
+  "ottoman": {
+   "bedroom": 1.0,
+   "childs_room": 1,
+   "living_room": 3
+  },
+  "oven": {
+   "dining_room": 1.0,
+   "kitchen": 71.0
+  },
+  "oyster": {
+   "kitchen": 2.0
+  },
+  "pack_of_chocolate_bar": {
+   "bedroom": 1.0
+  },
+  "pack_of_ground_beef": {
+   "kitchen": 1.0
+  },
+  "package": {
+   "living_room": 1.0,
+   "private_office": 1.0
+  },
+  "packing_box": {
+   "dining_room": 1.0,
+   "empty_room": 1.0,
+   "garage": 2.0,
+   "kitchen": 2.0,
+   "living_room": 3.0,
+   "storage_room": 1.0
+  },
+  "paintbrush": {
+   "bedroom": 1.0,
+   "living_room": 2.0
+  },
+  "painting": {
+   "bedroom": 0.5,
+   "living_room": 1.0,
+   "storage_room": 0.5
+  },
+  "pants": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "utility_room": 2.0
+  },
+  "paper_bag": {
+   "bathroom": 2.0,
+   "bedroom": 1.0,
+   "corridor": 1.0,
+   "dining_room": 1.0,
+   "garage": 1.0,
+   "kitchen": 29.0,
+   "living_room": 2.0,
+   "utility_room": 1.0
+  },
+  "paper_coffee_filter": {
+   "kitchen": 2.0
+  },
+  "paper_liners": {
+   "kitchen": 1.0
+  },
+  "paper_sheet": {
+   "living_room": 1.0
+  },
+  "paper_towel": {
+   "bathroom": 4.0,
+   "kitchen": 13.0,
+   "utility_room": 1.0
+  },
+  "paperback_book": {
+   "childs_room": 1.0,
+   "private_office": 1.0
+  },
+  "parer": {
+   "kitchen": 3.0
+  },
+  "parsley": {
+   "dining_room": 1.0,
+   "kitchen": 3.0
+  },
+  "pasta_box": {
+   "kitchen": 4.0
+  },
+  "pastry": {
+   "kitchen": 1.0
+  },
+  "pea_pod": {
+   "kitchen": 3.0
+  },
+  "peach": {
+   "kitchen": 1.0
+  },
+  "peanut_butter_jar": {
+   "kitchen": 2.0
+  },
+  "pear": {
+   "kitchen": 2.0
+  },
+  "pearl": {
+   "utility_room": 1.0
+  },
+  "pebble": {
+   "living_room": 1.0
+  },
+  "pedestal_sink": {
+   "bathroom": 13.999999999999986,
+   "bedroom": 1.2222222222222225,
+   "closet": 0.1111111111111111,
+   "corridor": 0.2222222222222222,
+   "dining_room": 1.2222222222222225,
+   "garage": 0.8888888888888891,
+   "kitchen": 20.77777777777772,
+   "living_room": 1.0000000000000002,
+   "storage_room": 1.1111111111111112,
+   "utility_room": 5.777777777777779
+  },
+  "pellet": {
+   "living_room": 1.0
+  },
+  "pellet_food_bag": {
+   "living_room": 1.0
+  },
+  "pen": {
+   "bedroom": 3.0,
+   "childs_room": 3.0,
+   "corridor": 1.0
+  },
+  "pencil": {
+   "bedroom": 1.0,
+   "childs_room": 1.5
+  },
+  "pencil_case": {
+   "bathroom": 1.0,
+   "bedroom": 3.0,
+   "childs_room": 2.0,
+   "living_room": 1.0
+  },
+  "penny": {
+   "bathroom": 1.0
+  },
+  "pepperoni": {
+   "kitchen": 1.0
+  },
+  "petfood_bag": {
+   "living_room": 1.0
+  },
+  "pewter_teapot": {
+   "utility_room": 1.0
+  },
+  "piano": {
+   "living_room": 3.0,
+   "playroom": 1,
+   "utility_room": 1.0
+  },
+  "pickle": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "pickup_truck": {
+   "bedroom": 1.0,
+   "garage": 2.0,
+   "kitchen": 1.0
+  },
+  "picture": {
+   "bathroom": 13,
+   "bedroom": 29,
+   "childs_room": 10,
+   "corridor": 5,
+   "dining_room": 8,
+   "exercise_room": 1,
+   "garage": 1,
+   "kitchen": 5,
+   "living_room": 25,
+   "playroom": 2,
+   "private_office": 3,
+   "storage_room": 1,
+   "television_room": 3,
+   "utility_room": 2
+  },
+  "pill_bottle": {
+   "bathroom": 1.0
+  },
+  "pillar_candle": {
+   "dining_room": 1.0,
+   "living_room": 1.0
+  },
+  "pillow": {
+   "bathroom": 1.0,
+   "bedroom": 3.0,
+   "kitchen": 1.0,
+   "living_room": 3.0
+  },
+  "pillowcase": {
+   "utility_room": 1.0
+  },
+  "pine_cone": {
+   "kitchen": 2.0
+  },
+  "pineapple": {
+   "kitchen": 1.0
+  },
+  "pineapple_juice_carton": {
+   "kitchen": 1.0
+  },
+  "pipe_cleaner": {
+   "bathroom": 1.0,
+   "private_office": 1.0
+  },
+  "pitcher": {
+   "dining_room": 1.5,
+   "empty_room": 0.5,
+   "kitchen": 4.5
+  },
+  "pizza": {
+   "kitchen": 2.0
+  },
+  "pizza_box": {
+   "kitchen": 1.0
+  },
+  "pizza_dough": {
+   "kitchen": 2.0
+  },
+  "place_mat": {
+   "dining_room": 4.0,
+   "utility_room": 1.0
+  },
+  "plant_pot": {
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "plastic_bag": {
+   "utility_room": 1.0
+  },
+  "plastic_wrap": {
+   "bathroom": 1.0,
+   "empty_room": 1.0,
+   "kitchen": 4.0
+  },
+  "plate": {
+   "bathroom": 2.0,
+   "dining_room": 18.0,
+   "empty_room": 1.0,
+   "garage": 1.0,
+   "kitchen": 55.0,
+   "living_room": 1.0,
+   "private_office": 1.0
+  },
+  "platter": {
+   "dining_room": 3.0,
+   "kitchen": 12.0
+  },
+  "plier": {
+   "garage": 1.0,
+   "utility_room": 1.0
+  },
+  "plum": {
+   "kitchen": 1.0
+  },
+  "plywood": {
+   "corridor": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "poinsettia": {
+   "garage": 1.0
+  },
+  "polish_bottle": {
+   "bathroom": 2.0,
+   "empty_room": 1.0,
+   "garage": 1.0,
+   "living_room": 2.0,
+   "utility_room": 3.0
+  },
+  "pomegranate": {
+   "kitchen": 1.0
+  },
+  "pool_table": {
+   "living_room": 1.0,
+   "playroom": 1
+  },
+  "popcorn_bag": {
+   "kitchen": 1.0
+  },
+  "pork_chop": {
+   "kitchen": 1.0
+  },
+  "pork_rib": {
+   "kitchen": 0.5
+  },
+  "postage_stamp": {
+   "private_office": 1.0
+  },
+  "postcard": {
+   "kitchen": 1.0
+  },
+  "poster": {
+   "bedroom": 1.0,
+   "kitchen": 1.0
+  },
+  "pot_plant": {
+   "bedroom": 2,
+   "corridor": 1,
+   "dining_room": 4.666666666666667,
+   "kitchen": 1.3333333333333333,
+   "living_room": 11.666666666666666
+  },
+  "potato": {
+   "dining_room": 1.0,
+   "kitchen": 5.0
+  },
+  "power_drill": {
+   "utility_room": 1.0
+  },
+  "pretzel": {
+   "dining_room": 2.0,
+   "kitchen": 2.0
+  },
+  "price_tag": {
+   "empty_room": 1.0
+  },
+  "pruner": {
+   "garage": 1.0
+  },
+  "public_trash_can": {
+   "bathroom": 5,
+   "bedroom": 1,
+   "kitchen": 2
+  },
+  "pumpkin": {
+   "kitchen": 2.0,
+   "living_room": 1.0
+  },
+  "pumpkin_seed_bag": {
+   "kitchen": 1.0
+  },
+  "punching_bag": {
+   "garage": 1.0
+  },
+  "quail_breast": {
+   "kitchen": 0.3333333333333333
+  },
+  "quail_breast_raw": {
+   "kitchen": 0.3333333333333333
+  },
+  "quarter": {
+   "kitchen": 1.0
+  },
+  "quiche": {
+   "kitchen": 1.0
+  },
+  "quilt": {
+   "closet": 1.0,
+   "utility_room": 2.0
+  },
+  "radiator": {
+   "bedroom": 2,
+   "living_room": 1,
+   "utility_room": 1.0
+  },
+  "rag": {
+   "bathroom": 35.0,
+   "bedroom": 8.0,
+   "corridor": 2.0,
+   "dining_room": 3.0,
+   "empty_room": 1.0,
+   "garage": 5.0,
+   "kitchen": 47.0,
+   "living_room": 20.0,
+   "playroom": 1.0,
+   "private_office": 1.0,
+   "storage_room": 1.0,
+   "utility_room": 20.0
+  },
+  "rail_fence": {
+   "living_room": 2.0
+  },
+  "raincoat": {
+   "utility_room": 1.0
+  },
+  "raisin_box": {
+   "kitchen": 1.0
+  },
+  "ramen": {
+   "kitchen": 1.0
+  },
+  "range_hood": {
+   "kitchen": 2
+  },
+  "raspberry": {
+   "kitchen": 3.0
+  },
+  "raw_egg": {
+   "kitchen": 18.0
+  },
+  "razor": {
+   "bathroom": 2.0
+  },
+  "reagent_bottle": {
+   "kitchen": 3.0
+  },
+  "refried_beans_can": {
+   "kitchen": 1.0
+  },
+  "retainer": {
+   "bathroom": 1.0
+  },
+  "rib": {
+   "kitchen": 0.5
+  },
+  "ribbon": {
+   "kitchen": 2.0,
+   "living_room": 1.0
+  },
+  "ring": {
+   "bathroom": 1.0,
+   "kitchen": 1.0
+  },
+  "rose": {
+   "living_room": 2.0
+  },
+  "rubber_boot": {
+   "dining_room": 1.0,
+   "utility_room": 1.0
+  },
+  "rubber_eraser": {
+   "bedroom": 1.0
+  },
+  "rum_bottle": {
+   "kitchen": 2.0
+  },
+  "saddle_soap_bottle": {
+   "bathroom": 1.0,
+   "utility_room": 2.0
+  },
+  "salad": {
+   "dining_room": 3.0,
+   "kitchen": 3.0
+  },
+  "salmon": {
+   "kitchen": 2.0
+  },
+  "salt_bottle": {
+   "kitchen": 1.0
+  },
+  "sandal": {
+   "bathroom": 1.0,
+   "bedroom": 3.0,
+   "closet": 2.0,
+   "corridor": 1.0,
+   "utility_room": 1.0
+  },
+  "satchel": {
+   "garage": 1.0,
+   "living_room": 1.0
+  },
+  "saucepan": {
+   "garage": 1.0,
+   "kitchen": 13.0
+  },
+  "saucepot": {
+   "bedroom": 1.0,
+   "garage": 1.0,
+   "kitchen": 12.0
+  },
+  "saucer": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "sauna_suit": {
+   "utility_room": 1.0
+  },
+  "saxophone": {
+   "bedroom": 1.0
+  },
+  "scallop": {
+   "kitchen": 2.0
+  },
+  "schnitzel": {
+   "kitchen": 1.0
+  },
+  "scone": {
+   "dining_room": 2.0,
+   "kitchen": 1.0
+  },
+  "scoop_of_ice_cream": {
+   "kitchen": 2.0
+  },
+  "scraper": {
+   "bathroom": 1.0,
+   "garage": 1.0,
+   "kitchen": 1.0,
+   "utility_room": 1.0
+  },
+  "screwdriver": {
+   "garage": 2.0,
+   "utility_room": 1.0
+  },
+  "scrub_brush": {
+   "bathroom": 13.0,
+   "bedroom": 6.0,
+   "closet": 1.0,
+   "garage": 5.0,
+   "kitchen": 8.0,
+   "living_room": 5.0,
+   "utility_room": 5.0
+  },
+  "seashell": {
+   "bathroom": 1.0
+  },
+  "sesame_oil_bottle": {
+   "kitchen": 1.0
+  },
+  "shampoo_bottle": {
+   "kitchen": 1.0,
+   "living_room": 1.0,
+   "utility_room": 1.0
+  },
+  "shears": {
+   "childs_room": 1.0,
+   "garage": 1.0,
+   "living_room": 1.0
+  },
+  "shortening_carton": {
+   "kitchen": 1.0
+  },
+  "shorts": {
+   "bedroom": 2.0
+  },
+  "shovel": {
+   "garage": 1.0
+  },
+  "shower": {
+   "bathroom": 1.0,
+   "bedroom": 1.0
+  },
+  "shower_stall": {
+   "bathroom": 11
+  },
+  "shrimp": {
+   "kitchen": 8.0
+  },
+  "shutter": {
+   "bedroom": 1.0
+  },
+  "sieve": {
+   "kitchen": 1.0
+  },
+  "silver_coin": {
+   "bathroom": 1.0,
+   "private_office": 1.0
+  },
+  "skateboard_deck": {
+   "bathroom": 1.0,
+   "bedroom": 1.0
+  },
+  "skateboard_wheel": {
+   "bathroom": 0.5,
+   "bedroom": 0.5
+  },
+  "skateboard_wheel_assembly": {
+   "bathroom": 0.5,
+   "bedroom": 0.5
+  },
+  "skates": {
+   "bedroom": 1.0,
+   "living_room": 1.0,
+   "storage_room": 1.0
+  },
+  "ski": {
+   "bathroom": 1.0,
+   "garage": 1.0,
+   "utility_room": 1.0
+  },
+  "skirt": {
+   "bedroom": 2.0,
+   "closet": 1.0
+  },
+  "sleeping_bag": {
+   "utility_room": 1.0
+  },
+  "soap_dish": {
+   "bathroom": 1.0
+  },
+  "soccer_ball": {
+   "living_room": 1.0
+  },
+  "sock": {
+   "bedroom": 2.0,
+   "childs_room": 1.0,
+   "living_room": 2.0,
+   "utility_room": 2.0
+  },
+  "soda_water_bottle": {
+   "kitchen": 2.0
+  },
+  "sodium_carbonate_jar": {
+   "bathroom": 2.0,
+   "kitchen": 6.0,
+   "utility_room": 1.0
+  },
+  "sofa": {
+   "childs_room": 1,
+   "dining_room": 1.0,
+   "garage": 1.0,
+   "kitchen": 4.0,
+   "living_room": 27.0,
+   "television_room": 1
+  },
+  "softball": {
+   "utility_room": 1.0
+  },
+  "solvent_bottle": {
+   "garage": 1.0
+  },
+  "soup_ladle": {
+   "kitchen": 2.0
+  },
+  "sourdough": {
+   "kitchen": 1.0
+  },
+  "spatula": {
+   "kitchen": 8.0
+  },
+  "spice_cookie": {
+   "kitchen": 1.0
+  },
+  "spinach": {
+   "dining_room": 1.0,
+   "kitchen": 5.0
+  },
+  "sponge": {
+   "bathroom": 11.0,
+   "bedroom": 1.0,
+   "garage": 3.0,
+   "kitchen": 25.0,
+   "living_room": 1.0,
+   "playroom": 1.0,
+   "utility_room": 5.0
+  },
+  "squeegee": {
+   "bedroom": 1.0
+  },
+  "standing_loudspeaker": {
+   "living_room": 2.3333333333333335
+  },
+  "standing_mirror": {
+   "bathroom": 0.6666666666666666
+  },
+  "standing_tv": {
+   "bedroom": 1.5,
+   "kitchen": 0.5,
+   "living_room": 4.5
+  },
+  "stapler": {
+   "childs_room": 1.0
+  },
+  "star_anise": {
+   "kitchen": 1.0
+  },
+  "steak": {
+   "kitchen": 8.0
+  },
+  "steamer_basket": {
+   "kitchen": 1.0
+  },
+  "sticker": {
+   "entryway": 1.0,
+   "garage": 1.0,
+   "kitchen": 1.0
+  },
+  "stockpot": {
+   "kitchen": 29.0
+  },
+  "storage_box": {
+   "garage": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "stove": {
+   "bathroom": 0.5,
+   "kitchen": 42.5
+  },
+  "straight_chair": {
+   "bedroom": 4,
+   "dining_room": 5,
+   "kitchen": 4,
+   "living_room": 6,
+   "playroom": 3,
+   "private_office": 1
+  },
+  "straw": {
+   "bathroom": 1.0,
+   "kitchen": 2.0
+  },
+  "strawberry": {
+   "kitchen": 7.0
+  },
+  "sugar_cookie": {
+   "dining_room": 1.0,
+   "kitchen": 3.0,
+   "living_room": 1.0
+  },
+  "sugar_cookie_dough": {
+   "kitchen": 1.0
+  },
+  "sugar_sack": {
+   "kitchen": 28.0
+  },
+  "suitcase": {
+   "bedroom": 1.0,
+   "corridor": 1.0,
+   "garage": 1.0,
+   "living_room": 1.0
+  },
+  "sunflower_seed_bag": {
+   "kitchen": 2.0
+  },
+  "sunglasses": {
+   "kitchen": 1.0
+  },
+  "sushi": {
+   "dining_room": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "sweet_corn": {
+   "kitchen": 2.0
+  },
+  "swiss_cheese": {
+   "living_room": 1.0
+  },
+  "swivel_chair": {
+   "bedroom": 3.0,
+   "living_room": 1,
+   "private_office": 2
+  },
+  "t_shirt": {
+   "bedroom": 3.0,
+   "closet": 2.0,
+   "empty_room": 0.5,
+   "storage_room": 0.5,
+   "utility_room": 2.0
+  },
+  "table_knife": {
+   "dining_room": 6.0,
+   "kitchen": 9.0
+  },
+  "table_lamp": {
+   "bedroom": 9.0,
+   "childs_room": 1,
+   "corridor": 1.0,
+   "dining_room": 2.0,
+   "garage": 1.0,
+   "kitchen": 1.0,
+   "living_room": 6.0,
+   "playroom": 1,
+   "utility_room": 1.0
+  },
+  "table_runner": {
+   "bedroom": 0.5,
+   "dining_room": 0.5,
+   "kitchen": 0.5
+  },
+  "tablecloth": {
+   "bedroom": 0.5,
+   "dining_room": 0.5,
+   "kitchen": 0.5
+  },
+  "tablefork": {
+   "dining_room": 7.0,
+   "kitchen": 5.0
+  },
+  "tablespoon": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "dining_room": 4.0,
+   "kitchen": 33.0
+  },
+  "tackle_box": {
+   "bathroom": 1.0
+  },
+  "taco": {
+   "kitchen": 1.0
+  },
+  "tarp": {
+   "garage": 1.0
+  },
+  "tea_bag": {
+   "kitchen": 1.0
+  },
+  "teacup": {
+   "dining_room": 1.0,
+   "kitchen": 2.0
+  },
+  "teapot": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "teaspoon": {
+   "dining_room": 3.0,
+   "kitchen": 11.0
+  },
+  "teddy_bear": {
+   "bathroom": 2.0,
+   "childs_room": 2.0,
+   "kitchen": 1.0,
+   "living_room": 1.0,
+   "storage_room": 1.0,
+   "utility_room": 1.0
+  },
+  "tennis_ball": {
+   "bathroom": 1.0,
+   "childs_room": 1.0,
+   "utility_room": 2.0
+  },
+  "tennis_racket": {
+   "garage": 3.0,
+   "living_room": 1.0
+  },
+  "tent": {
+   "utility_room": 1.0
+  },
+  "test_tube_holder": {
+   "dining_room": 0.5,
+   "kitchen": 2.5
+  },
+  "textbook": {
+   "garage": 1.0,
+   "living_room": 1.0,
+   "storage_room": 1.0
+  },
+  "tights": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "closet": 1.0,
+   "utility_room": 1.0
+  },
+  "tile": {
+   "bathroom": 0.5,
+   "corridor": 0.5
+  },
+  "tiramisu": {
+   "dining_room": 1.0,
+   "kitchen": 1.0
+  },
+  "tissue_dispenser": {
+   "bathroom": 2.0,
+   "bedroom": 1.0
+  },
+  "toast": {
+   "dining_room": 1.0,
+   "kitchen": 3.0
+  },
+  "tobacco_pipe": {
+   "bathroom": 1.0,
+   "kitchen": 1.0
+  },
+  "tofu": {
+   "kitchen": 1.0
+  },
+  "toilet": {
+   "bathroom": 22.0,
+   "bedroom": 1.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "toilet_paper": {
+   "bathroom": 1.0
+  },
+  "toilet_soap_bottle": {
+   "utility_room": 1.0
+  },
+  "tomato_paste_can": {
+   "kitchen": 1.0
+  },
+  "tomato_sauce_jar": {
+   "kitchen": 2.0
+  },
+  "tongs": {
+   "dining_room": 0.5,
+   "kitchen": 2.5
+  },
+  "toothbrush": {
+   "bathroom": 3.0,
+   "bedroom": 2.0,
+   "kitchen": 2.0,
+   "living_room": 2.0,
+   "utility_room": 4.0
+  },
+  "top_cabinet": {
+   "bathroom": 4.5,
+   "bedroom": 1.25,
+   "childs_room": 1.5,
+   "corridor": 0.25,
+   "dining_room": 4.25,
+   "entryway": 0.5,
+   "garage": 1.0,
+   "kitchen": 62.0,
+   "living_room": 4.5,
+   "pantry_room": 2,
+   "private_office": 3.25,
+   "storage_room": 0.25,
+   "utility_room": 7.25
+  },
+  "tortilla": {
+   "kitchen": 3.0
+  },
+  "tortilla_chips": {
+   "kitchen": 2.0
+  },
+  "tote": {
+   "bedroom": 2.0,
+   "empty_room": 1.0,
+   "kitchen": 1.0,
+   "living_room": 2.0
+  },
+  "towel_rack": {
+   "bathroom": 12.0,
+   "bedroom": 3.0,
+   "closet": 1,
+   "living_room": 2,
+   "utility_room": 1
+  },
+  "toy_box": {
+   "bedroom": 1.0,
+   "childs_room": 1.0,
+   "dining_room": 1.0,
+   "living_room": 1.0
+  },
+  "toy_dice": {
+   "living_room": 1.0
+  },
+  "toy_figure": {
+   "dining_room": 2.0,
+   "kitchen": 1.0,
+   "living_room": 1.0
+  },
+  "toy_train": {
+   "childs_room": 1.0,
+   "living_room": 1.0
+  },
+  "trash_can": {
+   "bathroom": 4.0,
+   "bedroom": 1.0,
+   "corridor": 1.0,
+   "dining_room": 3.0,
+   "entryway": 1.0,
+   "garage": 1.0,
+   "kitchen": 10.0,
+   "living_room": 2.0,
+   "playroom": 1.0,
+   "private_office": 1.0,
+   "utility_room": 2.0
+  },
+  "tray": {
+   "bathroom": 1.0,
+   "dining_room": 4.0,
+   "kitchen": 13.0
+  },
+  "treadmill": {
+   "exercise_room": 1
+  },
+  "tree": {
+   "living_room": 0.5
+  },
+  "trombone": {
+   "living_room": 1.0
+  },
+  "trout": {
+   "kitchen": 3.0
+  },
+  "trowel": {
+   "utility_room": 1.0
+  },
+  "trumpet": {
+   "bedroom": 1.0
+  },
+  "tube_of_toothpaste": {
+   "bathroom": 1.0,
+   "bedroom": 2.0
+  },
+  "tulip": {
+   "kitchen": 1.0
+  },
+  "tupperware": {
+   "dining_room": 7.0,
+   "empty_room": 1.0,
+   "kitchen": 62.0
+  },
+  "turkey": {
+   "dining_room": 1.0,
+   "kitchen": 5.0
+  },
+  "twine": {
+   "kitchen": 1.0
+  },
+  "valentine_wreath": {
+   "dining_room": 0.5,
+   "garage": 0.5,
+   "living_room": 2.5
+  },
+  "vase": {
+   "dining_room": 1.0,
+   "kitchen": 2.0,
+   "living_room": 2.0,
+   "utility_room": 1.0
+  },
+  "veal": {
+   "kitchen": 1.0
+  },
+  "vest": {
+   "bedroom": 1.0,
+   "closet": 1.0,
+   "utility_room": 1.0
+  },
+  "vidalia_onion": {
+   "kitchen": 14.0
+  },
+  "vinegar_bottle": {
+   "bathroom": 1.0,
+   "empty_room": 1.0,
+   "kitchen": 14.0,
+   "utility_room": 3.0
+  },
+  "violin": {
+   "living_room": 1.0
+  },
+  "virginia_ham": {
+   "kitchen": 3.0
+  },
+  "vodka_bottle": {
+   "kitchen": 1.0
+  },
+  "wafer": {
+   "living_room": 1.0
+  },
+  "waffle": {
+   "dining_room": 1.0,
+   "kitchen": 3.0
+  },
+  "walker": {
+   "empty_room": 1.0
+  },
+  "wall_mounted_sink": {
+   "bathroom": 9.999999999999986,
+   "bedroom": 1.2222222222222225,
+   "closet": 0.1111111111111111,
+   "corridor": 0.2222222222222222,
+   "dining_room": 1.2222222222222225,
+   "garage": 0.8888888888888891,
+   "kitchen": 20.77777777777772,
+   "living_room": 1.0000000000000002,
+   "storage_room": 0.1111111111111111,
+   "utility_room": 2.7777777777777786
+  },
+  "wall_mounted_tv": {
+   "bedroom": 1.5,
+   "kitchen": 0.5,
+   "living_room": 3.5,
+   "television_room": 1
+  },
+  "wall_nail": {
+   "bathroom": 2.0,
+   "bedroom": 6.0,
+   "corridor": 2.0,
+   "garage": 4.0,
+   "kitchen": 1.0,
+   "living_room": 12.0
+  },
+  "wallet": {
+   "childs_room": 1.0,
+   "closet": 1.0,
+   "corridor": 1.0
+  },
+  "walnut": {
+   "kitchen": 3.0
+  },
+  "wardrobe": {
+   "bathroom": 1.0,
+   "bedroom": 8.0,
+   "childs_room": 2.0,
+   "closet": 13.0
+  },
+  "washer": {
+   "bedroom": 1.0,
+   "corridor": 1,
+   "dining_room": 1.0,
+   "living_room": 1.0,
+   "storage_room": 1,
+   "utility_room": 36.0
+  },
+  "watch": {
+   "kitchen": 1.0
+  },
+  "water_bottle": {
+   "bathroom": 1.0,
+   "dining_room": 2.0,
+   "kitchen": 4.0,
+   "living_room": 5.0
+  },
+  "water_filter": {
+   "living_room": 1.0
+  },
+  "water_glass": {
+   "bathroom": 1.0,
+   "bedroom": 1.0,
+   "dining_room": 4.0,
+   "kitchen": 16.0
+  },
+  "watermelon": {
+   "empty_room": 1.0,
+   "kitchen": 2.0
+  },
+  "wax_paper": {
+   "kitchen": 2.0
+  },
+  "wheelbarrow": {
+   "living_room": 1.0
+  },
+  "whisk": {
+   "kitchen": 2.0
+  },
+  "whiskey_bottle": {
+   "kitchen": 1.0
+  },
+  "whiskey_stone": {
+   "kitchen": 1.0
+  },
+  "white_chocolate": {
+   "kitchen": 1.0
+  },
+  "white_rice_sack": {
+   "kitchen": 4.0
+  },
+  "wicker_basket": {
+   "bathroom": 3.0,
+   "bedroom": 1.0,
+   "closet": 1.0,
+   "dining_room": 3.0,
+   "kitchen": 7.0,
+   "living_room": 2.0
+  },
+  "window_blind": {
+   "bedroom": 1.0,
+   "living_room": 1.0
+  },
+  "wine_bottle": {
+   "dining_room": 6.0,
+   "kitchen": 8.0
+  },
+  "wineglass": {
+   "dining_room": 7.0,
+   "kitchen": 5.0,
+   "living_room": 1.0
+  },
+  "wire_cutter": {
+   "garage": 1.0
+  },
+  "wok": {
+   "kitchen": 4.0
+  },
+  "wood_fireplace": {
+   "living_room": 5.0
+  },
+  "wooden_spoon": {
+   "kitchen": 10.0
+  },
+  "wool_coat": {
+   "utility_room": 2.0
+  },
+  "work_helmet": {
+   "bedroom": 1.0
+  },
+  "wrapped_hamburger": {
+   "kitchen": 1.0
+  },
+  "wrapping_paper": {
+   "living_room": 2.0
+  },
+  "wreath": {
+   "dining_room": 0.5,
+   "garage": 0.5,
+   "living_room": 2.5
+  },
+  "yeast_jar": {
+   "kitchen": 1.0
+  },
+  "yogurt_carton": {
+   "kitchen": 4.0
+  },
+  "zucchini": {
+   "kitchen": 3.0
+  }
+ },
+ "weight": {
+  "address": 1.0,
+  "air_filter": 1.0,
+  "allen_wrench": 1.0,
+  "aluminum_foil": 4.0,
+  "antlers": 1.0,
+  "apple": 10.0,
+  "apple_pie": 2.0,
+  "apron": 1.0,
+  "arepa": 1.0,
+  "armchair": 3.0,
+  "ashtray": 1.0,
+  "asparagus": 3.0,
+  "avocado": 3.0,
+  "baby_bottle": 1.0,
+  "baby_shoe": 1.0,
+  "bacon": 1.0,
+  "bag_of_chips": 1.0,
+  "bag_of_jerky": 1.0,
+  "bag_of_rubbish": 1.0,
+  "bagel": 1.0,
+  "baguette": 1.0,
+  "bait": 1.0,
+  "baking_powder_jar": 8.0,
+  "baking_sheet": 29.0,
+  "banana": 0.5,
+  "bap": 3.0,
+  "bar": 108.6667,
+  "bar_soap": 11.0,
+  "baseball": 2.0,
+  "baseball_cap": 1.0,
+  "baseball_glove": 2.0,
+  "basil": 3.0,
+  "basil_jar": 1.0,
+  "bath_towel": 11.0,
+  "bathtub": 4.0,
+  "battery": 3.0,
+  "batting_gloves": 1.0,
+  "bed": 15.6667,
+  "bed_sheet": 11.0,
+  "beef_broth_carton": 1.0,
+  "beefsteak_tomato": 12.0,
+  "beer_bottle": 4.0,
+  "beer_glass": 2.0,
+  "beer_keg": 1.0,
+  "beet": 1.0,
+  "bell": 1.0,
+  "bell_pepper": 11.0,
+  "belt": 2.0,
+  "bicycle": 6.0,
+  "bicycle_chain": 1.0,
+  "bird_feed_bag": 1.0,
+  "birdcage": 4.0,
+  "biscuit": 1.0,
+  "blackberry": 1.0,
+  "blanket": 5.0,
+  "blouse": 5.0,
+  "board_game": 4.0,
+  "bobby_pin": 1.0,
+  "bok_choy": 4.0,
+  "bookcase": 27.0,
+  "booth": 4.0,
+  "bottle_of_apple_juice": 2.0,
+  "bottle_of_beer": 1.0,
+  "bottle_of_bleach_agent": 1.0,
+  "bottle_of_catsup": 2.0,
+  "bottle_of_champagne": 1.0,
+  "bottle_of_coffee": 1.0,
+  "bottle_of_cooking_oil": 1.0,
+  "bottle_of_detergent": 3.0,
+  "bottle_of_glue": 1.0,
+  "bottle_of_hot_sauce": 1.0,
+  "bottle_of_lemonade": 1.0,
+  "bottle_of_liquid_soap": 2.0,
+  "bottle_of_lotion": 2.0,
+  "bottle_of_mayonnaise": 1.0,
+  "bottle_of_medicine": 1.0,
+  "bottle_of_mustard": 2.0,
+  "bottle_of_olive_oil": 1.0,
+  "bottle_of_peanut_butter": 1.0,
+  "bottle_of_perfume": 3.0,
+  "bottle_of_shampoo": 2.0,
+  "bottle_of_soda": 1.0,
+  "bottle_of_soup": 1.0,
+  "bottle_of_sunscreen": 1.0,
+  "bottle_of_tea": 1.0,
+  "bottle_of_tonic": 1.0,
+  "bottle_of_vinegar": 1.0,
+  "bottle_of_vodka": 2.0,
+  "bottle_of_whiskey": 1.0,
+  "bottle_of_wine": 1.0,
+  "bottom_cabinet": 57.5,
+  "bottom_cabinet_no_top": 57.5,
+  "bow": 3.0,
+  "bowl": 122.0,
+  "bowling_ball": 2.0,
+  "box_of_baking_soda": 1.0,
+  "box_of_candy": 2.0,
+  "box_of_cereal": 1.0,
+  "box_of_chocolates": 3.0,
+  "box_of_cookies": 1.0,
+  "box_of_corn_flakes": 1.0,
+  "box_of_cream": 1.0,
+  "box_of_lasagna": 1.0,
+  "box_of_oatmeal": 1.0,
+  "box_of_sanitary_napkins": 1.0,
+  "boxers": 1.0,
+  "boxing_gloves": 1.0,
+  "bra": 3.0,
+  "bracelet": 2.0,
+  "bratwurst": 5.0,
+  "bread_slice": 6.0,
+  "breakfast_table": 43.0,
+  "briefcase": 1.0,
+  "brisket": 1.0,
+  "broccoli": 4.0,
+  "broccolini": 1.0,
+  "broken_glass": 1.0,
+  "broken_light_bulb": 3.0,
+  "broom": 9.0,
+  "brown_rice_sack": 1.0,
+  "brown_sugar_sack": 4.0,
+  "brownie": 4.0,
+  "brussels_sprouts": 3.0,
+  "bucket": 16.5,
+  "bunch_of_bananas": 0.5,
+  "burner": 41.5,
+  "burrito": 1.0,
+  "butter": 22.0,
+  "butter_cookie": 1.0,
+  "butter_package": 5.0,
+  "buttermilk_pancake": 1.0,
+  "butternut_squash": 2.0,
+  "cactus": 2.0,
+  "camera_tripod": 1.0,
+  "can_of_soda": 4.0,
+  "candied_yam": 3.0,
+  "candle_holder": 2.0,
+  "candy_cane": 2.0,
+  "canister": 2.0,
+  "canned_food": 1.0,
+  "canteen": 1.0,
+  "canvas": 1.5,
+  "carafe": 2.0,
+  "carpet": 12.0,
+  "carrot": 7.0,
+  "carton_of_milk": 3.0,
+  "carton_of_orange_juice": 2.0,
+  "carving_knife": 55.0,
+  "cash_register": 1.0,
+  "casserole": 14.0,
+  "cast": 1.0,
+  "cat_food_tin": 1.0,
+  "catalog": 1.0,
+  "cauldron": 1.0,
+  "cauliflower": 1.0,
+  "cedar_chest": 3.0,
+  "ceilings": 1,
+  "celery": 1.0,
+  "ceramic_tile": 0.5,
+  "chalice": 0.3333,
+  "chard": 2.0,
+  "cheddar": 3.0,
+  "cheese_danish": 2.0,
+  "cheese_tart": 1.0,
+  "cherry": 1.0,
+  "cherry_tomato": 1.0,
+  "chia_seed_bag": 2.0,
+  "chicken": 11.0,
+  "chicken_breast": 2.0,
+  "chicken_broth_carton": 5.0,
+  "chicken_soup_carton": 1.0,
+  "chicken_wing": 1.0,
+  "chickpea_can": 1.0,
+  "chili": 6.0,
+  "chip": 2.0,
+  "chisel": 1.0,
+  "chlorine_bottle": 1.0,
+  "chocolate_bar": 2.0,
+  "chocolate_biscuit": 3.0,
+  "chocolate_chip_cookie": 3.0,
+  "chopping_block": 1.0,
+  "chopping_board": 34.5,
+  "chorizo": 2.0,
+  "christmas_tree": 0.5,
+  "christmas_tree_decorated": 0.5,
+  "cigarette": 1.0,
+  "clam": 4.0,
+  "clipper": 1.0,
+  "clothes_dryer": 26.0,
+  "clothesline_pole": 1.0,
+  "clothesline_rope": 1.0,
+  "clove_jar": 1.0,
+  "club_sandwich": 4.0,
+  "cocktail_glass": 0.3333,
+  "cocoa_powder_jar": 7.0,
+  "coconut_oil_jar": 1.0,
+  "coffee_bean_jar": 3.0,
+  "coffee_cup": 1.0,
+  "coffee_maker": 10.0,
+  "coffee_table": 21.5,
+  "cola_bottle": 1.0,
+  "colander": 5.0,
+  "colored_pencil": 2.5,
+  "comic_book": 2.0,
+  "compost_bin": 2.0,
+  "conch": 1.0,
+  "console_table": 8.0,
+  "cooking_oil_bottle": 10.0,
+  "copper_pot": 1.0,
+  "copper_wire": 1.0,
+  "cork": 2.0,
+  "cornstarch_jar": 2.0,
+  "countertop": 109.6667,
+  "crab": 2.0,
+  "crawfish": 2.0,
+  "crayon": 2.0,
+  "cream_carton": 2.0,
+  "cream_cheese_box": 1.0,
+  "crib": 2.0,
+  "cubicle": 1.0,
+  "cucumber": 2.0,
+  "cup_holder": 1.0,
+  "cup_of_yogurt": 2.0,
+  "cupcake": 2.0,
+  "curtain": 7.0,
+  "curtain_rod": 3.0,
+  "cutting_board": 34.5,
+  "cymbal": 1.0,
+  "daffodil_bulb": 1.0,
+  "dart": 1.0,
+  "dartboard": 1.0,
+  "decanter": 2.0,
+  "denture": 2.0,
+  "desk": 17.0,
+  "desk_bracket": 1.0,
+  "desk_organizer": 0.5,
+  "detergent_bottle": 53.0,
+  "diamond": 1.0,
+  "diaper": 1.0,
+  "dice": 2.0,
+  "dinner_napkin": 4.0,
+  "dip_candle": 2.0,
+  "dishtowel": 9.0,
+  "dishwasher": 14.0,
+  "disinfectant_bottle": 21.0,
+  "dog_collar": 1.0,
+  "dog_food_can": 1.0,
+  "doily": 1.0,
+  "doll": 3.0,
+  "door": 8.0,
+  "dress": 8.0,
+  "drill": 1.0,
+  "duck": 1.0,
+  "dumpling": 1.0,
+  "dustpan": 4.0,
+  "dutch_oven": 1.0,
+  "dvd": 1.0,
+  "edible_cookie_dough": 1.0,
+  "egg": 6.0,
+  "eggplant": 1.0,
+  "electric_switch": 2.0,
+  "emery_paper": 4.0,
+  "envelope": 2.0,
+  "erlenmeyer_flask": 1.0,
+  "fabric_softener_bottle": 1.0,
+  "feta": 4.0,
+  "feta_box": 2.0,
+  "firewood": 4.0,
+  "fishing_rod": 2.0,
+  "floor_lamp": 1,
+  "floor_wax_bottle": 1.0,
+  "floors": 828.0,
+  "flour_sack": 21.0,
+  "folder": 4.0,
+  "french_fries": 2.0,
+  "french_press": 1.0,
+  "french_toast": 2.0,
+  "fridge": 74.3333,
+  "frosting_jar": 1.0,
+  "fruitcake": 1.0,
+  "frying_pan": 38.0,
+  "funnel": 1.0,
+  "fur_coat": 2.0,
+  "furniture_sink": 32.1111,
+  "garlic_clove": 22.0,
+  "gelatin": 1.0,
+  "gelatin_box": 1.0,
+  "geode": 1.0,
+  "gift_box": 1.0,
+  "glass_lantern": 1.0,
+  "globe": 1.0,
+  "glue_stick": 1.0,
+  "goalkeeper_gloves": 2.0,
+  "goblet": 0.3333,
+  "golf_club": 2.0,
+  "gourd": 1.0,
+  "grandfather_clock": 1,
+  "granola_bar": 2.0,
+  "granola_box": 1.0,
+  "granulated_sugar_jar": 1.0,
+  "granulated_sugar_sack": 6.0,
+  "grape": 2.0,
+  "grated_cheese_sack": 1.0,
+  "gravy_boat": 1.0,
+  "green_bean": 3.0,
+  "green_onion": 1.5,
+  "green_onion_stalk": 1.5,
+  "griddle_pan": 3.0,
+  "ground_beef_package": 2.0,
+  "guitar": 2.0,
+  "gym_shoe": 6.0,
+  "hall_tree": 1.0,
+  "ham_hock": 1.0,
+  "hamburger": 5.0,
+  "hammer": 2.0,
+  "hamper": 10.0,
+  "hamster_wheel": 1.0,
+  "hand_towel": 32.0,
+  "hanger": 9.0,
+  "hanging_basket": 2.3333,
+  "hanging_plant": 2.3333,
+  "hardback": 4.0,
+  "hat": 1.0,
+  "head_cabbage": 2.0,
+  "headstone": 1.0,
+  "hiking_boot": 1.0,
+  "hingeless_jar": 2.0,
+  "hitch": 1.0,
+  "hockey_puck": 1.0,
+  "hockey_stick": 2.0,
+  "holly_decoration": 1.0,
+  "honey_jar": 6.0,
+  "hotdog": 3.0,
+  "hotdog_bun": 1.0,
+  "hummus_box": 1.0,
+  "hutch": 3.0,
+  "hydrogen_peroxide_bottle": 1.0,
+  "ice_bucket": 16.5,
+  "ice_cream_carton": 2.0,
+  "ice_cube": 14.0,
+  "ice_lolly": 1.0,
+  "ice_tray": 1.0,
+  "icicle_lights": 5.0,
+  "infant_car_seat": 1.0,
+  "inhaler": 1.0,
+  "ink_bottle": 1.0,
+  "instant_coffee_jar": 4.0,
+  "ironing_board": 6.0,
+  "jade": 1.0,
+  "jar_of_honey": 2.0,
+  "jar_of_jam": 1.0,
+  "jar_of_spaghetti_sauce": 2.0,
+  "jar_of_sugar": 1.0,
+  "jelly_bean_jar": 1.0,
+  "jelly_jar": 1.0,
+  "jersey": 5.5,
+  "jigger": 1.0,
+  "jigsaw_puzzle": 5.0,
+  "jimmies_jar": 1.0,
+  "jug": 5.5,
+  "kabob": 0.3333,
+  "kale": 1.0,
+  "kayak": 1.0,
+  "kebab": 0.3333,
+  "kettle": 2.0,
+  "keyboard": 3.0,
+  "kielbasa": 1.0,
+  "kiwi": 1.0,
+  "knife_block": 1.0,
+  "lace": 1.0,
+  "lamb": 2.0,
+  "lampshade": 2.0,
+  "laptop": 5.0,
+  "lasagna": 4.0,
+  "leek": 1.0,
+  "legal_document": 2.0,
+  "lemon": 3.0,
+  "lemon_juice_bottle": 17.0,
+  "lemon_peel": 1.0,
+  "lemonade_bottle": 2.0,
+  "lens": 1.0,
+  "leotard": 1.0,
+  "letter": 1.0,
+  "lettuce": 3.0,
+  "license_plate": 2.0,
+  "lid": 6.0,
+  "life_jacket": 1.0,
+  "light_bulb": 3.0,
+  "lime": 2.0,
+  "lime_juice_bottle": 2.0,
+  "lint_screen": 1.0,
+  "lip_balm": 1.0,
+  "liquid_soap_bottle": 74.0,
+  "litter_box": 1.0,
+  "lobster": 1.0,
+  "log": 3.0,
+  "lollipop": 1.0,
+  "longboard": 2.0,
+  "loofah": 1.0,
+  "loudspeaker": 1.3333,
+  "low_resolution_tree": 0.5,
+  "lubricant_bottle": 1.0,
+  "mac_and_cheese": 1.0,
+  "magazine": 4.0,
+  "magnetic_stirrer": 1.0,
+  "mail": 4.0,
+  "makeup_mirror": 0.6667,
+  "mango": 2.0,
+  "maple_syrup_jar": 4.0,
+  "marinara_jar": 2.0,
+  "marker": 3.0,
+  "marshmallow": 2.0,
+  "mat": 2.0,
+  "mattress": 1.0,
+  "meat_loaf": 1.0,
+  "meatball": 2.0,
+  "microwave": 22.0,
+  "milk_carton": 18.0,
+  "mint": 4.0,
+  "mirror": 1.6667,
+  "mixing_bowl": 14.0,
+  "money": 1.0,
+  "monitor": 5.0,
+  "mop": 8.0,
+  "mop_bucket": 2.0,
+  "mouse": 2.0,
+  "mousepad": 1.0,
+  "mousetrap": 1.0,
+  "muffin": 5.0,
+  "mug": 17.0,
+  "multi_station_furniture_sink": 32.1111,
+  "mushroom": 4.0,
+  "mussel": 3.0,
+  "mustard_leaf": 1.0,
+  "necklace": 1.0,
+  "necktie": 2.0,
+  "newspaper": 16.0,
+  "nickel": 1.0,
+  "noodle_jar": 1.0,
+  "notebook": 7.0,
+  "oat_box": 2.0,
+  "olive_oil_bottle": 22.0,
+  "openable_window": 2.0,
+  "orange": 2.0,
+  "orange_juice_carton": 1.0,
+  "ottoman": 2.0,
+  "oven": 66.0,
+  "oyster": 2.0,
+  "pack_of_chocolate_bar": 1.0,
+  "pack_of_ground_beef": 1.0,
+  "package": 2.0,
+  "packing_box": 10.0,
+  "paintbrush": 3.0,
+  "painting": 1.5,
+  "pants": 3.0,
+  "paper_bag": 35.0,
+  "paper_coffee_filter": 2.0,
+  "paper_liners": 1.0,
+  "paper_sheet": 1.0,
+  "paper_towel": 17.0,
+  "paperback_book": 2.0,
+  "parer": 3.0,
+  "parsley": 3.0,
+  "pasta_box": 4.0,
+  "pastry": 1.0,
+  "pea_pod": 3.0,
+  "peach": 1.0,
+  "peanut_butter_jar": 2.0,
+  "pear": 2.0,
+  "pearl": 1.0,
+  "pebble": 1.0,
+  "pedestal_sink": 32.1111,
+  "pellet": 1.0,
+  "pellet_food_bag": 1.0,
+  "pen": 7.0,
+  "pencil": 2.5,
+  "pencil_case": 7.0,
+  "penny": 1.0,
+  "pepperoni": 1.0,
+  "petfood_bag": 1.0,
+  "pewter_teapot": 1.0,
+  "piano": 3.0,
+  "pickle": 2.0,
+  "pickup_truck": 2.0,
+  "picture": 1,
+  "pill_bottle": 1.0,
+  "pillar_candle": 1.0,
+  "pillow": 6.0,
+  "pillowcase": 1.0,
+  "pine_cone": 2.0,
+  "pineapple": 1.0,
+  "pineapple_juice_carton": 1.0,
+  "pipe_cleaner": 2.0,
+  "pitcher": 5.5,
+  "pizza": 2.0,
+  "pizza_box": 1.0,
+  "pizza_dough": 2.0,
+  "place_mat": 4.0,
+  "plant_pot": 2.0,
+  "plastic_bag": 1.0,
+  "plastic_wrap": 5.0,
+  "plate": 64.0,
+  "platter": 12.0,
+  "plier": 2.0,
+  "plum": 1.0,
+  "plywood": 2.0,
+  "poinsettia": 1.0,
+  "polish_bottle": 8.0,
+  "pomegranate": 1.0,
+  "pool_table": 2.0,
+  "popcorn_bag": 1.0,
+  "pork_chop": 1.0,
+  "pork_rib": 0.5,
+  "postage_stamp": 1.0,
+  "postcard": 1.0,
+  "poster": 2.0,
+  "pot_plant": 3.3333,
+  "potato": 5.0,
+  "power_drill": 1.0,
+  "pretzel": 2.0,
+  "price_tag": 1.0,
+  "pruner": 1.0,
+  "public_trash_can": 1,
+  "pumpkin": 3.0,
+  "pumpkin_seed_bag": 1.0,
+  "punching_bag": 1.0,
+  "quail_breast": 0.3333,
+  "quail_breast_raw": 0.3333,
+  "quarter": 1.0,
+  "quiche": 1.0,
+  "quilt": 3.0,
+  "radiator": 2.0,
+  "rag": 130.0,
+  "rail_fence": 2.0,
+  "raincoat": 1.0,
+  "raisin_box": 1.0,
+  "ramen": 1.0,
+  "range_hood": 1,
+  "raspberry": 3.0,
+  "raw_egg": 18.0,
+  "razor": 2.0,
+  "reagent_bottle": 3.0,
+  "refried_beans_can": 1.0,
+  "retainer": 1.0,
+  "rib": 0.5,
+  "ribbon": 3.0,
+  "ring": 2.0,
+  "rose": 2.0,
+  "rubber_boot": 2.0,
+  "rubber_eraser": 1.0,
+  "rum_bottle": 2.0,
+  "saddle_soap_bottle": 3.0,
+  "salad": 4.0,
+  "salmon": 2.0,
+  "salt_bottle": 1.0,
+  "sandal": 6.0,
+  "satchel": 1.0,
+  "saucepan": 14.0,
+  "saucepot": 12.0,
+  "saucer": 3.0,
+  "sauna_suit": 1.0,
+  "saxophone": 1.0,
+  "scallop": 2.0,
+  "schnitzel": 1.0,
+  "scone": 2.0,
+  "scoop_of_ice_cream": 2.0,
+  "scraper": 3.0,
+  "screwdriver": 3.0,
+  "scrub_brush": 36.0,
+  "seashell": 1.0,
+  "sesame_oil_bottle": 1.0,
+  "shampoo_bottle": 2.0,
+  "shears": 3.0,
+  "shortening_carton": 1.0,
+  "shorts": 2.0,
+  "shovel": 1.0,
+  "shower": 1.0,
+  "shower_stall": 1,
+  "shrimp": 8.0,
+  "shutter": 1.0,
+  "sieve": 1.0,
+  "silver_coin": 2.0,
+  "skateboard_deck": 1.0,
+  "skateboard_wheel": 0.5,
+  "skateboard_wheel_assembly": 0.5,
+  "skates": 2.0,
+  "ski": 2.0,
+  "skirt": 2.0,
+  "sleeping_bag": 1.0,
+  "soap_dish": 1.0,
+  "soccer_ball": 1.0,
+  "sock": 6.0,
+  "soda_water_bottle": 2.0,
+  "sodium_carbonate_jar": 9.0,
+  "sofa": 17.0,
+  "softball": 1.0,
+  "solvent_bottle": 1.0,
+  "soup_ladle": 2.0,
+  "sourdough": 1.0,
+  "spatula": 8.0,
+  "spice_cookie": 1.0,
+  "spinach": 5.0,
+  "sponge": 42.0,
+  "squeegee": 1.0,
+  "standing_loudspeaker": 1.3333,
+  "standing_mirror": 0.6667,
+  "standing_tv": 3.0,
+  "stapler": 1.0,
+  "star_anise": 1.0,
+  "steak": 8.0,
+  "steamer_basket": 1.0,
+  "sticker": 3.0,
+  "stockpot": 29.0,
+  "storage_box": 2.0,
+  "stove": 41.5,
+  "straight_chair": 1,
+  "straw": 2.0,
+  "strawberry": 7.0,
+  "sugar_cookie": 5.0,
+  "sugar_cookie_dough": 1.0,
+  "sugar_sack": 28.0,
+  "suitcase": 3.0,
+  "sunflower_seed_bag": 2.0,
+  "sunglasses": 1.0,
+  "sushi": 2.0,
+  "sweet_corn": 2.0,
+  "swiss_cheese": 1.0,
+  "swivel_chair": 2.0,
+  "t_shirt": 5.5,
+  "table_knife": 12.0,
+  "table_lamp": 7.0,
+  "table_runner": 1.5,
+  "tablecloth": 1.5,
+  "tablefork": 9.0,
+  "tablespoon": 36.0,
+  "tackle_box": 1.0,
+  "taco": 1.0,
+  "tarp": 1.0,
+  "tea_bag": 1.0,
+  "teacup": 3.0,
+  "teapot": 2.0,
+  "teaspoon": 13.0,
+  "teddy_bear": 8.0,
+  "tennis_ball": 4.0,
+  "tennis_racket": 3.0,
+  "tent": 1.0,
+  "test_tube_holder": 2.5,
+  "textbook": 2.0,
+  "tights": 2.0,
+  "tile": 0.5,
+  "tiramisu": 1.0,
+  "tissue_dispenser": 2.0,
+  "toast": 3.0,
+  "tobacco_pipe": 2.0,
+  "tofu": 1.0,
+  "toilet": 6.0,
+  "toilet_paper": 1.0,
+  "toilet_soap_bottle": 1.0,
+  "tomato_paste_can": 1.0,
+  "tomato_sauce_jar": 2.0,
+  "tongs": 2.5,
+  "toothbrush": 12.0,
+  "top_cabinet": 57.5,
+  "tortilla": 3.0,
+  "tortilla_chips": 2.0,
+  "tote": 5.0,
+  "towel_rack": 3.0,
+  "toy_box": 3.0,
+  "toy_dice": 1.0,
+  "toy_figure": 2.0,
+  "toy_train": 2.0,
+  "trash_can": 19.0,
+  "tray": 15.0,
+  "treadmill": 1,
+  "tree": 0.5,
+  "trombone": 1.0,
+  "trout": 3.0,
+  "trowel": 1.0,
+  "trumpet": 1.0,
+  "tube_of_toothpaste": 2.0,
+  "tulip": 1.0,
+  "tupperware": 64.0,
+  "turkey": 5.0,
+  "twine": 1.0,
+  "valentine_wreath": 3.0,
+  "vase": 6.0,
+  "veal": 1.0,
+  "vest": 2.0,
+  "vidalia_onion": 14.0,
+  "vinegar_bottle": 18.0,
+  "violin": 1.0,
+  "virginia_ham": 3.0,
+  "vodka_bottle": 1.0,
+  "wafer": 1.0,
+  "waffle": 3.0,
+  "walker": 1.0,
+  "wall_mounted_sink": 32.1111,
+  "wall_mounted_tv": 3.0,
+  "wall_nail": 22.0,
+  "wallet": 2.0,
+  "walnut": 3.0,
+  "wardrobe": 13.0,
+  "washer": 33.0,
+  "watch": 1.0,
+  "water_bottle": 10.0,
+  "water_filter": 1.0,
+  "water_glass": 19.0,
+  "watermelon": 3.0,
+  "wax_paper": 2.0,
+  "wheelbarrow": 1.0,
+  "whisk": 2.0,
+  "whiskey_bottle": 1.0,
+  "whiskey_stone": 1.0,
+  "white_chocolate": 1.0,
+  "white_rice_sack": 4.0,
+  "wicker_basket": 14.0,
+  "window_blind": 2.0,
+  "wine_bottle": 10.0,
+  "wineglass": 9.0,
+  "wire_cutter": 1.0,
+  "wok": 4.0,
+  "wood_fireplace": 5.0,
+  "wooden_spoon": 10.0,
+  "wool_coat": 2.0,
+  "work_helmet": 1.0,
+  "wrapped_hamburger": 1.0,
+  "wrapping_paper": 2.0,
+  "wreath": 3.0,
+  "yeast_jar": 1.0,
+  "yogurt_carton": 4.0,
+  "zucchini": 3.0
+ }
+}

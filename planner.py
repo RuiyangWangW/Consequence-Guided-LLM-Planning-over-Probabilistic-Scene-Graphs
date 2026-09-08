@@ -51,7 +51,8 @@ PRIMITIVES = {
         "effect": "it is shut"},
     "NAVIGATE_TO": {
         "takes_object": True, "doc": "Drive to an object",
-        "requires": "nothing",
+        "requires": "if the object is inside something with a door, that door is open - "
+                    "the robot has to be able to see it to drive to it",
         "effect": "the robot is then standing at that object, and at whatever is on or "
                   "inside it. It is no longer standing at what it drove away from"},
     "RELEASE": {
@@ -83,17 +84,29 @@ PRIMITIVES = {
 
 BDDL_DATA = "/mnt/check/ruiyangw/omnigibson/BEHAVIOR-1K/bddl3/bddl/generated_data"
 
-# The handful of words BDDL has no category for. An instruction says "the cabinet" and
-# "the lamp"; the dataset ships `bottom_cabinet` and `table_lamp`. These are spellings, not
-# affordances - each is here because the dataset names the same thing more specifically.
-GENERIC = {
-    "openable": {"cabinet", "drawer", "trash_can", "box", "briefcase",
-                 "refrigerator", "freezer", "dryer"},
-    "toggleable": {"lamp", "light", "ceiling_light", "television", "fan", "sink",
-                   "shower", "kettle", "dryer"},
-    "fixture": {"cabinet", "counter", "table", "sink", "television",
-                "refrigerator", "dryer", "window", "fireplace"},
-}
+# An instruction says "the cabinet" and "the lamp"; the dataset ships `bottom_cabinet` and
+# `table_lamp`. A generic word inherits an affordance when EVERY category it abbreviates
+# has it - all three cabinets open, so "cabinet" opens; every lamp switches, so "lamp"
+# switches. Where the specific forms disagree, it inherits nothing, which is the honest
+# answer: a `feta_box` opens and a `gelatin_box` does not, so "box" says nothing.
+#
+# This replaces a hand-written list of seventeen words. That list was not just redundant,
+# it contradicted the data: it declared a `trash_can` openable when BDDL gives it no lid -
+# the very thing the `no_door` fault reports - and declared `briefcase` and `freezer`
+# openable when BDDL annotates neither. Four of its entries (`drawer`, `refrigerator`,
+# `ceiling_light`, `television`) are not dataset categories at all, so nothing could ever
+# check them. The benchmark uses none of the seventeen; it names the specific categories.
+def _generic_forms(annotated, universe):
+    """The abbreviations every one of whose specific forms carries the property."""
+    out = set()
+    for category in universe:
+        parts = category.split("_")
+        for cut in range(1, len(parts)):
+            word = "_".join(parts[cut:])
+            kin = {c for c in universe if c == word or c.endswith("_" + word)}
+            if kin and kin <= annotated:
+                out.add(word)
+    return out
 
 
 # What a mobile manipulator can lift. This is the robot's spec, not a number fitted to
@@ -149,7 +162,8 @@ def _by_property(name):
     return {c for s in synsets for c in realises.get(s, ())}
 
 
-OPENABLE = _by_property("openable") | GENERIC["openable"]
+_OPENABLE_BASE = _by_property("openable")
+OPENABLE = _OPENABLE_BASE | _generic_forms(_OPENABLE_BASE, set(_mass_table()))
 
 # Whether things go *in* a thing, which is a different question from whether it has a door.
 # A bin, a hamper and a bookcase are all fillable and none of them opens; a fridge and a
@@ -164,9 +178,11 @@ FILLABLE = _by_property("fillable")
 # wholesale sack - each of those refused a benchmark task that picks the thing up. Together
 # they agree with every case we can check by hand.
 _HEAVY = {c for c, kg in _mass_table().items() if kg >= PAYLOAD_KG}
-NOT_GRASPABLE = (_HEAVY & _by_property("sceneObject")) | GENERIC["fixture"]
+_FIXED = _HEAVY & _by_property("sceneObject")
+NOT_GRASPABLE = _FIXED | _generic_forms(_FIXED, set(_mass_table()))
 
-TOGGLEABLE = _by_property("toggleable") | GENERIC["toggleable"]
+_TOGGLEABLE_BASE = _by_property("toggleable")
+TOGGLEABLE = _TOGGLEABLE_BASE | _generic_forms(_TOGGLEABLE_BASE, set(_mass_table()))
 
 
 CONFERS = {
@@ -177,6 +193,22 @@ CONFERS = {
     "washed": {"washer", "washing_machine", "dishwasher"},
     "dried": {"clothes_dryer", "dryer"},
 }
+
+
+# What must be switched off before the robot walks away, and what may be left running.
+#
+# The old rule was "everything you switched on", which cannot express "turn on the lamp":
+# the plan met the goal and was then failed for leaving the lamp on. But a lamp is not a
+# hazard and an oven is, so the distinction belongs to the object, not to the task.
+#
+# Three BEHAVIOR annotations answer it together, and none is enough alone. `heatSource` is
+# the thing that can start a fire - it catches the coffee maker, which cooks nothing.
+# `waterSource` is the tap left running, which floods rather than burns - it catches all
+# nine sinks. `CONFERS` is the appliance that runs a cycle on its contents - it catches the
+# dishwasher, the washer and the dryer, which BDDL calls neither. Their union is the set
+# worth walking back for; a lamp and a television are in none of them.
+MUST_SWITCH_OFF = (_by_property("heatSource") | _by_property("waterSource")
+                   | set().union(*CONFERS.values()))
 
 
 OBJECT_STATES = tuple(CONFERS)
@@ -207,6 +239,11 @@ def parse_goal(text):
     kinds = {"on_top": "on_top", "ontop": "on_top", "inside": "object_inside",
              "object_inside": "object_inside"}
     kinds.update({state: state for state in CONFERS})
+    # A task that says "turn the lamp on" is asking for an end state, and nothing else
+    # checks it: the safety rule deliberately ignores lamps and televisions, so if the goal
+    # does not say the lamp ends on, no part of the pipeline does. Omitting it here would
+    # drop it silently - exactly what happened to cooked/washed/dried, per the note above.
+    kinds["toggled"] = "toggled"
     goal = []
     for match in re.finditer(r"([a-z_]+)\s*\(\s*([^,()]+?)\s*,\s*([^,()]+?)\s*\)",
                              block, re.I):
@@ -219,7 +256,7 @@ def parse_goal(text):
         # forever, and the loop would spend every attempt on a condition no plan can reach.
         obj = canonical(_clean_name(match.group(2)))
         rhs = match.group(3).strip().lower()
-        if kind in CONFERS:
+        if kind in CONFERS or kind == "toggled":
             if rhs not in ("true", "false"):
                 continue
             entry = (kind, obj, rhs == "true")
@@ -414,7 +451,50 @@ GOAL_PREDICATES = """  on_top(object, surface)        the object ends resting on
   toggled(object, false)        that switch ends off"""
 
 
-def build_prompt(task, graph, with_goal=False):
+def format_goal(goal):
+    """The goal in words the planner can act on, or "" if there is none.
+
+    This is the goal *this pipeline predicted from the instruction*, never the benchmark's
+    answer key - the key is ground truth and handing it over would be telling the model
+    what it is meant to read out of the sentence. The prediction comes from the same source
+    the plan does, so showing it leaks nothing.
+
+    It was not shown before, and that was the gap: every plan was validated against this
+    goal while the planner had never seen it. A model told only "wash the towels in the
+    washer" wrote PLACE_ON_TOP(washer), was refused, and was never once told that what the
+    checker wanted was the towels *inside* the machine.
+    """
+    if not goal:
+        return ""
+    say = []
+    for entry in goal:
+        try:
+            kind, obj, val = entry
+        except (TypeError, ValueError):
+            continue
+        if kind == "on_top":
+            say.append(f"  the {obj} ends on top of the {val}")
+        elif kind in ("object_inside", "inside"):
+            say.append(f"  the {obj} ends inside the {val}")
+        elif kind == "open":
+            say.append(f"  the {obj} ends {'open' if val else 'shut'}")
+        elif kind == "toggled":
+            say.append(f"  the {obj} ends switched {'on' if val else 'off'}")
+        elif kind in CONFERS:
+            say.append(f"  the {obj} ends {kind}"
+                       + ("" if val else " - which it must NOT be"))
+        else:
+            say.append(f"  {kind}({obj}, {val})")
+    if not say:
+        return ""
+    return ("What the finished house must look like, as read from the task:\n"
+            + "\n".join(say)
+            + "\n\nYour plan is checked against exactly these conditions. A plan where "
+              "every action is legal but one of these does not hold at the end is "
+              "rejected.\n")
+
+
+def build_prompt(task, graph, with_goal=False, goal=()):
     """The planning prompt: action space, scene graph, rules, and output format.
 
     `with_goal` asks the model to state the finished world before it plans for it.
@@ -470,6 +550,7 @@ actions, exactly as written:
 
 {format_for_llm(graph)}
 
+{format_goal(goal)}
 Every action above is checked against its `requires` before it runs. If one fails, the
 whole plan is rejected.
 

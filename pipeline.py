@@ -63,7 +63,7 @@ def run(task, scene, model_name="Qwen/Qwen2.5-7B-Instruct",
         print(format_for_llm(graph))
         print()
 
-    # --- stage 4: plan, then validate against the primitives' real semantics ---
+    # --- stage 5: plan, then validate against the primitives' real semantics ---
     if verbose:
         print("planning:")
     result = generate(task, graph, model_name, strict=strict, verbose=verbose)

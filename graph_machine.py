@@ -47,7 +47,7 @@ import os
 import re
 
 from object_names import match
-from planner import CONFERS, NOT_GRASPABLE, OPENABLE, TOGGLEABLE
+from planner import CONFERS, MUST_SWITCH_OFF, NOT_GRASPABLE, OPENABLE, TOGGLEABLE
 from world_graph import ROBOT, WorldGraph
 
 _CATALOGUE = None
@@ -120,9 +120,10 @@ class Outcome:
         self.goal_met = goal_met
         self.missing = missing
         self.failed_at = failed_at
-        # Doors the plan opened and never shut, and switches it turned on and never turned
-        # off. A plan can be applicable and reach its goal and still walk away from an open
-        # fridge and a lit hob, which is not a plan anyone should run.
+        # Doors the plan opened and never shut, and hazardous appliances it turned on and
+        # never turned off. A plan can be applicable and reach its goal and still walk away
+        # from an open fridge and a lit hob, which is not a plan anyone should run. A lamp
+        # left burning is not in that class - see `planner.MUST_SWITCH_OFF`.
         self.left_open = list(left_open)
         self.left_on = list(left_on)
 
@@ -171,7 +172,7 @@ class GraphMachine:
 
     | action              | preconditions                                    |
     | ------------------- | ------------------------------------------------ |
-    | `NAVIGATE_TO(x)`    | none                                             |
+    | `NAVIGATE_TO(x)`    | if `inside(x, c)` and `c` has a door, then `open(c)` |
     | `RELEASE()`         | none                                             |
     | `GRASP(x)`          | not holding anything; `near(x)`; if `inside(x, c)` then `open(c)`; `graspable(x)` |
     | `TOGGLE_ON/OFF(x)`  | `near(x)`; `switchable(x)`                       |
@@ -386,6 +387,24 @@ And what each one does. "The stack" is the held object plus everything riding on
         return found
 
 
+    def _inside_only(self, name):
+        """What is *inside* this object, and inside those - not what is resting on it.
+
+        `_contents` walks `on_top` as well, which is right for reach: standing at a table
+        puts the robot within reach of what is on it. It is wrong for an appliance. An oven
+        cooks what is inside it and not the pie someone left on the lid, and using
+        `_contents` here credited exactly that - a plan that wrote PLACE_ON_TOP(washer)
+        instead of PLACE_INSIDE(washer) was scored as having washed the towels.
+        """
+        found, frontier = set(), [name]
+        while frontier:
+            here = frontier.pop()
+            for item, _ in self.graph.edges_of("object_inside", dst=here):
+                if item not in found:
+                    found.add(item)
+                    frontier.append(item)
+        return found
+
     def _blocked_by_container(self, name):
         """Is `name` inside something that is currently closed?"""
         for _, container in self.graph.edges_of("object_inside", src=name):
@@ -494,7 +513,23 @@ And what each one does. "The stack" is the held object plus everything riding on
             if name is None:
                 return fail(f"'{arg}' is not one of the objects this task is about; use "
                             f"the names listed above", ("unknown", arg))
-            # No preconditions. Whether the robot can actually get there is a question
+            # Driving to something sealed inside a shut container is a step the simulator
+            # cannot execute. It has to *see* the object to go to it, and a bottle behind a
+            # closed fridge door is invisible: `sim2d` searches every believed room, finds
+            # nothing, and the run dies on the step. The machine used to allow it, because
+            # NAVIGATE_TO had no preconditions at all - and that gap was 9 of the 4B's 11
+            # plans that passed validation and then failed when driven, every one of them
+            # reaching for something behind a door it had not opened yet.
+            #
+            # Refusing here makes it repairable instead of fatal, and needs no new rule:
+            # `repair.py` answers `closed` by inserting OPEN(container), the `not_near`
+            # rule then supplies the drive to the container, and the two compose into
+            # "go to the container, open it, then come to the object".
+            shut = self._blocked_by_container(name)
+            if shut is not None:
+                return fail(f"'{name}' is inside '{shut}', which is closed - open "
+                            f"'{shut}' before driving to '{name}'", ("closed", shut))
+            # No other preconditions. Whether the robot can actually get there is a question
             # about floor, and the room graph's answer to it is too coarse to be worth
             # refusing a plan over - `sim2d` runs A* over the eroded map and answers it
             # properly. An unreachable room is reported there, where it is known.
@@ -664,7 +699,7 @@ And what each one does. "The stack" is the held object plus everything riding on
                 category = self._category(name)
                 for state, appliances in CONFERS.items():
                     if category in appliances:
-                        for item in self._contents(name):
+                        for item in self._inside_only(name):
                             self.states[state].add(item)
                             edits.append(f"{item}.{state} = True")
             edits.append(f"{name}.toggled = {want}")
@@ -739,8 +774,13 @@ And what each one does. "The stack" is the held object plus everything riding on
 
         missing = self.unmet(goal) if failed_at is None else list(goal)
 
+        # Everything the plan opened has to be shut - an open door is an open door.
+        # Switches are not symmetric: only an appliance that heats or runs a cycle is worth
+        # walking back for, so `MUST_SWITCH_OFF` filters these. That is what makes "turn on
+        # the lamp" a task the machine can accept instead of one it fails for succeeding.
         left_open = sorted(n for n in self.opened if self.open.get(n))
-        left_on = sorted(n for n in self.switched_on if self.toggled.get(n))
+        left_on = sorted(n for n in self.switched_on
+                         if self.toggled.get(n) and self._category(n) in MUST_SWITCH_OFF)
         return Outcome(steps, self.graph, list(goal), failed_at is None and not missing,
                        missing, failed_at, left_open, left_on)
 

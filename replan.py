@@ -73,6 +73,23 @@ def repair_prompt(task, graph, steps, outcome, mended=()):
     # rejected plans carried at least one such false mark, on top of the real refusal.
     abandoned = (set(outcome.left_open) | set(outcome.left_on)
                  if outcome.failed_at is None else set())
+    # A plan whose every action applied and whose goal is still unmet is nearly always the
+    # wrong placement verb: PLACE_ON_TOP where the goal asks for `object_inside`, or the
+    # mirror. Marking those steps "ok" is true - they were applicable - and useless: the
+    # model is then shown twelve correct-looking steps and told a relation is missing, with
+    # nothing connecting the two. Measured over both models, nine plans failed this way and
+    # seven of them burned all five attempts re-sending the same placement. So find them.
+    PLACES = {"on_top": "PLACE_ON_TOP", "object_inside": "PLACE_INSIDE"}
+    misplaced = {}
+    if outcome.failed_at is None:
+        for relation, _moved, destination in outcome.missing:
+            want = PLACES.get(relation)
+            if want is None:
+                continue
+            for index, step in enumerate(steps):
+                if (step["action"] in PLACES.values() and step["action"] != want
+                        and step.get("object") == destination):
+                    misplaced[index] = (step["action"], want)
     for index, step in enumerate(steps):
         arg = step.get("object") or ""
         mark = ""
@@ -80,6 +97,9 @@ def repair_prompt(task, graph, steps, outcome, mended=()):
             mark = f"   <-- REJECTED: {outcome.steps[index].reason}"
         elif arg in abandoned and step["action"] in ("OPEN", "TOGGLE_ON"):
             mark = "   <-- never undone"
+        elif index in misplaced:
+            wrong, want = misplaced[index]
+            mark = f"   <-- applied, but {wrong} is not {want} - see below"
         elif index < len(outcome.steps) and outcome.steps[index].ok:
             mark = "   ok"
         lines.append(f"  {index + 1:2d}. {step['action']}({arg}){mark}")
@@ -101,9 +121,20 @@ def repair_prompt(task, graph, steps, outcome, mended=()):
                             "points, since a door has to stay open while something is "
                             "being put in or taken out.")
         if outcome.missing:
-            faults.append("it does not achieve the task. These are still missing at the "
-                          "end:\n"
-                          + "\n".join(f"    {t}({a}, {b})" for t, a, b in outcome.missing))
+            detail = ("it does not achieve the task. These are still missing at the "
+                      "end:\n"
+                      + "\n".join(f"    {t}({a}, {b})" for t, a, b in outcome.missing))
+            if misplaced:
+                # Quote both contracts, for the same reason the rejected-step branch does:
+                # knowing *that* the goal is unmet is not knowing what to write instead.
+                verbs = sorted({v for pair in misplaced.values() for v in pair})
+                detail += ("\n  The marked steps are why. They applied, but they produce "
+                           "the wrong relation:\n"
+                           + "\n".join(f"    {v}: {PRIMITIVES.get(v, {}).get('effect', '')}"
+                                       for v in verbs)
+                           + "\n  Change the marked steps to the placement whose effect "
+                             "matches what is missing. Leave the rest of the plan as it is.")
+            faults.append(detail)
         complaint = ("Every action was applicable, but the plan has "
                      + ("two problems" if len(faults) > 1 else "a problem") + ".\n\n"
                      + "\n\n".join(f"  {i}. {f}" for i, f in enumerate(faults, 1))
@@ -150,7 +181,7 @@ def repair_prompt(task, graph, steps, outcome, mended=()):
                    "you:\n" + "\n".join(f"  - {note}" for note in mended)
                    + "\n\nDo not undo those. What is left is the part they cannot fix:")
 
-    return (f"{build_prompt(task, graph)}\n\n"
+    return (f"{build_prompt(task, graph, goal=outcome.goal)}\n\n"
             f"---\n\n"
             f"{preface}\n\n" + "\n".join(lines) + "\n\n"
             f"{complaint}\n\n"
@@ -193,7 +224,7 @@ def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
     generator = get_generator(model_name) if model_name else get_generator()
     seed = WorldGraph.from_scene_graph(graph)
     history = []
-    prompt = build_prompt(task, graph, with_goal=declare_goal)
+    prompt = build_prompt(task, graph, with_goal=declare_goal, goal=goal)
 
     for attempt in range(1, attempts + 1):
         reply = generator(prompt, max_new_tokens)
@@ -209,7 +240,7 @@ def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
 
         if not steps:
             history.append({"attempt": attempt, "steps": [], "outcome": None})
-            prompt = build_prompt(task, graph, with_goal=declare_goal)   # ask again cleanly
+            prompt = build_prompt(task, graph, with_goal=declare_goal, goal=goal)   # ask again cleanly
             continue
 
         plan = [(s["action"], s.get("object")) for s in steps]

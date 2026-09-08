@@ -851,11 +851,21 @@ class Sim2D:
         actually in. A run can succeed at every step, reach its goal, and still leave an
         open fridge and a lit hob behind - which is not a run anyone should be pleased
         with, and is invisible to a check that only asks whether the goal edges hold.
+
+        Switches are filtered the same way `GraphMachine` filters them, by
+        `planner.MUST_SWITCH_OFF`: an oven or a running tap left on is a hazard, a lamp
+        left on is what the task asked for. This check is a second implementation of the
+        same rule, so it has to move with the first - when only the machine was narrowed,
+        three tasks passed the checker and then failed here for leaving a lamp lit.
         """
+        from planner import MUST_SWITCH_OFF
+
         machine = self.truth_machine
         return {
             "open": sorted(n for n in machine.opened if self.world.open.get(n)),
-            "on": sorted(n for n in machine.switched_on if self.world.toggled.get(n)),
+            "on": sorted(n for n in machine.switched_on
+                         if self.world.toggled.get(n)
+                         and self.world.category_of(n) in MUST_SWITCH_OFF),
         }
 
     def audit(self):

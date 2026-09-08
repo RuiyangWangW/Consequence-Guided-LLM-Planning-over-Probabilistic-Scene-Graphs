@@ -18,7 +18,7 @@ planning mistake.
 apply, meet their goal, and are not satisfied before the robot moves.
 """
 
-from task_shapes import (INSIDE, ON_TOP, carry_two_and_switch, fetch_heat_serve,
+from task_shapes import (INSIDE, ON_TOP, carry_two, carry_two_and_switch, fetch_heat_serve,
                          heat_and_serve, laundry_cycle, load_and_run, move_three,
                          stack_then_store, swap_places, two_into_container, unload_two)
 
@@ -78,7 +78,7 @@ TASKS = {
          **unload_two("bottle_of_milk", "bottle_of_apple_juice", "fridge", "breakfast_table")},
 
         {"task": "carry the coffee cup and the notebook from the kitchen to the desk in the "
-                 "office, then switch the floor lamp on and off again",
+                 "office, then switch the floor lamp on",
          "extraction": {"uncertain": ["coffee_cup", "notebook", "desk", "floor_lamp",
                                       "countertop"],
                         "dependent": []},
@@ -154,7 +154,7 @@ TASKS = {
          **stack_then_store("mug", "tray", "top_cabinet", "countertop",
                             "bottom_cabinet")},
 
-        {"task": "swap the lampshade on the bookcase with the picture frame on the breakfast "
+        {"task": "swap the lampshade in the bookcase with the picture frame on the breakfast "
                  "table, using the armchair to set one down while you move the other",
          "extraction": {"uncertain": ["lampshade", "picture_frame", "bookcase",
                                       "breakfast_table", "armchair"],
@@ -236,7 +236,7 @@ TASKS = {
          **unload_two("butter", "jar_of_jam", "fridge", "breakfast_table")},
 
         {"task": "carry the vase and the dip candle from the console table to the breakfast "
-                 "table, then switch the floor lamp on and off again",
+                 "table, then switch the floor lamp on",
          "extraction": {"uncertain": ["vase", "dip_candle", "console_table",
                                       "breakfast_table", "floor_lamp"],
                         "dependent": []},
@@ -382,7 +382,7 @@ TASKS = {
          **move_three(["sock", "t_shirt", "bath_towel"], ["bed", "bed", "bed"], "hamper")},
 
         {"task": "carry the gaming controller and the magazine from the coffee table to the "
-                 "bed in the child's room, then switch the table lamp on and off again",
+                 "bed in the child's room, then switch the table lamp on",
          "extraction": {"uncertain": ["gaming_controller", "magazine", "coffee_table", "bed",
                                       "table_lamp"],
                         "dependent": []},
@@ -461,7 +461,7 @@ TASKS = {
                       ["coffee_table", "coffee_table", "coffee_table"], "bookcase")},
 
         {"task": "carry the mug and the plate from the coffee table to the office "
-                 "countertop, then turn the standing tv on and off again",
+                 "countertop, then turn the standing tv on",
          "extraction": {"uncertain": ["mug", "plate", "coffee_table", "countertop",
                                       "standing_tv"],
                         "dependent": []},
@@ -500,7 +500,7 @@ TASKS = {
 
         # The scene has its own guitar, so spawning one would duplicate the node.
         {"task": "carry the cardstock and the notepad from the bed to the office countertop, "
-                 "then switch the standing tv on and off again",
+                 "then switch the standing tv on",
          "extraction": {"uncertain": ["cardstock", "notepad", "bed", "countertop",
                                       "standing_tv"],
                         "dependent": []},
@@ -571,14 +571,11 @@ TASKS = {
                       ["coffee_table", "coffee_table", "coffee_table"], "bookcase")},
 
         {"task": "carry the mug and the bowl from the kitchen countertop to the corridor "
-                 "coffee table, then run the kitchen furniture sink and turn it off",
-         "extraction": {"uncertain": ["mug", "bowl", "countertop", "coffee_table",
-                                      "furniture_sink"],
+                 "coffee table",
+         "extraction": {"uncertain": ["mug", "bowl", "countertop", "coffee_table"],
                         "dependent": []},
-         "rooms": {"countertop": "kitchen_0", "coffee_table": "corridor_0",
-                   "furniture_sink": "kitchen_0"},
-         **carry_two_and_switch("mug", "bowl", ["countertop", "countertop"],
-                                "coffee_table", "furniture_sink")},
+         "rooms": {"countertop": "kitchen_0", "coffee_table": "corridor_0"},
+         **carry_two("mug", "bowl", ["countertop", "countertop"], "coffee_table")},
 
         {"task": "take the fruitcake out of the kitchen fridge, put it on the tray, then store the "
                  "tray in the kitchen bottom cabinet and shut it",
@@ -591,7 +588,7 @@ TASKS = {
                             "bottom_cabinet")},
 
         {"task": "swap the detergent bottle in the utility room bottom cabinet with the bar "
-                 "soap on the bathroom furniture sink, using the kitchen countertop to set "
+                 "soap in the bathroom furniture sink, using the kitchen countertop to set "
                  "one down",
          "extraction": {"uncertain": ["detergent_bottle", "bar_soap", "bottom_cabinet",
                                       "furniture_sink", "countertop"],
@@ -647,7 +644,7 @@ TASKS = {
         # Rs_int has a `laptop` of its own, so spawning one would put two nodes of that
         # name in the graph. These are objects the scene does not already hold.
         {"task": "carry the notebook and the notepad to the breakfast table, then switch "
-                 "the floor lamp on and off again",
+                 "the floor lamp on",
          "extraction": {"uncertain": ["notebook", "notepad", "breakfast_table",
                                       "floor_lamp", "countertop"],
                         "dependent": []},
@@ -724,13 +721,11 @@ TASKS = {
          **unload_two("bottle_of_milk", "butter", "fridge", "breakfast_table")},
 
         {"task": "carry the mug and the plate from the kitchen to the living room coffee "
-                 "table, then run the coffee maker and switch it off",
-         "extraction": {"uncertain": ["mug", "plate", "countertop", "coffee_table",
-                                      "coffee_maker"],
+                 "table",
+         "extraction": {"uncertain": ["mug", "plate", "countertop", "coffee_table"],
                         "dependent": []},
          "rooms": {"coffee_table": "living_room_1"},
-         **carry_two_and_switch("mug", "plate", ["countertop", "countertop"],
-                                "coffee_table", "coffee_maker")},
+         **carry_two("mug", "plate", ["countertop", "countertop"], "coffee_table")},
 
         {"task": "take the fruitcake out of the fridge, put it on the tray, then store the "
                  "tray in the dining room bottom cabinet and shut it",

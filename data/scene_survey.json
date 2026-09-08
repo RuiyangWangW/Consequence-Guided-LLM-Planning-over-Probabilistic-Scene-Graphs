@@ -1,0 +1,1042 @@
+{
+ "Beechwood_0_int": {
+  "rooms": {
+   "bathroom_0": {
+    "carpet": 1,
+    "electric_switch": 1,
+    "furniture_sink": 1,
+    "mirror": 1,
+    "picture": 2,
+    "toilet": 1
+   },
+   "corridor_0": {
+    "electric_switch": 3
+   },
+   "dining_room_0": {
+    "carpet": 1,
+    "coffee_table": 1,
+    "electric_switch": 1,
+    "floor_lamp": 2,
+    "picture": 1,
+    "straight_chair": 6
+   },
+   "kitchen_0": {
+    "bookcase": 2,
+    "bottom_cabinet_no_top": 8,
+    "bottom_cabinet": 1,
+    "breakfast_table": 1,
+    "burner": 1,
+    "cedar_chest": 1,
+    "countertop": 7,
+    "dishwasher": 1,
+    "electric_switch": 1,
+    "fridge": 1,
+    "furniture_sink": 1,
+    "microwave": 1,
+    "oven": 1,
+    "rail_fence": 1,
+    "straight_chair": 4,
+    "top_cabinet": 4
+   },
+   "living_room_0": {
+    "armchair": 2,
+    "breakfast_table": 2,
+    "carpet": 2,
+    "countertop": 1,
+    "electric_switch": 2,
+    "floor_lamp": 1,
+    "ottoman": 1,
+    "piano": 1,
+    "picture": 1,
+    "straight_chair": 1
+   },
+   "living_room_1": {
+    "bookcase": 2,
+    "bottom_cabinet": 2,
+    "breakfast_table": 1,
+    "carpet": 1,
+    "coffee_table": 1,
+    "electric_switch": 1,
+    "floor_lamp": 2,
+    "sofa": 1,
+    "wall_mounted_tv": 1
+   },
+   "private_office_0": {
+    "bookcase": 1,
+    "bottom_cabinet": 2,
+    "desk": 2,
+    "electric_switch": 1,
+    "picture": 3,
+    "swivel_chair": 1
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   },
+   "storage_room_1": {
+    "electric_switch": 1
+   },
+   "utility_room_0": {
+    "bottom_cabinet": 1,
+    "clothes_dryer": 1,
+    "electric_switch": 1,
+    "pedestal_sink": 1,
+    "top_cabinet": 1,
+    "towel_rack": 1,
+    "washer": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "corridor_0",
+   "dining_room_0",
+   "kitchen_0",
+   "living_room_0",
+   "living_room_1",
+   "private_office_0",
+   "storage_room_0",
+   "storage_room_1",
+   "storage_room_2",
+   "utility_room_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "corridor_0": "corridor",
+   "dining_room_0": "dining_room",
+   "kitchen_0": "kitchen",
+   "living_room_1": "living_room",
+   "living_room_0": "living_room",
+   "private_office_0": "private_office",
+   "storage_room_0": "storage_room",
+   "storage_room_2": "storage_room",
+   "storage_room_1": "storage_room",
+   "utility_room_0": "utility_room"
+  }
+ },
+ "Beechwood_1_int": {
+  "rooms": {
+   "bathroom_0": {
+    "bottom_cabinet_no_top": 2,
+    "carpet": 1,
+    "countertop": 2,
+    "electric_switch": 1,
+    "mirror": 1,
+    "multi_station_furniture_sink": 1,
+    "shower_stall": 1,
+    "toilet": 1,
+    "top_cabinet": 1,
+    "towel_rack": 1
+   },
+   "bathroom_1": {
+    "carpet": 2,
+    "electric_switch": 1,
+    "furniture_sink": 1,
+    "mirror": 1,
+    "shower_stall": 1,
+    "toilet": 1,
+    "top_cabinet": 1,
+    "towel_rack": 2
+   },
+   "bedroom_0": {
+    "bed": 1,
+    "bottom_cabinet": 6,
+    "electric_switch": 1,
+    "floor_lamp": 4,
+    "mirror": 2,
+    "picture": 2
+   },
+   "childs_room_0": {
+    "bed": 1,
+    "bookcase": 2,
+    "bottom_cabinet": 1,
+    "electric_switch": 1,
+    "top_cabinet": 1
+   },
+   "childs_room_1": {
+    "bed": 1,
+    "bookcase": 2,
+    "breakfast_table": 1,
+    "countertop": 1,
+    "electric_switch": 1,
+    "picture": 1
+   },
+   "closet_0": {
+    "bookcase": 2,
+    "bottom_cabinet": 1,
+    "electric_switch": 1
+   },
+   "closet_1": {
+    "electric_switch": 1
+   },
+   "closet_2": {
+    "electric_switch": 1
+   },
+   "corridor_0": {
+    "electric_switch": 2
+   },
+   "playroom_0": {
+    "armchair": 4,
+    "bookcase": 4,
+    "bottom_cabinet": 1,
+    "breakfast_table": 2,
+    "carpet": 1,
+    "electric_switch": 2,
+    "picture": 1,
+    "table_lamp": 1
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   },
+   "storage_room_1": {
+    "electric_switch": 1
+   },
+   "storage_room_2": {
+    "electric_switch": 1
+   },
+   "television_room_0": {
+    "bookcase": 2,
+    "bottom_cabinet": 3,
+    "electric_switch": 1,
+    "picture": 3,
+    "sofa": 1,
+    "wall_mounted_tv": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bathroom_1",
+   "bedroom_0",
+   "childs_room_0",
+   "childs_room_1",
+   "closet_0",
+   "closet_1",
+   "closet_2",
+   "corridor_0",
+   "playroom_0",
+   "storage_room_0",
+   "storage_room_1",
+   "television_room_0"
+  ],
+  "stranded": [],
+  "too_small": [
+   "storage_room_2"
+  ],
+  "room_types": {
+   "bathroom_1": "bathroom",
+   "bathroom_0": "bathroom",
+   "bedroom_0": "bedroom",
+   "childs_room_1": "childs_room",
+   "childs_room_0": "childs_room",
+   "closet_0": "closet",
+   "closet_2": "closet",
+   "closet_1": "closet",
+   "corridor_0": "corridor",
+   "playroom_0": "playroom",
+   "storage_room_1": "storage_room",
+   "storage_room_0": "storage_room",
+   "storage_room_2": "storage_room",
+   "television_room_0": "television_room"
+  }
+ },
+ "Benevolence_1_int": {
+  "rooms": {
+   "corridor_0": {
+    "bookcase": 1,
+    "console_table": 1,
+    "picture": 2
+   },
+   "dining_room_0": {
+    "breakfast_table": 1,
+    "countertop": 1,
+    "electric_switch": 1,
+    "picture": 1,
+    "straight_chair": 3
+   },
+   "kitchen_0": {
+    "bottom_cabinet_no_top": 5,
+    "countertop": 4,
+    "dishwasher": 1,
+    "electric_switch": 1,
+    "fridge": 1,
+    "furniture_sink": 1,
+    "microwave": 1,
+    "oven": 1,
+    "picture": 1,
+    "top_cabinet": 8
+   },
+   "living_room_0": {
+    "bookcase": 5,
+    "carpet": 1,
+    "cedar_chest": 2,
+    "electric_switch": 1,
+    "floor_lamp": 1,
+    "ottoman": 1,
+    "picture": 4,
+    "sofa": 1,
+    "straight_chair": 1,
+    "wall_mounted_tv": 1
+   },
+   "pantry_room_0": {
+    "electric_switch": 1
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   }
+  },
+  "reachable": [
+   "corridor_0",
+   "dining_room_0",
+   "kitchen_0",
+   "living_room_0",
+   "pantry_room_0",
+   "storage_room_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "corridor_0": "corridor",
+   "dining_room_0": "dining_room",
+   "kitchen_0": "kitchen",
+   "living_room_0": "living_room",
+   "pantry_room_0": "pantry_room",
+   "storage_room_0": "storage_room"
+  }
+ },
+ "Ihlen_1_int": {
+  "rooms": {
+   "bathroom_0": {
+    "bathtub": 1,
+    "electric_switch": 1,
+    "mirror": 1,
+    "pedestal_sink": 1,
+    "picture": 1,
+    "shower_stall": 1,
+    "toilet": 1
+   },
+   "bedroom_0": {
+    "bed": 1,
+    "bottom_cabinet": 2,
+    "cedar_chest": 1,
+    "electric_switch": 2,
+    "picture": 3,
+    "straight_chair": 1,
+    "table_lamp": 2,
+    "wall_nail": 1
+   },
+   "bedroom_1": {
+    "bed": 1,
+    "breakfast_table": 2,
+    "carpet": 1,
+    "cedar_chest": 2,
+    "electric_switch": 1,
+    "picture": 2,
+    "radiator": 1,
+    "straight_chair": 1,
+    "table_lamp": 2,
+    "wall_nail": 1
+   },
+   "bedroom_2": {
+    "bed": 1,
+    "bottom_cabinet": 2,
+    "cedar_chest": 1,
+    "electric_switch": 1,
+    "picture": 2,
+    "radiator": 1,
+    "straight_chair": 1,
+    "table_lamp": 2
+   },
+   "corridor_0": {
+    "carpet": 1,
+    "electric_switch": 2
+   },
+   "dining_room_0": {
+    "breakfast_table": 1,
+    "carpet": 1,
+    "countertop": 1,
+    "electric_switch": 1,
+    "picture": 2,
+    "straight_chair": 4
+   },
+   "kitchen_0": {
+    "bookcase": 1,
+    "bottom_cabinet_no_top": 4,
+    "bottom_cabinet": 2,
+    "countertop": 6,
+    "dishwasher": 1,
+    "electric_switch": 2,
+    "fridge": 1,
+    "furniture_sink": 1,
+    "oven": 1,
+    "top_cabinet": 5
+   },
+   "living_room_0": {
+    "armchair": 3,
+    "bottom_cabinet": 1,
+    "carpet": 1,
+    "coffee_table": 1,
+    "electric_switch": 1,
+    "floor_lamp": 1,
+    "mirror": 1,
+    "picture": 2,
+    "radiator": 2,
+    "sofa": 1,
+    "table_lamp": 1,
+    "wall_nail": 2
+   },
+   "staircase_0": {
+    "electric_switch": 1
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   },
+   "storage_room_1": {
+    "electric_switch": 1
+   },
+   "storage_room_2": {
+    "electric_switch": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bedroom_0",
+   "bedroom_1",
+   "bedroom_2",
+   "corridor_0",
+   "corridor_1",
+   "dining_room_0",
+   "kitchen_0",
+   "living_room_0",
+   "staircase_0",
+   "storage_room_0",
+   "storage_room_1",
+   "storage_room_2"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "bedroom_2": "bedroom",
+   "bedroom_1": "bedroom",
+   "bedroom_0": "bedroom",
+   "corridor_0": "corridor",
+   "corridor_1": "corridor",
+   "dining_room_0": "dining_room",
+   "kitchen_0": "kitchen",
+   "living_room_0": "living_room",
+   "staircase_0": "staircase",
+   "storage_room_0": "storage_room",
+   "storage_room_1": "storage_room",
+   "storage_room_2": "storage_room"
+  }
+ },
+ "Merom_1_int": {
+  "rooms": {
+   "bathroom_0": {
+    "bathtub": 1,
+    "electric_switch": 1,
+    "furniture_sink": 1,
+    "mirror": 1,
+    "public_trash_can": 1,
+    "toilet": 1,
+    "top_cabinet": 1
+   },
+   "bedroom_0": {
+    "bed": 1,
+    "bottom_cabinet": 4,
+    "electric_switch": 1,
+    "hamper": 2,
+    "picture": 8,
+    "pot_plant": 1,
+    "table_lamp": 3
+   },
+   "childs_room_0": {
+    "armchair": 1,
+    "bed": 1,
+    "bottom_cabinet": 2,
+    "carpet": 1,
+    "electric_switch": 1,
+    "ottoman": 1,
+    "picture": 5,
+    "table_lamp": 1
+   },
+   "closet_0": {
+    "electric_switch": 2
+   },
+   "closet_1": {
+    "electric_switch": 1
+   },
+   "corridor_0": {
+    "electric_switch": 2
+   },
+   "dining_room_0": {
+    "armchair": 4,
+    "breakfast_table": 1,
+    "electric_switch": 1,
+    "picture": 2,
+    "pot_plant": 1
+   },
+   "empty_room_0": {
+    "electric_switch": 1
+   },
+   "empty_room_1": {
+    "electric_switch": 1
+   },
+   "kitchen_0": {
+    "bookcase": 2,
+    "bottom_cabinet": 3,
+    "dishwasher": 1,
+    "electric_switch": 2,
+    "fridge": 1,
+    "furniture_sink": 1,
+    "picture": 2,
+    "public_trash_can": 1,
+    "range_hood": 1,
+    "stove": 1,
+    "top_cabinet": 2
+   },
+   "living_room_0": {
+    "armchair": 1,
+    "bottom_cabinet": 1,
+    "carpet": 2,
+    "coffee_table": 1,
+    "electric_switch": 2,
+    "floor_lamp": 2,
+    "mirror": 1,
+    "picture": 2,
+    "pot_plant": 1,
+    "sofa": 1,
+    "towel_rack": 1
+   },
+   "staircase_0": {
+    "electric_switch": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bedroom_0",
+   "childs_room_0",
+   "closet_0",
+   "closet_1",
+   "corridor_0",
+   "dining_room_0",
+   "empty_room_0",
+   "empty_room_1",
+   "kitchen_0",
+   "living_room_0",
+   "staircase_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "bedroom_0": "bedroom",
+   "childs_room_0": "childs_room",
+   "closet_0": "closet",
+   "closet_1": "closet",
+   "corridor_0": "corridor",
+   "dining_room_0": "dining_room",
+   "empty_room_0": "empty_room",
+   "empty_room_1": "empty_room",
+   "kitchen_0": "kitchen",
+   "living_room_0": "living_room",
+   "staircase_0": "staircase"
+  }
+ },
+ "Pomaria_0_int": {
+  "rooms": {
+   "bathroom_0": {
+    "bathtub": 1,
+    "carpet": 1,
+    "electric_switch": 1,
+    "furniture_sink": 1,
+    "toilet": 1
+   },
+   "bedroom_0": {
+    "bed": 1,
+    "bookcase": 1,
+    "carpet": 1,
+    "electric_switch": 2,
+    "picture": 2
+   },
+   "bedroom_1": {
+    "bed": 1,
+    "breakfast_table": 1,
+    "electric_switch": 1,
+    "guitar": 2,
+    "monitor": 1
+   },
+   "closet_1": {
+    "electric_switch": 1
+   },
+   "corridor_0": {
+    "bookcase": 1,
+    "electric_switch": 2
+   },
+   "living_room_0": {
+    "armchair": 1,
+    "bookcase": 6,
+    "coffee_table": 1,
+    "electric_switch": 2,
+    "sofa": 1,
+    "standing_tv": 1,
+    "straight_chair": 1
+   },
+   "private_office_0": {
+    "bookcase": 5,
+    "bottom_cabinet": 1,
+    "bottom_cabinet_no_top": 2,
+    "breakfast_table": 1,
+    "carpet": 1,
+    "countertop": 1,
+    "electric_switch": 2,
+    "monitor": 1,
+    "swivel_chair": 1
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bedroom_0",
+   "bedroom_1",
+   "closet_0",
+   "closet_1",
+   "corridor_0",
+   "living_room_0",
+   "private_office_0",
+   "storage_room_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "bedroom_0": "bedroom",
+   "bedroom_1": "bedroom",
+   "closet_0": "closet",
+   "closet_1": "closet",
+   "corridor_0": "corridor",
+   "living_room_0": "living_room",
+   "private_office_0": "private_office",
+   "storage_room_0": "storage_room"
+  }
+ },
+ "Pomaria_1_int": {
+  "rooms": {
+   "bathroom_0": {
+    "electric_switch": 1,
+    "furniture_sink": 1,
+    "mirror": 1,
+    "toilet": 1
+   },
+   "corridor_0": {
+    "bookcase": 1,
+    "carpet": 1,
+    "coffee_table": 1,
+    "electric_switch": 2
+   },
+   "kitchen_0": {
+    "bottom_cabinet": 1,
+    "bottom_cabinet_no_top": 8,
+    "breakfast_table": 1,
+    "burner": 1,
+    "carpet": 1,
+    "countertop": 6,
+    "dishwasher": 1,
+    "electric_switch": 2,
+    "fridge": 1,
+    "furniture_sink": 1,
+    "microwave": 1,
+    "oven": 3,
+    "picture": 1,
+    "pot_plant": 1,
+    "straight_chair": 6,
+    "top_cabinet": 5
+   },
+   "living_room_0": {
+    "armchair": 2,
+    "bookcase": 2,
+    "coffee_table": 2,
+    "electric_switch": 1,
+    "picture": 3
+   },
+   "pantry_room_0": {
+    "bottom_cabinet_no_top": 2,
+    "countertop": 1,
+    "electric_switch": 1,
+    "fridge": 1,
+    "top_cabinet": 2
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   },
+   "utility_room_0": {
+    "bottom_cabinet": 1,
+    "clothes_dryer": 1,
+    "electric_switch": 1,
+    "pedestal_sink": 1,
+    "top_cabinet": 1,
+    "washer": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "corridor_0",
+   "kitchen_0",
+   "living_room_0",
+   "pantry_room_0",
+   "storage_room_0",
+   "utility_room_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "corridor_0": "corridor",
+   "kitchen_0": "kitchen",
+   "living_room_0": "living_room",
+   "pantry_room_0": "pantry_room",
+   "storage_room_0": "storage_room",
+   "utility_room_0": "utility_room"
+  }
+ },
+ "Rs_int": {
+  "rooms": {
+   "bathroom_0": {
+    "carpet": 1,
+    "electric_switch": 1,
+    "mirror": 1,
+    "pedestal_sink": 1,
+    "shower_stall": 1,
+    "toilet": 1,
+    "towel_rack": 2
+   },
+   "bedroom_0": {
+    "bed": 1,
+    "bottom_cabinet": 1,
+    "electric_switch": 1,
+    "picture": 1
+   },
+   "entryway_0": {
+    "bottom_cabinet": 1,
+    "electric_switch": 1
+   },
+   "kitchen_0": {
+    "bottom_cabinet": 2,
+    "dishwasher": 1,
+    "electric_switch": 1,
+    "fridge": 1,
+    "furniture_sink": 1,
+    "microwave": 1,
+    "oven": 1,
+    "public_trash_can": 1,
+    "top_cabinet": 5
+   },
+   "living_room_0": {
+    "bookcase": 3,
+    "bottom_cabinet": 2,
+    "breakfast_table": 2,
+    "carpet": 1,
+    "coffee_table": 1,
+    "countertop": 1,
+    "electric_switch": 2,
+    "floor_lamp": 1,
+    "laptop": 1,
+    "loudspeaker": 1,
+    "ottoman": 1,
+    "picture": 2,
+    "pot_plant": 3,
+    "sofa": 1,
+    "standing_tv": 1,
+    "straight_chair": 5,
+    "swivel_chair": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bedroom_0",
+   "entryway_0",
+   "kitchen_0",
+   "living_room_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "bedroom_0": "bedroom",
+   "entryway_0": "entryway",
+   "kitchen_0": "kitchen",
+   "living_room_0": "living_room"
+  }
+ },
+ "Wainscott_0_int": {
+  "rooms": {
+   "bathroom_0": {
+    "electric_switch": 1,
+    "furniture_sink": 1,
+    "mirror": 1,
+    "picture": 1,
+    "shower_stall": 1,
+    "toilet": 1,
+    "towel_rack": 1
+   },
+   "bathroom_1": {
+    "electric_switch": 1,
+    "mirror": 1,
+    "pedestal_sink": 1,
+    "picture": 1,
+    "toilet": 1,
+    "towel_rack": 1
+   },
+   "bedroom_0": {
+    "bed": 1,
+    "bottom_cabinet": 1,
+    "breakfast_table": 1,
+    "console_table": 1,
+    "electric_switch": 1,
+    "straight_chair": 1,
+    "swivel_chair": 1,
+    "table_lamp": 2
+   },
+   "corridor_0": {
+    "electric_switch": 1,
+    "grandfather_clock": 1,
+    "mirror": 1,
+    "picture": 1
+   },
+   "dining_room_0": {
+    "bottom_cabinet": 1,
+    "breakfast_table": 1,
+    "carpet": 1,
+    "electric_switch": 1,
+    "mirror": 1,
+    "picture": 1,
+    "pot_plant": 2,
+    "straight_chair": 6
+   },
+   "kitchen_0": {
+    "bookcase": 1,
+    "bottom_cabinet": 1,
+    "bottom_cabinet_no_top": 7,
+    "coffee_maker": 1,
+    "coffee_table": 1,
+    "countertop": 8,
+    "dishwasher": 1,
+    "electric_switch": 1,
+    "fridge": 1,
+    "furniture_sink": 2,
+    "microwave": 1,
+    "oven": 2,
+    "range_hood": 1,
+    "stove": 1,
+    "straight_chair": 4,
+    "top_cabinet": 8
+   },
+   "living_room_0": {
+    "armchair": 1,
+    "bottom_cabinet": 1,
+    "carpet": 1,
+    "cedar_chest": 1,
+    "coffee_table": 3,
+    "console_table": 1,
+    "electric_switch": 1,
+    "picture": 1,
+    "pot_plant": 4,
+    "sofa": 2,
+    "standing_loudspeaker": 3
+   },
+   "living_room_1": {
+    "armchair": 1,
+    "bottom_cabinet": 1,
+    "breakfast_table": 1,
+    "carpet": 1,
+    "coffee_table": 1,
+    "console_table": 1,
+    "electric_switch": 1,
+    "floor_lamp": 1,
+    "mirror": 1,
+    "picture": 2,
+    "pot_plant": 1,
+    "sofa": 1
+   },
+   "living_room_2": {
+    "bottom_cabinet": 1,
+    "breakfast_table": 2,
+    "carpet": 1,
+    "coffee_table": 1,
+    "console_table": 1,
+    "electric_switch": 1,
+    "picture": 1,
+    "pot_plant": 1,
+    "sofa": 1,
+    "table_lamp": 1
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   },
+   "storage_room_1": {
+    "electric_switch": 1
+   },
+   "storage_room_2": {
+    "electric_switch": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bathroom_1",
+   "bedroom_0",
+   "living_room_2",
+   "storage_room_0",
+   "storage_room_2"
+  ],
+  "stranded": [
+   "corridor_0",
+   "dining_room_0",
+   "kitchen_0",
+   "living_room_0",
+   "living_room_1",
+   "storage_room_1"
+  ],
+  "too_small": [],
+  "room_types": {
+   "bathroom_1": "bathroom",
+   "bathroom_0": "bathroom",
+   "bedroom_0": "bedroom",
+   "corridor_0": "corridor",
+   "dining_room_0": "dining_room",
+   "kitchen_0": "kitchen",
+   "living_room_0": "living_room",
+   "living_room_1": "living_room",
+   "living_room_2": "living_room",
+   "storage_room_1": "storage_room",
+   "storage_room_0": "storage_room",
+   "storage_room_2": "storage_room"
+  }
+ },
+ "Wainscott_1_int": {
+  "rooms": {
+   "bathroom_0": {
+    "bathtub": 1,
+    "bottom_cabinet": 4,
+    "bottom_cabinet_no_top": 2,
+    "countertop": 1,
+    "electric_switch": 1,
+    "mirror": 3,
+    "pedestal_sink": 2,
+    "shower_stall": 1
+   },
+   "bathroom_1": {
+    "electric_switch": 1,
+    "furniture_sink": 2,
+    "mirror": 1,
+    "picture": 2,
+    "public_trash_can": 1,
+    "shower_stall": 1,
+    "toilet": 1,
+    "towel_rack": 1
+   },
+   "bedroom_0": {
+    "armchair": 2,
+    "bed": 1,
+    "bottom_cabinet": 4,
+    "breakfast_table": 1,
+    "electric_switch": 1,
+    "mirror": 1,
+    "table_lamp": 2
+   },
+   "bedroom_1": {
+    "bed": 1,
+    "bottom_cabinet": 3,
+    "electric_switch": 1,
+    "picture": 2,
+    "table_lamp": 2
+   },
+   "bedroom_2": {
+    "bed": 1,
+    "coffee_table": 2,
+    "electric_switch": 1,
+    "picture": 2,
+    "table_lamp": 2
+   },
+   "closet_0": {
+    "electric_switch": 1
+   },
+   "corridor_0": {
+    "electric_switch": 2,
+    "wall_nail": 1
+   },
+   "exercise_room_0": {
+    "electric_switch": 1,
+    "picture": 1,
+    "treadmill": 2
+   },
+   "playroom_0": {
+    "breakfast_table": 2,
+    "carpet": 2,
+    "coffee_table": 1,
+    "electric_switch": 1,
+    "picture": 1,
+    "pool_table": 1,
+    "straight_chair": 7,
+    "top_cabinet": 2
+   },
+   "storage_room_0": {
+    "electric_switch": 1
+   },
+   "storage_room_1": {
+    "electric_switch": 1
+   },
+   "storage_room_2": {
+    "electric_switch": 1
+   },
+   "storage_room_3": {
+    "electric_switch": 1
+   },
+   "utility_room_0": {
+    "bottom_cabinet": 1,
+    "clothes_dryer": 1,
+    "electric_switch": 1,
+    "pedestal_sink": 1,
+    "top_cabinet": 2,
+    "washer": 1
+   }
+  },
+  "reachable": [
+   "bathroom_0",
+   "bathroom_1",
+   "bedroom_0",
+   "bedroom_1",
+   "bedroom_2",
+   "closet_0",
+   "closet_1",
+   "corridor_0",
+   "exercise_room_0",
+   "playroom_0",
+   "storage_room_0",
+   "storage_room_1",
+   "storage_room_2",
+   "storage_room_3",
+   "utility_room_0"
+  ],
+  "stranded": [],
+  "too_small": [],
+  "room_types": {
+   "bathroom_0": "bathroom",
+   "bathroom_1": "bathroom",
+   "bedroom_0": "bedroom",
+   "bedroom_2": "bedroom",
+   "bedroom_1": "bedroom",
+   "closet_1": "closet",
+   "closet_0": "closet",
+   "corridor_0": "corridor",
+   "exercise_room_0": "exercise_room",
+   "playroom_0": "playroom",
+   "storage_room_0": "storage_room",
+   "storage_room_1": "storage_room",
+   "storage_room_3": "storage_room",
+   "storage_room_2": "storage_room",
+   "utility_room_0": "utility_room"
+  }
+ }
+}

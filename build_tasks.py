@@ -98,6 +98,8 @@ def extraction_truth(task, path=EXTRACTION_TRUTH):
             "dependent": [dict(d) for d in (answer.get("dependent") or [])]}
 
 
+_PREPOSITIONS = {"on", "onto", "in", "into", "inside", "to", "from", "beside", "under",
+                 "over", "at", "near", "with", "and", "then"}
 _ON = re.compile(r"\b(?:on top of|onto|on)\s+(?:the\s+)?([a-z' ]+)")
 _IN = re.compile(r"\b(?:inside(?: of)?|into|in)\s+(?:the\s+)?([a-z' ]+)")
 
@@ -117,9 +119,20 @@ def stated_preposition(text, target):
     for pattern, relation in ((_IN, "INSIDE"), (_ON, "ON_TOP")):
         for match in pattern.finditer(lowered):
             tail = match.group(1).split()
-            # the preposition governs this destination if its name starts right here
-            if tail[:len(words)] == words or tail[:1] == words[-1:]:
-                return relation
+            # The preposition governs this destination if its name starts within the next
+            # few words. A room qualifier sits between the article and the name often
+            # enough to matter - "in the *bathroom* furniture sink", "in the *utility room*
+            # bottom cabinet" - and requiring the name to start immediately missed all of
+            # them, silently falling back to the annotation on 28 destinations.
+            for skip in range(4):
+                head = tail[skip:]
+                # Never skip across another preposition. "out of the fridge in the kitchen
+                # onto the countertop" would otherwise let the `in` reach `countertop` and
+                # claim it for INSIDE - 40 rows said things go inside a breakfast table.
+                if skip and (skip > len(tail) or tail[skip - 1] in _PREPOSITIONS):
+                    break
+                if head[:len(words)] == words or head[:1] == words[-1:]:
+                    return relation
     return None
 
 
@@ -299,20 +312,22 @@ def verify(task, verbose=False, simulate=True):
         if not driven["ok"]:
             return False, f"the reference plan does not run: {driven['why']}"
 
-    # Safety: whatever the plan opened it must shut, and whatever it switched on it must
-    # switch off. A task whose goal does not *say* so is a task an unsafe plan can pass,
-    # so the goal has to assert the final state, not merely the plan happen to reach it.
+    # Safety: whatever the plan opened it must shut, and whatever it switched on that is
+    # worth walking back for it must switch off. `GraphMachine` decides that on its own -
+    # `left_open` over everything opened, `left_on` filtered by `planner.MUST_SWITCH_OFF` -
+    # so the task only has to *be* safe, not to restate it.
+    #
+    # The goal used to be required to assert every `open(x, False)` and `toggled(x, False)`
+    # as well. That was dropped: it restated a check the machine already makes, and it
+    # restated it in a form that enforces nothing, because `unmet` reads an untouched door
+    # as shut and an untouched switch as off - so the condition was satisfied by a plan
+    # that never went near the object, and only ever bit when `outcome.safe` had already
+    # caught it. Worse, it made "leave the lamp on" inexpressible: the goal had to demand
+    # the opposite of the instruction.
     if not outcome.safe:
         return False, ("plan leaves "
                        + ", ".join([f"{n} open" for n in outcome.left_open]
                                    + [f"{n} switched on" for n in outcome.left_on]))
-    asserted = {(kind, name) for kind, name, value in goal
-                if kind in ("open", "toggled") and value is False}
-    touched = {("open", n) for n in machine.opened} | {("toggled", n) for n in machine.switched_on}
-    unasserted = touched - asserted
-    if unasserted:
-        return False, ("goal does not require putting back: "
-                       + ", ".join(f"{k}({n})" for k, n in sorted(unasserted)))
     return True, f"{len(plan)} actions, {len(goal)} goal conditions"
 
 
@@ -323,7 +338,14 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--scene", help="verify only this scene")
     parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--out", default=OUT)
+    # NOT `data/tasks.json`. The benchmark carries corrections that are applied to the
+    # JSON by hand - conferred cooked/washed/dried conditions, the stripped safety
+    # conditions the machine now enforces itself, and three goals whose lamp must end on -
+    # and regenerating from `tasks.py` silently discards every one of them. That happened:
+    # a run of this script wiped 22 conferred states, 111 strips and 3 goal corrections,
+    # and nothing failed, because the regenerated file is perfectly valid. Verification is
+    # what this script is for; writing the benchmark is not.
+    parser.add_argument("--out", default="data/tasks.check.json")
     args = parser.parse_args()
 
     scenes = [args.scene] if args.scene else SCENES
@@ -347,6 +369,9 @@ def main():
         print(f"  FAIL {task_id}: {message}")
     if failures:
         return 1
+    if os.path.abspath(args.out) == os.path.abspath(OUT):
+        raise SystemExit(f"refusing to overwrite {OUT} - it holds hand-applied corrections "
+                         f"that regenerating discards. Write elsewhere and diff.")
     if not args.scene:
         with open(args.out, "w") as f:
             json.dump(dataset, f, indent=1)

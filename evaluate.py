@@ -148,62 +148,42 @@ def grounding_error(task, graph):
             set(hopeless))
 
 
-def score(task, steps):
-    """Replay a plan against ground truth. Returns (verdict, detail, failing object).
+def verdict_of(sim, steps):
+    """The verdict a *driven* run earns, and the object its failing step acted on.
 
-    The plan's object names are grounded onto the true world's first, the way stage 5 does
-    before running anything in OmniGibson. Without that, a plan that says `GRASP(soup)`
-    fails against a world holding `bottle_of_soup` - and the pipeline never saw the longer
-    name, because its own extraction produced the shorter one from the instruction. That is
-    a naming mismatch, not a planning error, and scoring it as one buries the result.
+    The same three conditions the symbolic scorer used - every action applied, the goal
+    holds, nothing was left disturbed - but read off an execution instead of a replay.
+
+    The symbolic scorer is gone on purpose. It judged a plan against `task["goal"]`, which
+    is the answer key the pipeline never sees, so a run whose goal model was wrong could
+    still score `ok` if its plan happened to land on the truth - while the validation loop,
+    judging the same plan against the goal the pipeline actually predicted, had rejected it
+    for all five attempts. Two tasks read that way in the last comparison. There are now
+    exactly two verdicts about a plan: what the pipeline believed (the in-loop validation,
+    against the predicted goal) and what happened when it was driven (here, against the
+    truth). Nothing in between hands out credit for a goal nobody had.
     """
     if not steps:
         return "unparsed", "no actions parsed from the reply", None
-    graph = seed_graph(task)
-    known = set(graph["objects"])
-    # The task's own ground-truth vocabulary, resolved against first. The world holds every
-    # category in the house on purpose - a plan that reaches the goal by way of a different
-    # real cupboard should be marked right - but that also means an under-specified name
-    # matches several of them equally. `cabinet` is as good a name for `top_cabinet` as for
-    # `bottom_cabinet`, and matching against the whole house picked the top one: a cabinet
-    # in the playroom, for a task about the bathroom, marking five correct plans wrong.
-    #
-    # The task says which it means. Its spawn, plan and goal name the categories it is
-    # about, and they are ground truth rather than a guess - so an ambiguous name resolves
-    # among those first, and only falls back to the whole house when the task's own words
-    # do not settle it.
-    # Only what the *setup* names - the objects the task injects and the rooms it pins.
-    # The reference plan and the goal were in here too, and they are the answer: a plan
-    # saying "towel" was resolved against the reference's `hand_towel` before the house was
-    # consulted, which is help no unseen task can give. Removing them moves 3-10 tasks per
-    # stored run, every one of them ok -> worse.
-    named = ({s["target"] for s in task.get("spawn", ())}
-             | {s["name"] for s in task.get("spawn", ())}
-             | set(task.get("rooms") or {})) & known
-
-    def ground(name):
-        return resolve(name, named) or resolve(name, known) or name
-
-    plan = [(s["action"], ground(s["object"]) if s.get("object") else None)
-            for s in steps]
-    machine = GraphMachine(WorldGraph.from_scene_graph(graph))
-    outcome = machine.run(plan, [tuple(g) for g in task["goal"]])
-    if outcome.failed_at is not None:
-        step = outcome.steps[outcome.failed_at]
-        return ("planning", f"step {outcome.failed_at + 1} {step.action}: {step.reason}",
-                step.arg)
-    if not outcome.goal_met:
-        return ("goal",
-                "missing " + ", ".join(f"{t}({a}, {b})" for t, a, b in outcome.missing),
+    if sim is None:
+        return "unrun", "not simulated", None
+    if sim.get("error"):
+        return "error", sim.get("why", ""), None
+    failed_at = sim.get("failed_at")
+    if failed_at is not None:
+        step = steps[failed_at] if failed_at < len(steps) else {}
+        arg = step.get("object") if isinstance(step, dict) else None
+        return "planning", sim.get("why", ""), arg
+    if not sim.get("goal_met"):
+        missing = sim.get("missing") or []
+        return ("goal", "missing " + ", ".join(f"{t}({a}, {b})" for t, a, b in missing),
                 None)
-    if not outcome.safe:
-        return ("safety", "left " + ", ".join([f"{n} open" for n in outcome.left_open]
-                                              + [f"{n} on" for n in outcome.left_on]), None)
-    return "ok", f"{len(plan)} actions", None
-
+    if sim.get("unsafe"):
+        return "safety", "left " + ", ".join(map(str, sim["unsafe"])), None
+    return "ok", f"{len(steps)} actions", None
 
 def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
-             extractor=None, simulate=False, declare_goal=False, goal_model=None,
+             extractor=None, declare_goal=False, goal_model=None,
              mend="loop"):
     """Run every task. Rows are written after each one, not at the end.
 
@@ -279,24 +259,25 @@ def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
         # already in `final`; this only reads what it did, for the record.
         mended = (winner or history[-1]).get("mended") if history else None
 
-        # The verdict is the plan's, and only the plan's.
-        plain, plain_why, plain_at = score(task, first)
-        checked, checked_why, checked_at = score(task, final)
+        # Both plans are driven. The ablation is unvalidated-vs-validated, and it is only
+        # honest if both arms are measured the same way - so the LLM's first plan goes
+        # through the simulator exactly as the repaired one does. It costs a second
+        # simulation per task; the alternative was scoring the baseline symbolically, which
+        # is the shortcut this pipeline just removed.
+        from sim_eval import run_plan
 
-        # And the same plan, *driven*. `score` replays symbolically: a NAVIGATE_TO always
-        # succeeds, so a plan that depends on finding a mug in the wrong room scores the
-        # same as one that does not. Running it in `sim2d` makes the robot search for the
-        # object with a camera, and the belief it searches on is the one this pipeline
-        # produced - so a wrong extraction costs metres here in a way it cannot symbolically.
-        simulated = None
-        if simulate and final:
-            from sim_eval import run_plan
-
+        def drive(steps):
+            if not steps:
+                return None
             try:
-                simulated = run_plan(task, graph, final, verbose=False)
+                return run_plan(task, graph, steps, verbose=False)
             except Exception as exc:
-                simulated = {"ok": False, "why": f"{type(exc).__name__}: {exc}",
-                             "error": True}
+                return {"ok": False, "why": f"{type(exc).__name__}: {exc}", "error": True}
+
+        sim_first = drive(first)
+        simulated = drive(final)
+        plain, plain_why, plain_at = verdict_of(sim_first, first)
+        checked, checked_why, checked_at = verdict_of(simulated, final)
 
         # Attribution runs only over failures, and only to explain them. An earlier stage
         # going wrong is the honest cause - the planner cannot use an object nobody
@@ -323,16 +304,16 @@ def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
             # an unplaceable object elsewhere in the task did not cause this failure.
             if stage3 and failed_on and any(same_object(failed_on, n) for n in unnameable):
                 return "grounding"
-            # A belief that already satisfies the goal is a stage-1/3 fault, and naming the
+            # A belief that already satisfies the goal is a stage-1/4 fault, and naming the
             # planner for it hides the cause entirely.
             if believed_done:
                 return "extraction" if stage1 else "grounding"
             # A predicted goal is a new way to fail, and it has to be named as its own
-            # stage. If the loop accepted a plan because it satisfied the goal stage 2b
+            # stage. If the loop accepted a plan because it satisfied the goal stage 2
             # predicted, and the plan then misses the real one, the planner did what it was
             # asked - the target was wrong. Blaming the planner for that hides the cause.
             if verdict == "goal" and predicted:
-                # Compare only the predicates stage 2b is asked to produce. It omits
+                # Compare only the predicates stage 2 is asked to produce. It omits
                 # `open`/`toggled` on purpose - the machine derives those from what the plan
                 # disturbed - so measuring it against the benchmark's full goal blamed it
                 # for every goal failure, including seven where its prediction was exactly
@@ -381,6 +362,9 @@ def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
             # later without replaying every plan.
             "checked_at": checked_at, "plain_at": plain_at,
             "mended": mended,
+            # Both arms of the ablation, driven. `sim_first` is the LLM's own plan with no
+            # validation; `simulated` is the one the loop accepted.
+            "sim_first": sim_first,
             "simulated": simulated,
             "seconds": round(time.time() - started, 1),
             # Kept so the whole thing can be re-scored later without re-running the LLM.
@@ -406,33 +390,43 @@ def summarise(rows):
     from collections import Counter
     total = len(rows)
     lines = [f"\n{total} tasks\n"]
-    for arm, key in (("without validation (first answer)", "plain"),
-                     ("with validation (repair loop)", "checked")):
+    for arm, key in (("without validation, driven", "plain"),
+                     ("with validation + repair, driven", "checked")):
         ok = sum(1 for r in rows if r[key] == "ok")
         lines.append(f"  {arm:34s} {ok:3d}/{total} succeeded ({ok / total:.0%})")
         causes = Counter(r[f"{key}_cause"] for r in rows if r[key] != "ok")
         for cause, n in causes.most_common():
             lines.append(f"      {n:3d}  {cause}")
-    # The third arm, when it was run: the same accepted plan, actually driven.
+    # What the pipeline *believed*, against what happened. The in-loop validation judges a
+    # plan against the goal stage 2 predicted; the simulator judges it against the truth.
+    # The gap between them is the honest cost of a wrong prediction, and it used to be
+    # hidden by a symbolic scorer that judged against the truth for free.
+    believed = [r for r in rows if r["accepted_at"] is not None]
+    ok_and_believed = sum(1 for r in believed if r["checked"] == "ok")
+    lines.append(f"\n  the loop believed it was done  {len(believed):3d}/{total}")
+    lines.append(f"      of those, actually done    {ok_and_believed:3d}/{len(believed) or 1}")
+    wrong_belief = len(believed) - ok_and_believed
+    silent = sum(1 for r in rows if r["accepted_at"] is None and r["checked"] == "ok")
+    lines.append(f"      believed done, was not     {wrong_belief:3d}"
+                 f"    succeeded without ever being accepted: {silent}")
+
     driven = [r for r in rows if r.get("simulated")]
     if driven:
-        ok = sum(1 for r in driven if r["simulated"]["ok"])
-        lines.append(f"  {'executed in the 2-D simulator':34s} {ok:3d}/{len(driven)} "
-                     f"succeeded ({ok / len(driven):.0%})")
         why = Counter()
         for r in driven:
             s_ = r["simulated"]
             if s_["ok"]:
                 continue
             w = s_.get("why", "")
-            why["the plan was already wrong" if r["checked"] != "ok"
-                else "object not found by search" if "is in none of" in w
+            why["object not found by search" if "is in none of" in w
                 else "could not get within reach" if "beyond the" in w
                 else "goal not met once driven" if "goal not met" in w
                 else "left unsafe" if "unsafe" in w
                 else "other"] += 1
-        for cause, n in why.most_common():
-            lines.append(f"      {n:3d}  {cause}")
+        if why:
+            lines.append("  how the driven runs failed:")
+            for cause, n in why.most_common():
+                lines.append(f"      {n:3d}  {cause}")
         metres = [r["simulated"].get("driven", 0.0) for r in driven if r["simulated"]["ok"]]
         if metres:
             lines.append(f"      {sum(metres) / len(metres):.1f} m driven on average "
@@ -486,9 +480,6 @@ def main():
     parser.add_argument("--declare-goal", action="store_true",
                         help="have the planner state the finished world before it plans, "
                              "and check the plan against that instead of nothing")
-    parser.add_argument("--simulate", action="store_true",
-                        help="also drive each accepted plan in the 2-D simulator, so the "
-                             "robot has to find its objects with a camera")
     parser.add_argument("--json", default="data/evaluation.json")
     args = parser.parse_args()
 
@@ -504,7 +495,7 @@ def main():
         out = (args.json if not args.models
                else args.json.replace(".json", f"-{model.split('/')[-1]}.json"))
         rows = evaluate(tasks, attempts=args.attempts, model=model, out=out,
-                        extractor=args.extractor, simulate=args.simulate,
+                        extractor=args.extractor,
                         declare_goal=args.declare_goal, goal_model=args.goal_model,
                         mend=False if args.repair_at == "off" else args.repair_at)
         print(summarise(rows))
