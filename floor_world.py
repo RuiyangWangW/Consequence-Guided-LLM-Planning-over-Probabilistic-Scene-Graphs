@@ -202,6 +202,58 @@ def _erode(mask, cells):
     return ndimage.binary_erosion(mask, np.ones((cells, cells), bool), border_value=0)
 
 
+def reachable_rooms(scene, resolution=DEFAULT_RESOLUTION, radius=DEFAULT_ROBOT_RADIUS,
+                    graphs_path=None):
+    """The rooms the robot can actually get into, in this scene, fully furnished.
+
+    A room the robot cannot enter is not part of its world. Objects in it can never be
+    picked up, searched for or placed on; a plan that names one cannot succeed however good
+    it is; and a probability the RSN spends on it is probability taken away from the rooms
+    that can hold something. Half of `Wainscott_0_int` is like this - six of its twelve
+    rooms, holding nine of its thirty-five pieces of furniture.
+
+    **This is the one definition, and it is the simulator's own.** `Sim2D._search_room`
+    refuses a room with "no standable floor in X reachable from Y", and that is exactly the
+    test here: erode the map by the robot's radius, take the connected region the robot
+    starts in, and keep the rooms with at least one cell in it. Two other notions were in
+    use and both were wrong in a way that cost real tasks. Routing to a *stance beside an
+    object* answers a different question - the stance can sit just outside the room, on
+    reachable floor, while the room itself has none, which is how a console table in an
+    unreachable bedroom looked reachable and broke nineteen tasks. And A* between *room
+    centroids*, which `cost_matrix` used, is stricter than either: a centroid can be buried
+    under furniture in a room the robot enters perfectly well.
+
+    Measured on the fully furnished scene on purpose. The simulator loads only the
+    categories a task mentions, so its floor is more open than the real house and a room
+    can look reachable in one task and not the next. Reachability has to be a property of
+    the building, or the benchmark means something different for every task in it.
+    """
+    key = (scene, round(resolution, 6), round(radius, 6), graphs_path)
+    if key in _REACHABLE:
+        return _REACHABLE[key]
+    kwargs = {"graphs_path": graphs_path} if graphs_path else {}
+    # `prune_unreachable=False` or this recurses: pruning asks this function what to keep.
+    world = FloorWorld.load(scene, resolution=resolution, categories=None,
+                            prune_unreachable=False, **kwargs)
+    mask, labels = world.traversable(radius)
+    cells = np.argwhere(mask)
+    if not len(cells):
+        _REACHABLE[key] = set()
+        return _REACHABLE[key]
+    # Where the robot starts: the middle of the largest standable region, which is what
+    # `Sim2D._starting_pose` picks when no start room is given.
+    sizes = np.bincount(labels.ravel())
+    sizes[0] = 0
+    home = int(np.argmax(sizes))
+    keep = {room for room in world.rooms
+            if int((world.room_mask(room) & mask & (labels == home)).sum()) > 0}
+    _REACHABLE[key] = keep
+    return keep
+
+
+_REACHABLE = {}
+
+
 class FloorWorld:
     """One scene: the floor as a grid, the rooms as labels, the objects as ground truth."""
 
@@ -232,7 +284,7 @@ class FloorWorld:
     @classmethod
     def load(cls, scene, resolution=DEFAULT_RESOLUTION, dataset_root=DEFAULT_DATASET,
              graphs_path="data/room_graphs.json", categories=(), trav_map="no_door",
-             open_doorways=True, radius=None):
+             open_doorways=True, radius=None, prune_unreachable=True):
         """Build the world for one scene from its shipped floor plans.
 
         `categories` says which of the scene's own furniture to load, and mirrors
@@ -246,6 +298,14 @@ class FloorWorld:
         Structural categories are never loaded whatever is asked for; see `STRUCTURAL`.
         `trav_map` picks which raster is the floor (`TRAV_MAPS`), and `open_doorways`
         clears the thresholds that leave adjacent rooms unreachable from one another.
+
+        `prune_unreachable` drops the rooms the robot cannot get into, and everything in
+        them, before anything downstream ever sees them - see `reachable_rooms`. It is on
+        by default because a room behind a wall is not part of the robot's world in any
+        sense that matters: it cannot be searched, nothing in it can be picked up, and a
+        plan naming it cannot succeed. Keeping it only gave every stage its own chance to
+        trip over it. `reachable_rooms` itself loads with this off, since that is the
+        measurement it makes.
         """
         from PIL import Image
 
@@ -269,9 +329,44 @@ class FloorWorld:
         world = cls(scene, resolution, free, room_ids, id_to_room, room_graph, trav_map)
         if open_doorways:
             world.open_doorways(radius or DEFAULT_ROBOT_RADIUS)
+        if prune_unreachable:
+            # The canonical set, measured on the fully furnished house, so that a room is
+            # reachable or not as a fact about the building rather than about which
+            # categories this particular load happens to want.
+            world.keep_rooms(reachable_rooms(scene, resolution=resolution,
+                                             radius=radius or DEFAULT_ROBOT_RADIUS,
+                                             graphs_path=graphs_path))
         if categories is None or categories:
             world.load_scene_objects(dataset_root, categories)
         return world
+
+    def keep_rooms(self, keep):
+        """Drop every room not in `keep`, and every object standing in one.
+
+        The floor raster is left alone - the robot may still walk over cells belonging to a
+        dropped room, and pretending otherwise would carve holes in the map it navigates.
+        What goes is the room's *name*: it stops being somewhere the RSN can rank, somewhere
+        the searcher can be sent, a node in the graph the planner reasons over, and a room
+        an instruction can name. That is the whole point - one rule, applied where the world
+        is built, instead of every stage downstream having to remember.
+        """
+        keep = set(keep)
+        dropped = [r for r in self.rooms if r not in keep]
+        if not dropped:
+            return self
+        self.dropped_rooms = dropped
+        # `room_at` answers from `id_to_room`, which is about to lose the dropped rooms - so
+        # a point inside one would come back `None` and read as "roomless" rather than
+        # "somewhere the robot cannot go". Keep the full map to tell those two apart.
+        self._id_to_room_all = dict(self.id_to_room)
+        self.rooms = {r: v for r, v in self.rooms.items() if r in keep}
+        self.room_graph = dict(self.room_graph)
+        self.room_graph["rooms"] = self.rooms
+        self.room_graph["edges"] = [e for e in self.room_graph.get("edges", [])
+                                    if e[0] in keep and e[1] in keep]
+        self.id_to_room = {i: r for i, r in self.id_to_room.items() if r in keep}
+        self.truth = WorldGraph.from_room_graph(self.room_graph)
+        return self
 
     def load_scene_objects(self, dataset_root=DEFAULT_DATASET, categories=None):
         """Add the furniture the scene JSON declares, at its recorded position.
@@ -311,6 +406,12 @@ class FloorWorld:
             non_kin = state.get("non_kin") or {}
             toggled = (non_kin.get("ToggledOn") or {}).get("value")
             opened = (non_kin.get("Open") or {}).get("value")
+            # An object in a room the robot cannot enter is not part of its world either.
+            # Loading it would let `ground` bind a plan's word to it and let the searcher
+            # be sent after it, which is exactly the failure this pruning exists to remove.
+            if getattr(self, "dropped_rooms", None):
+                if self._true_room_at(*position) in set(self.dropped_rooms):
+                    continue
             self.add_object(name, category, position=position,
                             toggled=toggled, opened=opened)
             added += 1
@@ -355,6 +456,33 @@ class FloorWorld:
         for seg in ids[np.argsort(-counts)]:
             if int(seg) in self.id_to_room:
                 return self.id_to_room[int(seg)]
+        return None
+
+    def _true_room_at(self, x, y, search=0.6):
+        """`room_at`, but answering from the map as it was before any room was pruned.
+
+        Needed for exactly one question: is this object standing in a room the robot cannot
+        reach? After pruning, `room_at` returns None for such a point, which is the same
+        answer it gives for a point in a wall - and the two have to be told apart, or every
+        object in a dropped room is kept as "roomless".
+        """
+        full = getattr(self, "_id_to_room_all", None)
+        if full is None:
+            return self.room_at(x, y, search)
+        row, col = self.to_cell(x, y)
+        if not self.in_bounds(row, col):
+            return None
+        here = int(self.room_ids[row, col])
+        if here in full:
+            return full[here]
+        r = int(round(search / self.resolution))
+        lo_r, hi_r = max(0, row - r), min(self.n, row + r + 1)
+        lo_c, hi_c = max(0, col - r), min(self.n, col + r + 1)
+        patch = self.room_ids[lo_r:hi_r, lo_c:hi_c]
+        ids, counts = np.unique(patch[patch > 0], return_counts=True)
+        for seg in ids[np.argsort(-counts)]:
+            if int(seg) in full:
+                return full[int(seg)]
         return None
 
     def room_mask(self, room):

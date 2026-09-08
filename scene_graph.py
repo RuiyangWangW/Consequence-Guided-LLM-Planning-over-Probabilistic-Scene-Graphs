@@ -127,6 +127,30 @@ def populate(
     )
     rooms = graph["rooms"]
 
+    # **Rooms the robot cannot get into are not part of its world, so they are not part of
+    # its belief either.** Leaving them in gave the RSN somewhere to put probability that
+    # can never hold anything: the searcher was sent to `bedroom_0` in `Wainscott_0_int`,
+    # got "no standable floor" back, ruled it out and moved on - a wasted sweep every time -
+    # and the mass spent on six dead rooms was mass taken from the six that can actually
+    # hold the object. Worse, `sim_eval.ground` could bind a plan's word to a piece of
+    # furniture standing in one, which is what made nineteen tasks unsolvable before any
+    # planning happened.
+    #
+    # `floor_world.reachable_rooms` is the single definition, and it is the simulator's own:
+    # a room is reachable if it has standable floor in the region the robot starts in. The
+    # remaining probabilities are renormalised over what is left, so the ranking still sums
+    # to one and still covers every room the robot can reach.
+    if isinstance(scene_or_graph, str):
+        from floor_world import reachable_rooms
+
+        keep = reachable_rooms(scene_or_graph, graphs_path=graphs_path)
+        if keep and any(r not in keep for r in rooms):
+            rooms = {r: info for r, info in rooms.items() if r in keep}
+            graph = dict(graph)
+            graph["rooms"] = rooms
+            graph["edges"] = [e for e in graph.get("edges", [])
+                              if e[0] in keep and e[1] in keep]
+
     device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     model, ckpt = load(model_path, device)
     room_types = ckpt["room_types"]

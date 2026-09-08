@@ -66,11 +66,30 @@ def build_world(task, graph, plan_objects=(), rng=None):
 
     probe = Sim2D(world, verbose=False)
 
+    memo = {}
+
     def reachable(instance):
-        stances = probe.stances_for(instance)
-        return any(probe.route_to(s) is not None
-                   and world.distance_to(instance, *world.to_world(*s)) <= REACH
-                   for s in stances)
+        if instance not in memo:
+            stances = probe.stances_for(instance)
+            memo[instance] = any(probe.route_to(s) is not None
+                                 and world.distance_to(instance, *world.to_world(*s)) <= REACH
+                                 for s in stances)
+        return memo[instance]
+
+    # `ground` has to answer the same question about the plan's names and the goal's that
+    # this answers about the spawn's supports, and it was answering it differently: the
+    # spawn preferred an instance the robot can get to, and the grounding fell back to
+    # `instances[0]`. So a task could spawn its object on a reachable countertop and then
+    # score the plan against an unreachable one. Sharing the predicate - memoised, because
+    # routing is not cheap and `ground` is called for every step - makes it one rule.
+    world.reachable_instance = reachable
+
+    # Where the *task* says each piece of furniture is. This is the benchmark's own statement
+    # about which physical object an instruction is about, and it is the same source the spawn
+    # below uses to choose a support. `ground` needs it for the same reason: the belief answers
+    # "where does the robot think it is", which is a different question from "which one is this
+    # task about", and only the first should cost search.
+    world.declared_room = lambda n: ((truth.get("objects") or {}).get(n) or {}).get("room")
 
     placed = []
     for spawn in task.get("spawn", []):
@@ -163,7 +182,43 @@ def ground(name, world, graph):
             if support in instances:
                 return support
 
-    return next((i for i in instances if world.room_of(i) == believed), instances[0])
+    # Which instance, when no relation names one. The believed room comes first, but the
+    # belief is the RSN's guess and can name a room no instance is in - and then this used to
+    # take `instances[0]`, which is an arbitrary pick that can land in a part of the house the
+    # robot cannot walk to. On `Wainscott_0_int-09` it did exactly that: six coffee tables,
+    # the belief guessing `bedroom_0` where there is none, and the first instance sitting in
+    # `living_room_2`, across the gap that splits that scene in two. The reference plan itself
+    # then fails, so the task is unsolvable before any planning happens - and the benchmark's
+    # own verification never saw it, because `build_tasks.verify` grounds against the truth,
+    # where the right instance is found by room.
+    #
+    # An unreachable instance cannot be the one the task meant: every task here is verified
+    # achievable. So prefer reachable, exactly as the spawn does above.
+    # Which instance, when no relation names one. Four preferences, weakest assumption last.
+    #
+    # The room the *task declares* comes first. `Wainscott_0_int` has four console tables and the
+    # subtask says the plate goes on the one in `living_room_1`; the RSN guessed `corridor_0`,
+    # where there is none, and this used to fall through to `instances[0]` - the console table in
+    # `bedroom_0`. The robot then swept all twelve rooms without finding it, because that room's
+    # centroid is on the far side of the gap that splits the scene's room graph, so the sweep can
+    # never enter it. One subtask broken that way took eighteen multi-task instructions with it,
+    # and the benchmark's own verification could not see any of them: it grounds against the
+    # truth, where the room lookup finds the right table immediately.
+    #
+    # Then the believed room, which is what the plan was written against. Then merely somewhere
+    # the robot can get to. A wrong belief should cost the robot a search, not make the task
+    # impossible, and binding the name to a table the task never meant is what made it impossible.
+    declared = getattr(world, "declared_room", None)
+    want = declared(name) if declared else None
+    can_reach = getattr(world, "reachable_instance", None)
+    stated = [i for i in instances if want and world.room_of(i) == want]
+    here = [i for i in instances if world.room_of(i) == believed]
+    if can_reach is None:
+        return (stated or here or instances)[0]
+    return (next((i for i in stated if can_reach(i)), None)
+            or next((i for i in here if can_reach(i)), None)
+            or next((i for i in instances if can_reach(i)), None)
+            or (stated or here or instances)[0])
 
 
 def run_plan(task, graph, steps, start_room=None, verbose=False):

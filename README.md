@@ -303,37 +303,45 @@ what else is resident, and a different reduction order flips a near-tied argmax.
 is that no single run's total should be read to the task, and a change worth one or two tasks
 cannot be demonstrated by running the benchmark twice and subtracting.
 
-What *can* be demonstrated is a change on the tasks it was predicted to affect, named in advance.
-The goal-name resolution below was predicted to fix four tasks; it fixed the three in the 4B and
-not the one in the 8B, while the totals moved 87 -> 88 and 93 -> 91. The totals are the noise; the
-three are the result.
+What *can* be demonstrated is a change on tasks named in advance - and the discipline matters,
+because naming them wrongly is easy. The goal-name resolution below was first predicted to fix
+four tasks. Rebuilding every row's belief and comparing it against that row's predicted goal shows
+it can only ever have affected **one**: on three of the four the belief graph and the goal use the
+*same* string, because stage 1 wrote `tshirt` and the goal adapter wrote `tshirt`, so the loop was
+comparing like with like. The `t_shirt` that appears in those rows' failure messages is the answer
+key's spelling, printed by the simulator after grounding, not a comparison the loop ever made. Two
+of the three flipped to passing in the re-run anyway - which is exactly the +/-3 noise, and a
+reminder that a flip in the predicted direction is not evidence unless the mechanism is checked.
 
 **Checking the plan is worth more than doubling the model.** An unchecked 8B solves 43; a
 checked 4B solves 87. The 4B's raw output is little better than half the 8B's — 23 against 43 —
 and the loop closes most of the gap, repairing 65 of the 4B's plans and 50 of the 8B's.
 
-**A harness fault that used to cost both arms, now fixed.** `GraphMachine._resolve_goal_name` matches goal object
-names by equality, and its docstring says loose matching was removed because the goal is
-"canonicalised on the way in" — but `parse_goal` canonicalises only the *predicate* vocabulary,
-never object names, so that canonicalisation does not exist. The goal adapter writes reasonable
-variants the graph does not hold verbatim: `tshirt` for `t_shirt`, `bath_towels` for
-`bath_towel`, `bowls` for `bowl`, `tv` for `standing_tv`. `object_names.same` resolves every one
-of them; `unmet` never asks it. Fifteen occurrences in each arm, costing 3 of the 4B's 13
-failures and 3 of the 8B's 7. `Pomaria_0_int-04` is the clearest: the 4B's *first* plan is
-correct and drives clean, but it is scored against `toggled(tv, True)`, never matches
-`standing_tv`, is refused on all five attempts, and the run reports a degenerate two-step last
-attempt — the single "made worse" case in the table. `_resolve_goal_name` now resolves a goal term through `object_names.same`, but only when
-**exactly one** object in the graph could be it - `cabinet` with both a top and a bottom cabinet
-present stays unresolved, which is what the strict version existed to protect. On the tasks
-predicted in advance it fixed 3 of 3 in the 4B (`Pomaria_0_int-04`, `Wainscott_1_int-01`,
-`Wainscott_1_int-02`) and 0 of 1 in the 8B.
+**A harness fault that used to cost both arms, now fixed.** `GraphMachine._resolve_goal_name`
+matched goal object names by equality, and its docstring said loose matching had been removed
+because the goal is "canonicalised on the way in" — but `parse_goal` canonicalises only the
+*predicate* vocabulary, never object names, so that canonicalisation did not exist. The function
+was also a tautology: `return name if name in self.graph.objects else name` returns `name` either
+way. A goal term that never resolves can never hold, so the loop refuses every plan for five
+attempts and reports whatever the last one wrote.
 
-The three it did not fix elsewhere fail for a different reason: the *plan* uses the wrong name
-too - the model writes `NAVIGATE_TO(tshirt)` - and `WorldGraph.resolve` is strict there on
-purpose, because matching loosely once let `cabinet` bind to a lone `bottom_cabinet` and admitted
-invented nodes. The machine refuses with "'tshirt' is not one of the objects this task is about;
-use the names listed above", which is correct and actionable, and the model ignores it for five
-attempts. That is the model's failure, not the harness's.
+`_resolve_goal_name` now resolves through `object_names.same`, but only when **exactly one** object
+in the graph could be the term — `cabinet` with both a top and a bottom cabinet present stays
+unresolved, which is what the strict version existed to protect against, since it used to guess and
+let the plan break ties.
+
+**It is worth exactly one task in two hundred, and that is the honest figure.** Scanning all 200
+rows and rebuilding each belief: four carry a goal term that fails `==` and `object_names.same`
+resolves, every one of them the same word, `tv` for `standing_tv`. No term in the benchmark is
+ambiguous and none is unresolvable. Of those four, one actually failed - `Pomaria_0_int-04` in the
+4B, where the model's first plan is correct, drives clean, and is refused five times over
+`toggled(tv)`. The other three carried the mismatch and passed regardless, because their plans
+failed or succeeded on other grounds first.
+
+The fix is still right - a term that cannot resolve makes a condition unsatisfiable, and the loop
+then rejects correct work - but it is a one-task fix, not the three-to-six the first count
+suggested. That first count came from grepping failing rows for a resolvable mismatch instead of
+asking whether the mismatch was what refused the plan.
 
 **Belief against reality.** The loop believed it was finished on 88 tasks (4B) and 94 (8B), and
 was right on 86 and 91. The wrong beliefs are two and three respectively, and they share the
