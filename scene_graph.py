@@ -17,6 +17,7 @@ planner needs to know an object is probably absent, which is exactly the signal 
 safety filter exists to provide.
 """
 
+import collections
 import json
 import os
 
@@ -137,16 +138,52 @@ def populate(
         if t not in best_instance or info["pixels"] > rooms[best_instance[t]]["pixels"]:
             best_instance[t] = rid
 
+    # Every room of every type, so a type with two instances can hold the object in either.
+    # Keeping only the largest instance - which this did - means an object that is really in
+    # the smaller living room is not merely mis-ranked, it is unreachable by search: the room
+    # never enters the candidate list, so no amount of looking can ever turn it up.
+    instances = collections.defaultdict(list)
+    for rid, info in rooms.items():
+        instances[info["room_type"]].append(rid)
+
     def rsn_ranking(name):
-        """Every room in this scene, most probable first, with the winner's probability."""
+        """A complete distribution over this scene's rooms, most probable first.
+
+        The RSN scores room *types*; a scene has room *instances*. The type's mass is split
+        equally across its instances, because the model has said nothing to tell two bedrooms
+        apart - they are a genuine tie. The tie is broken where the information to break it
+        exists: `search_cost` orders equal-probability rooms by how far they are from
+        wherever the robot is standing, so it sweeps the near bedroom first. That is a fact
+        about the robot's position, which changes as it moves, so it cannot be baked in here.
+
+        The result is normalised over the rooms this scene actually has, so it sums to one
+        and ranks every room. That matters downstream: the search estimator weighs a
+        candidate by its probability, and a distribution that sums to the top score alone -
+        which is what the raw RSN output gives - makes an object the model is unsure about
+        look cheap to find rather than expensive.
+
+        Rooms whose type the RSN has no label for keep a floor of the smallest scored mass,
+        rather than zero: the model having no opinion about a room is not evidence that the
+        object is not in it.
+        """
         probs = predict_rooms(model, ckpt, name, device)
         # Only room types this scene actually has are candidates: a high score for
         # `garage` is irrelevant in a scene with no garage.
-        scored = [(probs[room_types.index(t)], t) for t in best_instance if t in room_types]
+        scored = {t: float(probs[room_types.index(t)]) for t in instances if t in room_types}
         if not scored:
-            return [], 0.0, None
-        scored.sort(reverse=True)
-        return ([best_instance[t] for _, t in scored], float(scored[0][0]), scored[0][1])
+            return [], 0.0, None, {}
+        floor = min(scored.values()) if scored else 0.0
+        weights = {}
+        for room_type, rids in instances.items():
+            mass = scored.get(room_type, floor)
+            for rid in rids:
+                weights[rid] = mass / len(rids)
+        bulk = sum(weights.values())
+        belief = ({r: w / bulk for r, w in weights.items()} if bulk > 0
+                  else {r: 1.0 / len(weights) for r in weights})
+        ranked = sorted(belief, key=lambda r: (-belief[r], r))
+        best_type = rooms[ranked[0]]["room_type"]
+        return ranked, float(scored.get(best_type, belief[ranked[0]])), best_type, belief
 
     stated = stated or {}
     dependent = dependent or []
@@ -169,7 +206,7 @@ def populate(
 
     placed, unplaced = {}, {}
     for name in to_place:
-        ranked, p, best_type = rsn_ranking(name)
+        ranked, p, best_type, belief = rsn_ranking(name)
         said = resolve_room_type(stated.get(name), best_instance) if name in stated else None
         if said:
             # The task said so, so search there first - but keep the RSN's ranking behind
@@ -181,6 +218,10 @@ def populate(
                 "room_type": said,
                 "probability": 1.0,
                 "candidates": [first] + [r for r in ranked if r != first],
+                # The task named the room, so that is where the robot looks; the RSN's
+                # distribution stays behind it as the belief to fall back on if it is wrong.
+                "belief": {first: 1.0},
+                "fallback": belief,
                 "stated": True,
             }
             continue
@@ -199,6 +240,7 @@ def populate(
             "room_type": best_type,
             "probability": p,
             "candidates": ranked,
+            "belief": belief,
         }
 
     # Now the dependent objects, outward from the roots. A relation is a fact the task
@@ -222,13 +264,19 @@ def populate(
             #      when the *relation* was wrong, not just the room. A potato reported on
             #      the countertop but actually in the fridge is only findable if the
             #      potato's own ranking is in the list.
-            own, _, _ = rsn_ranking(dep["object"])
+            own, _, _, own_belief = rsn_ranking(dep["object"])
             order = list(anchor.get("candidates") or ([room] if room else [])) + own
             placed[dep["object"]] = {
                 "room": room,
                 "room_type": rooms[room]["room_type"] if room in rooms else None,
                 "probability": 1.0,
                 "candidates": list(dict.fromkeys(order)),
+                # Where its support is, if that is known; otherwise the support's own
+                # belief, and failing that this object's - the same three tiers as the
+                # candidate order above, carrying probability rather than just rank.
+                "belief": ({room: 1.0} if room else
+                           (anchor.get("belief") or own_belief)),
+                "fallback": anchor.get("belief") or own_belief,
                 "via": {"relation": dep["relation"], "target": target},
             }
             relations.append({

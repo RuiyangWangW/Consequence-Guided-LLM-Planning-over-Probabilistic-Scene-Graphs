@@ -46,7 +46,7 @@ import json
 import os
 import re
 
-from object_names import match
+from object_names import match, same
 from planner import CONFERS, MUST_SWITCH_OFF, NOT_GRASPABLE, OPENABLE, TOGGLEABLE
 from world_graph import ROBOT, WorldGraph
 
@@ -712,15 +712,29 @@ And what each one does. "The stack" is the held object plus everything riding on
     def _resolve_goal_name(self, name):
         """The graph node a goal term names, or the term itself.
 
-        One vocabulary: the goal is written in the same names the belief graph is built
-        from, so this is equality. It used to match loosely, with the plan breaking ties,
-        because the goal model wrote the sentence's words - `cabinet` for `bottom_cabinet`
-        - on 16 of 100 tasks. That gap is closed at the source now: the instruction names
-        the dataset's category and the goal is canonicalised on the way in. A term that
-        still does not resolve is a term nothing produced, and leaving it unresolved makes
-        the condition unmet, which is the honest answer.
+        Equality first, because one vocabulary is the goal. But the goal model writes the
+        *sentence's* words, and the sentence does not always spell things the way the dataset
+        does: `tshirt` for `t_shirt`, `bath_towels` for `bath_towel`, `tv` for `standing_tv`,
+        `bowls` for `bowl`. Those are the same object by any reading, and `object_names.same`
+        already says so - it is the function the scorer and the extraction check use for exactly
+        this. Nothing was asking it here.
+
+        The cost of not asking is not a near miss. A goal term that never resolves can never
+        hold, so the validation loop refuses *every* plan for all five attempts and the run
+        reports whatever the last one wrote - which is usually worse than the first. On
+        `Pomaria_0_int-04` the model's first plan is correct and drives clean, and the loop
+        rejects it five times over `toggled(tv)` against a graph holding `standing_tv`.
+
+        This once matched loosely and was taken out because it guessed, letting the plan break
+        ties between several candidates. It does not guess now: a term resolves only when
+        **exactly one** object in the graph could be it. Where two could, the term stays
+        unresolved and the condition stays unmet, which is the honest answer the strict version
+        was written to give.
         """
-        return name if name in self.graph.objects else name
+        if name in self.graph.objects:
+            return name
+        hits = [node for node in self.graph.objects if same(name, node)]
+        return hits[0] if len(hits) == 1 else name
 
     def unmet(self, goal):
         """Which of these goal conditions do not hold in this machine's world?

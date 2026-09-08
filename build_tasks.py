@@ -87,10 +87,15 @@ def extraction_truth(task, path=EXTRACTION_TRUTH):
     second reader. It is data, versioned and inspectable, rather than a rule nobody re-reads.
     """
     global _TRUTH
+    # Keyed by path. It used to be a single dict filled by whichever caller arrived first,
+    # so a second answer file - the subtasks have their own - would silently be served the
+    # first one's contents and every id would come back missing.
     if _TRUTH is None:
+        _TRUTH = {}
+    if path not in _TRUTH:
         with open(path) as handle:
-            _TRUTH = json.load(handle)
-    answer = _TRUTH.get(task["id"])
+            _TRUTH[path] = json.load(handle)
+    answer = _TRUTH[path].get(task["id"])
     if answer is None:
         raise SystemExit(f"no extraction ground truth for {task['id']} - add it to {path}")
     return {"uncertain": list(answer.get("uncertain") or []),

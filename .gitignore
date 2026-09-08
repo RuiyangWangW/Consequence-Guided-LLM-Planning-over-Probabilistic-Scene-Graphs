@@ -37,3 +37,13 @@ data/pre-*/
 data/prompted-extractor/
 data/*.bak
 data/tasks.json.*
+data/v[0-9]-*.json
+data/exp-*.json
+data/ladder/
+data/order-oracle*.json
+data/multi-4b*.json
+data/spread-headroom.json
+
+# Papers and other reference material that is not an input to anything here.
+docs/
+
