@@ -9,6 +9,16 @@ cannot see a whole house at once, so it cannot check those claims itself. This p
 supplies what is missing — a learned prior over where objects are, and a symbolic model of what
 the primitives permit — and refuses plans that violate either.
 
+**Everything here is BEHAVIOR-1K.** The scenes, floor plans, room labels and object instances are
+BEHAVIOR-1K's; the affordances the world model enforces are read from BDDL's own annotations
+rather than written by hand - `OPENABLE`, `TOGGLEABLE`, `FILLABLE` and `NOT_GRASPABLE` all come
+out of `properties_to_synsets.json` and the mass table; and the nine primitives are the ones
+`execute_plan.py` drives in OmniGibson. The 2-D simulator is a fast executor over those same
+assets, not a separate world: it reads the BEHAVIOR floor plan, places objects where the task's
+ground truth puts them, and moves a robot of the real base radius along A* routes it could
+actually drive. A plan validated here is a plan in BEHAVIOR-1K's action space, over BEHAVIOR-1K
+objects, in a BEHAVIOR-1K house.
+
 ```
 task text ──> objects ────┐                       ┌─> graph machine ──> repair ──┐
           └─> goal state ──┐ ├──> scene graph ──┐    │                              │
@@ -30,11 +40,11 @@ floor plan ──> rooms ──────┼─┘       (RSN)      └─> LL
 | 7 | `sim2d.py` / `execute_plan.py` | the plan is **driven** — 2-D in a second, or OmniGibson with video |
 
 Supporting: `derive_vocab.py` derives the household vocabulary from BEHAVIOR's own activity
-definitions; `tasks.py` + `task_shapes.py` + `build_tasks.py` define and **verify** the 100-task
-benchmark, replaying every reference plan before it counts. `build_tasks.py` refuses to write
+definitions. The benchmarks are built and verified separately - see [BENCHMARK.md](BENCHMARK.md).
+The builder refuses to write
 `data/tasks.json`: that file carries corrections applied by hand, and regenerating discards
-them silently — which has happened. A rebuild goes elsewhere and is diffed; `evaluate.py` runs the experiment; `ablate_plan.py` measures where the
-two checkers disagree.
+them silently. A rebuild goes elsewhere and is diffed. `evaluate.py` runs the experiment and
+`ablate_plan.py` measures where the two checkers disagree.
 
 ```bash
 source ~/safety_filter/setup_behavior_env.sh
@@ -117,9 +127,8 @@ predicate. Harmless in practice — a stray `open` is redundant with the safety 
 means the adapter's behaviour on that one predicate is arbitrary.
 
 **This predicted goal is shown to the planner in every attempt**, initial and retry. It is the
-pipeline's own reading of the instruction, never the benchmark's answer key — so it leaks
-nothing, and it closes a real gap: plans used to be validated against a goal the planner had
-never been shown.
+pipeline's own reading of the instruction, never the benchmark's answer key, so it leaks nothing -
+and a plan is never refused against a goal the planner was not shown.
 
 ## Stage 3 — room graphs
 
@@ -129,10 +138,34 @@ region of floor.
 
 ## Stage 4 — placing objects with the RSN
 
-The RSN gives `P(object | room type)` for open vocabulary. A stated location is the first guess
-but never the only one: the graph carries a **ranking**, and the search layer works down it, so
-a wrong first guess costs metres rather than the task. Only an object the RSN cannot place at
-all is unrecoverable.
+Where an object is, when the sentence does not say, comes from a **Relational Semantic Network**
+after Ginting et al., *SEEK: Semantic Reasoning for Object Goal Navigation in Real World
+Inspection Tasks* (RSS 2024, IV-B):
+
+    object name -> frozen text encoder -> MLP -> P(object present | room type), for all room types
+
+`BAAI/bge-small-en-v1.5` encodes the category name to 384 dimensions and is **frozen**; a
+three-layer MLP (256-128-64, dropout 0.2) maps that to one logit per room type. Two properties of
+this shape do the work. The embedding is frozen and textual rather than a learned per-category
+table, so a name never seen in training still lands near similar names and gets an answer - which
+is the only workable choice when a language model can ask about any object. And the room is an
+*output dimension*, not an input, so one forward pass scores every room at once, which is what the
+search estimator needs.
+
+Trained on **11,218 object placements across all 51 BEHAVIOR scenes**, 197 merged categories over
+37 room types, held out by scene. Where SEEK regresses onto soft probabilities distilled from
+GPT-4, real layouts give hard occurrence labels, so this trains with BCE - the correct likelihood
+for a binary observation - with positive-class weighting, and a two-parameter temperature
+calibration fitted afterwards. Held-out **AUC 0.904, average precision 0.602, Brier 0.057**.
+
+The output is a *soft prior*, and treating it as anything firmer is a mistake: `P(toilet in
+kitchen)` is 0.18, not zero. So a stated location is the first guess but never the only one - the
+graph carries a complete ranked distribution and the search layer works down it, so a wrong first
+guess costs metres rather than the task. Only an object the RSN cannot place at all is
+unrecoverable. It conditions on room *type*, not on this particular house, and is measured to put
+its argmax on the right room **47% of the time**; the true room is second on a further 197 of 832
+guesses. That accuracy is what the ordering stage is reasoning over, and why carrying the whole
+distribution rather than its argmax is worth anything at all.
 
 ## Stage 5 — planning and validation
 
@@ -151,17 +184,17 @@ scene with per-object confidences, the predicted goal, nine rules, and worked ex
 | `TOGGLE_ON`/`OFF(x)` | `near(x)`; `x` has a switch |
 | `RELEASE()` | none |
 
-Two of these were learned the hard way.
+Two of these carry more weight than their size suggests.
 
-**`near` is an edge, not a room.** It used to mean "same room", and a fifth of the plans the
-machine accepted were undrivable — every one drove to something in the kitchen and then acted
-on something else three metres away in the same kitchen. `NAVIGATE_TO` now writes a `nearby`
-edge to the object and its contents, and that class is gone.
+**`near` is an edge, not a room.** `NAVIGATE_TO` writes a `nearby` edge to the object and its
+contents, so proximity is to a *thing*. Room-level proximity is too weak to be a precondition: a
+robot standing at the kitchen counter is in the same room as the fridge three metres away, and a
+plan that acts on it from there is accepted by the checker and undrivable by the robot.
 
-**`NAVIGATE_TO` is not free.** It had no preconditions at all, but the simulator has to *see* an
-object to drive to it, and a bottle behind a shut fridge door is invisible: the robot searches
-every believed room and the run dies on the step. It now refuses, and the repair rules compose
-into go-to-container → open → go-to-object.
+**`NAVIGATE_TO` is not free.** It refuses an object inside a shut container, because the simulator
+has to *see* something to drive to it and a bottle behind a fridge door is invisible - the robot
+would sweep every believed room and die on the step. The repair rules compose to satisfy it:
+go-to-container -> open -> go-to-object.
 
 ### Safety
 
@@ -171,11 +204,9 @@ the `CONFERS` appliances, 39 categories. An oven, a dishwasher, a washer, a drye
 maker and all nine sink types qualify; a lamp or a television does not, so "turn on the lamp"
 is a task the machine can accept instead of failing for succeeding.
 
-This is checked automatically from what the plan disturbed. Goals do **not** restate it. They
-used to be required to, and that requirement was deleted: it duplicated a check the machine
-already makes, in a form that enforced nothing — an untouched switch reads as off, so the
-condition was satisfied by never approaching the object — and it made "leave the lamp on"
-inexpressible.
+This is checked automatically from what the plan disturbed, and goals do **not** restate it.
+Requiring them to would enforce nothing - an untouched switch reads as off, so the condition is
+satisfied by never approaching the object - and would make "leave the lamp on" inexpressible.
 
 ## Stage 6 — repair, then replanning
 
@@ -228,22 +259,27 @@ That fuzzer cannot generate the case that matters most, though: it never spawns 
 object inside a shut container, which is exactly the gap `NAVIGATE_TO`'s new precondition
 closes. Treat "480 of 480" as a statement about the cases the fuzzer reaches.
 
-## The benchmark
+## The benchmarks
 
-100 tasks over 10 scenes, in `tasks.py`, expanded by `task_shapes.py` and verified by
-`build_tasks.py`. A task is only written out if its reference plan runs and reaches its goal.
+**Single-task: 100 long-horizon tasks over 10 scenes.** Each names objects to fetch, containers
+to open, appliances to run, and a place to leave things. Predicate counts: `object_inside` 102,
+`on_top` 97, `washed` 17, `cooked` 12, `toggled` 9, `dried` 3. Every task ships with a reference
+plan that is known to reach its goal in the simulator, so a failure is always the pipeline's.
 
-A task has to be **sayable** (the instruction names everything needed), **reachable** (the
-objects are in one region of floor), and **mean one thing**. The extraction ground truth is
-derived from the task's own structure, not written by hand. Where a sentence gives a
-preposition it is decisive; otherwise BEHAVIOR's `fillable` annotation decides in-versus-on.
+**Multi-task: 500 instructions over the same 10 scenes**, each asking for 2-5 independent errands
+in one sentence - "put the notebook in the office bookcase, take the casserole out of the fridge,
+warm it in the microwave, and leave it on the breakfast table". Predicate counts: `on_top` 964,
+`object_inside` 869, `cooked` 110, `toggled` 99, `washed` 65, `dried` 62; 173 of the 500 ask for a
+state an appliance confers. The errands in one instruction never share an object, so every
+ordering is legal and the robot's only reason to prefer one is that it has to walk.
 
-Predicate counts: `object_inside` 102, `on_top` 97, `washed` 17, `cooked` 12, `toggled` 9,
-`dried` 3.
+BEHAVIOR scenes are furniture-only - across all ten benchmark scenes there are **three** objects a
+robot could pick up - so anything to manipulate is injected, from categories the object dataset
+ships.
 
-BEHAVIOR scenes are furniture-only — across all ten benchmark scenes there are **three**
-objects a robot could pick up — so anything to manipulate is injected, from categories the
-object dataset ships.
+Both sets are fixed artefacts with a content stamp, and every result records the stamp it ran
+against. How they are constructed, verified and rebuilt is in **[BENCHMARK.md](BENCHMARK.md)**;
+none of it is needed to read the results below.
 
 ## The experiment
 
@@ -251,16 +287,15 @@ object dataset ships.
 task**, so the comparison is exact: decoding is greedy, so the first plan is the same plan in
 both arms, and they differ only in whether anything is done about a bad one.
 
-| arm | what it is |
-| --- | --- |
-| without validation | the model's first answer, kept whatever it says |
-| with validation | the repair loop — mend what the machine can, hand back what it cannot, up to 5 attempts |
+| arm | flags | what it is |
+| --- | --- | --- |
+| LLM-only | `--attempts 1 --repair-at off` | the model's first answer, kept whatever it says |
+| LLM + feedback | `--attempts 5 --repair-at off` | the machine's refusal handed back, up to 5 tries, nothing edited on the model's behalf |
+| GAVEL | `--attempts 5 --repair-at loop` | the same loop, plus the mender applying what its own refusals imply |
 
-**Both arms are driven.** There is no symbolic scoring: a plan's verdict is what happened when
-the robot ran it. An earlier version replayed plans symbolically against the benchmark's goal,
-which handed out credit for satisfying an answer key the pipeline never sees — two tasks scored
-`ok` while the validation loop had rejected them for five straight attempts. That scorer is
-gone.
+**Every arm is driven.** There is no symbolic scoring: a plan's verdict is what happened when the
+robot ran it. Replaying a plan against the benchmark's goal instead would hand out credit for
+satisfying an answer key the pipeline never sees.
 
 The summary reports three numbers per model: the two driven arms, and **how often the loop
 believed it was finished against how often it actually was**. The gap between those is the cost
@@ -268,7 +303,8 @@ of a wrong goal prediction, which nothing measured before.
 
 ```bash
 HF_HOME=/mnt/check/ruiyangw/hf_cache python evaluate.py \
-    --model Qwen/Qwen3-8B --extractor models/h1-1.7b-v2 --goal-model models/state-1.7b-v2 \
+    --model Qwen/Qwen3-8B --extractor models/h1-1.7b-v5 --goal-model models/state-1.7b-v5 \
+    --attempts 5 --repair-at loop \
     --json data/run.json
 ```
 
@@ -281,8 +317,9 @@ by executing.
 Failures cascade, so each is attributed to the stage that **caused** it, not the stage that
 differed. Extraction can only cause a failure two ways: the plan wanted an object it never
 surfaced, or it read a location the task did not state and the failing step is that object.
-Anything else is the planner's. Measured on an earlier run, the old "blame extraction if
-extraction differed" rule was wrong on every one of 11 tasks.
+Anything else is the planner's. Attributing a failure to whichever stage merely *differed* from
+the reference is not the same test and gets it wrong: extraction differs on many tasks that
+succeed, and on many failures whose cause is elsewhere.
 
 A wrong RSN room is not a failure — the search layer works down the ranking.
 
@@ -316,72 +353,33 @@ what else is resident, and a different reduction order flips a near-tied argmax.
 is that no single run's total should be read to the task, and a change worth one or two tasks
 cannot be demonstrated by running the benchmark twice and subtracting.
 
-What *can* be demonstrated is a change on tasks named in advance - and the discipline matters,
-because naming them wrongly is easy. The goal-name resolution below was first predicted to fix
-four tasks. Rebuilding every row's belief and comparing it against that row's predicted goal shows
-it can only ever have affected **one**: on three of the four the belief graph and the goal use the
-*same* string, because stage 1 wrote `tshirt` and the goal adapter wrote `tshirt`, so the loop was
-comparing like with like. The `t_shirt` that appears in those rows' failure messages is the answer
-key's spelling, printed by the simulator after grounding, not a comparison the loop ever made. Two
-of the three flipped to passing in the re-run anyway - which is exactly the +/-3 noise, and a
-reminder that a flip in the predicted direction is not evidence unless the mechanism is checked.
+A change worth one or two tasks therefore cannot be demonstrated by running the benchmark twice
+and subtracting; it has to be shown on tasks named in advance, with the mechanism checked on each.
 
-**Checking the plan is worth more than doubling the model.** An unchecked 8B solves 43; a
-checked 4B solves 87. The 4B's raw output is little better than half the 8B's — 23 against 43 —
-and the loop closes most of the gap, repairing 65 of the 4B's plans and 50 of the 8B's.
+**The failures.** Nineteen across both models, and they cluster into three shapes.
 
-**A harness fault that used to cost both arms, now fixed.** `GraphMachine._resolve_goal_name`
-matched goal object names by equality, and its docstring said loose matching had been removed
-because the goal is "canonicalised on the way in" — but `parse_goal` canonicalises only the
-*predicate* vocabulary, never object names, so that canonicalisation did not exist. The function
-was also a tautology: `return name if name in self.graph.objects else name` returns `name` either
-way. A goal term that never resolves can never hold, so the loop refuses every plan for five
-attempts and reports whatever the last one wrote.
+| | Qwen3-4B (11) | Qwen3-8B (8) |
+| --- | --- | --- |
+| goal unmet in the true world | 3 | 4 |
+| a `GRASP` the world refused | 3 | 3 |
+| a placement with an empty hand | 3 | 0 |
+| acted on something never navigated to | 0 | 1 |
+| other | 2 | 0 |
+| *of which also carry a stage-1 error* | *4* | *3* |
 
-`_resolve_goal_name` now resolves through `object_names.same`, but only when **exactly one** object
-in the graph could be the term — `cabinet` with both a top and a bottom cabinet present stays
-unresolved, which is what the strict version existed to protect against, since it used to guess and
-let the plan break ties.
+Four of the 4B's and three of the 8B's are downstream of an extraction fault - an invented
+location or a misread relation - so the genuinely planner-attributable count is smaller than the
+totals suggest.
 
-**It is worth exactly one task in two hundred, and that is the honest figure.** Scanning all 200
-rows and rebuilding each belief: four carry a goal term that fails `==` and `object_names.same`
-resolves, every one of them the same word, `tv` for `standing_tv`. No term in the benchmark is
-ambiguous and none is unresolvable. Of those four, one actually failed - `Pomaria_0_int-04` in the
-4B, where the model's first plan is correct, drives clean, and is refused five times over
-`toggled(tv)`. The other three carried the mismatch and passed regardless, because their plans
-failed or succeeded on other grounds first.
+The class neither the checker nor the repair can reach is **goal unmet**: the plan applies
+cleanly, leaves nothing open or running, and still does not achieve what was asked. The machine
+has no complaint to make about a plan that breaks none of its rules, so there is nothing to hand
+back and nothing to mend. It is the largest single class for the 8B and the reason its score is
+not higher.
 
-The fix is still right - a term that cannot resolve makes a condition unsatisfiable, and the loop
-then rejects correct work - but it is a one-task fix, not the three-to-six the first count
-suggested. That first count came from grepping failing rows for a resolvable mismatch instead of
-asking whether the mismatch was what refused the plan.
-
-**Belief against reality.** The loop believed it was finished on 88 tasks (4B) and 94 (8B), and
-was right on 86 and 91. The wrong beliefs are two and three respectively, and they share the
-same two tasks — `Beechwood_0_int-08` and `Wainscott_0_int-07`, where stage 1 *invents* a
-location ("coffee_cup ON_TOP desk", "plate ON_TOP coffee_table") that the instruction never
-states. The belief then has the object already at its destination, the plan does not fetch it,
-and the loop has nothing to object to: it is measuring against a world that is wrong before the
-robot moves. Nothing downstream can catch that.
-
-The mirror case happens too: `Pomaria_0_int-09` (both arms) and `Pomaria_0_int-04` (8B) were
-refused on all five attempts and then met their goal when driven — the goal-name fault above.
-Being conservative is the safe direction; it costs attempts, not correctness.
-
-**The failures.** The 4B's thirteen: six goal-unmet, four placements with an empty hand, three
-where the plan reaches for something it never navigated to. The 8B's seven: four goal-unmet and
-three unreached objects. Four of the 4B's and one of the 8B's are downstream of a stage-1
-error — an invented location or a misread relation — and three in each arm are the goal-name
-fault, which leaves the genuinely planner-attributable count much smaller than the totals
-suggest.
-
-The feedback itself is correct: the complaint names the unmet relations verbatim, and the
-planner is shown the goal. What separates the two models is not the quality of the complaint
-but whether they act on it. The 4B still loses four tasks to a placement with an empty hand —
-a refusal the machine states plainly and the model does not answer — where the 8B loses none.
-Both lose the same three to objects the plan reaches for without navigating to first, and both
-lose their remaining tasks to plans the machine accepts and the goal check rejects, which is
-the one class neither the checker nor the repair can reach.
+The 4B's distinguishing failure is different: three placements with an empty hand, a refusal the
+machine states plainly and the model does not act on, where the 8B loses none. That is the gap
+that closes with model capacity, and it is smaller than the gap the world model itself closes.
 
 ## Several errands in one instruction
 
@@ -407,50 +405,14 @@ cost.
 | 9-11 | `gavel.solve` | commit one errand, execute it, update the belief with what was seen, re-optimise |
 
 Stages 1-4 and 6 are the single-task pipeline unchanged, and that is deliberate: the multi-task
-arm reuses the same extractor, the same RSN, the same `GraphMachine`, the same repair loop and
-the same simulator, so a difference in the results is the new stages and not a new pipeline.
+arm reuses the same extractor, the same RSN, the same `GraphMachine`, the same repair loop and the
+same simulator, so a difference in the results is the new stages and not a new pipeline.
 
-**Stage 1's answer key has three classes, and they are not interchangeable.** `stated` is
-where the sentence names an object's *room* ("the kitchen countertop"); `dependent` is where it
-names an object's *support* ("the wineglass from the countertop"); `uncertain` is what it says
-nothing about, and only that last class is what the RSN is asked to guess. `subtasks.py`
-originally computed its own key and put every name into `uncertain` with the other two empty.
-Two things went wrong at once, and the second is much worse than the first:
-
-* the extractor, which reads the sentence correctly and answers in the three classes, was
-  marked wrong on every one of the 500 instructions;
-* `populate` was handed those same wrong classes, so the RSN was set guessing rooms that the
-  instruction had stated outright — and the belief the planner reasoned over was worse than the
-  instruction warranted.
-
-The multi-task set now gets its key the way the single-task set does: authored per sentence in
-`data/subtask_extraction.json`, in the same format, read by the same `extraction_truth`
-function. Merging across errands respects the disjointness — an object `uncertain` in one clause
-and `stated` in another is stated in the combined instruction, because one of the clauses says
-so.
-
-The errands themselves are written the same way the single-task benchmark is — `subtasks.py`
-declares them in `tasks.py`'s format and `build_multitask.py` puts every one through
-`build_tasks.verify`, the same function that verifies the 100-task set, before any of them is
-combined. There is one task generator, not two. `build_multitask.py` refuses to write
-`data/tasks.json` at all, for the same reason `build_tasks.py` does.
-
-Combinations are drawn under two rules. No two errands in one instruction may touch the same
-object, which is what makes any ordering legal and the cost decomposition exact. And no
-furniture *category* may appear in two different rooms across them.
-
-The second rule exists because the belief is keyed by category: `stated` maps `bookcase` to one
-room and `populate` creates one `bookcase` node. An instruction saying "the office bookcase" in
-one clause and "the kitchen bookcase" in another therefore has no single referent for
-`NAVIGATE_TO bookcase`, and one of the two clauses is wrong whatever the planner does. That is
-not a hard instruction, it is an unanswerable one, and 174 of the first 500 were built that way
-— 35% of the benchmark scoring the planner on an ambiguity it could not resolve. Sharing a
-*destination* is still allowed; two things can go in the same bookcase, and that leaves the
-referent unique. Every scene still admits 200 to 1,500 admissible combinations against the 50
-it needs.
-
-Precedence is deliberately absent: two errands that must happen in a fixed order are not two
-errands, they are one.
+Two properties of the instructions matter for what follows, and both are enforced when the set is
+built rather than assumed here. The errands in one instruction **share no object**, which is what
+makes every ordering legal and lets the expected-cost objective decompose into a pairwise matrix.
+And no furniture *category* appears in two different rooms across them, so `NAVIGATE_TO bookcase`
+always has one referent. See [BENCHMARK.md](BENCHMARK.md).
 
 ### What the ordering costs to compute
 
@@ -500,169 +462,45 @@ falls back to the object's own RSN ranking, and failing that to a sweep of what 
 Without this the estimate goes infinite and every ordering ties, not because the errand is
 impossible but because the guesser ran out of guesses.
 
-### The RSN's beliefs are now complete distributions
+### The methods being compared
 
-Stage 4 used to hand the searcher a ranked list of rooms plus the winner's confidence, and the
-tail shared whatever was left over. That does not sum to one, and an estimator that weighs a
-candidate by its probability then makes an object the model is *unsure* about look cheap to
-find. `scene_graph` now returns a full distribution over every room the scene has, normalised.
+Seven arms, defined once in `baselines.py` and shared by both harnesses. Each changes exactly
+one thing from the one above it, so a difference in the results has one candidate cause.
 
-The RSN scores room *types*; a house has room *instances*. A type's mass is split equally
-across its instances — the model has said nothing that tells two bedrooms apart, so they are a
-genuine tie — and the tie is broken where the information to break it exists: `search_cost`
-orders equal-probability rooms by distance from wherever the robot is standing, so it sweeps the
-near bedroom first. That is a fact about the robot's position, which changes as it moves, so it
-cannot be baked into the scene graph.
-
-Keeping only the largest instance of each type, which is what this did before, was not merely a
-mis-ranking: a sofa really in the smaller living room was **unreachable by search**, because the
-room never entered the candidate list at all.
-
-### The three arms
-
-| arm | decomposes | orders | re-orders online |
-| --- | --- | --- | --- |
-| `monolithic` | no | no | no |
-| `static` | yes | once, against the prior | no |
-| `gavel` | yes | yes | yes |
-
-`static` against `gavel` isolates the online information and nothing else — same decomposition,
-same subplans, same cost model, same executor, so the only thing that varies is *when* the order
-is decided. `monolithic` against the other two is the value of decomposing at all. All three run
-on the 4B.
-
-Every arm is judged by the 2-D simulator against the true world, exactly as the single-task
-experiment is. Two distances are reported: `walked`, what the cost model charged — the number
-the ordering stage actually optimised — and `driven`, what the simulator really drove. The
-ordering claim is only worth making if it holds on the second.
-
-**Results, 50 instructions sampled evenly across the ten scenes, 4B planner** (benchmark stamp
-`25afcba3af59a180`):
-
-| arm | goal reached |
-| --- | --- |
-| monolithic — one model, whole instruction | 17/50 |
-| static — decomposed, ordered once | **46/50** |
-| gavel — decomposed, reordered online | **46/50** |
-
-**Decomposing is worth 29 tasks out of 50.** The whole-instruction read carries a stage-1 error on
-36 of the 50 - the extractor was trained on single sentences naming two to four objects and these
-name up to thirteen - and every dropped object is one the planner then cannot refer to. Reading the
-instruction a clause at a time removes that, and the validation loop refuses only 2 errands out of
-roughly 170.
-
-The two decomposed arms differ by -0.7% of driven distance, which is *not* evidence that reordering
-hurts: they choose a different order on only 7 of the 50 tasks, so this sample cannot resolve an
-effect of about a percent either way. The 500-instruction reference-plan measurement below is the
-one with the power; this one is consistent with it and says nothing on its own.
-
-### What the ordering is worth
-
-An earlier version of this section reported reordering as worth +0.6% and called the stage
-marginal. That was the wrong measurement. `static` does not skip the ordering - it optimises once
-on its first pass and never revises - so `static` against `gavel` was only ever the *online
-increment on top of an already optimal order*. Nothing measured what ordering itself buys.
-
-`gavel.solve(..., force=<permutation>)` supplies the missing rung: an order imposed from outside,
-with no optimisation. `force=tuple(range(n))` is "do the errands in the order the instruction
-names them", which is what a planner with no ordering stage does. Every one of the `n!` orderings
-of every task can then be enumerated on both meters. On the current benchmark, 161 instructions
-whose every ordering runs clean:
-
-| policy | driven | vs written |
-| --- | --- | --- |
-| written — the instruction's own order | 10,970 m | — |
-| random | 11,423 m | +4.13% |
-| **static** — ordered once, against the prior | 10,300 m | **-6.10%** |
-| **gavel** — re-optimised online | 10,079 m | **-8.11%** |
-| oracle — the cost model's own best ordering | 9,957 m | -9.23% |
-| the true floor — the simulator's best ordering | 8,807 m | -19.72% |
-
-**Where the distance goes**, as what each step is worth on top of the one below it:
-
-| step | points | share of the gap |
-| --- | --- | --- |
-| ordering at all (written -> static) | 6.10 | 30.9% |
-| re-optimising online (static -> gavel) | 2.01 | 10.2% |
-| optimising the cost model exactly (gavel -> oracle) | 1.11 | 5.7% |
-| **a cost model that matched the simulator** (oracle -> true floor) | **10.49** | **53.2%** |
-
-Over all 500 instructions, paired, gavel beats static by **+1.2%** of driven distance and **+4.0%**
-of the cost model's - **+1.3%** and **+4.8%** once the two-errand instructions, which are a
-structural zero, are set aside. An earlier measurement of the same thing gave +1.01% [+0.22%,
-+1.79%] before the executor's free-teleport bug was fixed and before the errands were spread. Both are worth quoting and neither should be quoted alone - the tasks the
-stricter rule drops are `Wainscott_0_int` ones where gavel does *worse*, so that rule flatters it.
-The gain is also fragile and unevenly distributed: orders differ on 107 of 500 tasks, gavel drives
-shorter on 66 and **longer on 38**, dropping the five largest single-task wins halves the total to
-+0.53%, and gavel is net negative in two scenes of ten.
-
-**The largest single loss is not the ordering policy.** It is that the cost model and the simulator
-disagree about which ordering is cheapest. Kendall's tau between the two meters across a task's
-orderings is about 0.28-0.36 - an earlier draft printed 0.53, which is inflated by two-errand tasks
-where tau is +/-1 by construction and carries no information. The model's own best ordering is the
-simulator's best on 37-44% of tasks. A *perfect* optimiser of the cost model recovers 0.82% of a
-12.22% true ordering headroom on a full enumeration of the 246 instructions with three errands or
-fewer. No amount of reordering can reach past that.
-
-### When ordering pays, and when it cannot
-
-**Rooms.** Only the transition term of `J = internal + transitions` depends on the order, so errands
-crowded into one part of the house leave little to win. Drawing combinations uniformly averaged 3.4
-rooms an instruction; `build_multitask.combine` now requires errands to reach `size + 2` rooms,
-capped at what each scene can offer and relaxed per scene only when its pool runs out, which lifts
-the mean to 4.5 and takes the share of instructions touching four or more rooms from 45% to 84%.
-Measured against the old set, that roughly doubled the cost-model gain (1.7% -> 3.6%) and raised the
-simulator gain from 0.6% to 1.0%, with the five-errand gain going 0.9% -> 2.0%.
-
-An earlier draft of this section said the stage buys "nothing at all" below four rooms. That was a
-median read of a stratum in which most tasks tie: the totals for the few-room group are -2.98%
-(static) and -4.77% (gavel), not zero. The effect is a gradient, not a cliff. Any stratified table
-here should print the paired total and the number of non-tied tasks beside the median, because
-medians over mostly-tied strata read as categorical when they are not.
-
-**Being wrong, not being unsure.** The obvious explanation for the small online increment is that
-83% of task objects have a point-mass belief, so sweeping teaches nothing. That is not what the data
-says. A point mass is not a *correct* belief: 18.5% of them name the room the object is not in. What
-actually moves an ordering is discovering that a confidently stated room is wrong. Splitting all 500
-instructions on whether the prior is ambiguous and whether it is wrong:
-
-| prior | tasks | orders differ | driven saved |
-| --- | --- | --- | --- |
-| sharp and right everywhere | 46 | 0 | 0.0 m (+0.00%) |
-| sharp but at least one **wrong** | 88 | 13 | 218.8 m (+3.10%) |
-| ambiguous, none wrong | 116 | 7 | 13.8 m (+0.24%) |
-| ambiguous **and** wrong | 250 | 87 | 111.1 m (+0.57%) |
-
-64% of the entire benchmark's saving comes from thirteen tasks with *no prior ambiguity at all*.
-
-Sweeping that axis directly confirms it. `exp_corrupt.py` takes objects the belief is *certain*
-about and moves the certainty to a room the object is not in, at rates from none to all of them,
-leaving the amount of ambiguity untouched:
-
-| confident beliefs corrupted | static | gavel | gain | instructions whose order changes |
+| arm | plans with | ordering | belief the cost model gets | validation / repair |
 | --- | --- | --- | --- | --- |
-| 0% | 7,089 m | 6,918 m | +2.41% | 18/100 |
-| 25% | 7,975 m | 7,512 m | **+5.80%** | 39/100 |
-| 50% | 8,268 m | 7,820 m | +5.41% | 53/100 |
-| 75% | 8,850 m | 8,276 m | +6.49% | 54/100 |
-| 100% | 9,284 m | 8,827 m | +4.92% | 51/100 |
+| `llm-only` | the model, 1 attempt | none — as written | — | none |
+| `sayplan` | the model, 5 attempts | none — as written | — | validated, refusal fed back, **no repair** |
+| `epog` | itself, from the graph diff | min travel cost | argmax | none at all |
+| `gavel-map` | the model, mended | once, offline | **argmax only** | validated and mended |
+| `gavel-static` | the model, mended | once, offline | full distribution | validated and mended |
+| `gavel` | the model, mended | **online** | full distribution | validated and mended |
+| `oracle` | the benchmark's reference plans | optimal, by computing every route | **ground truth** | — |
 
-Corrupting a quarter of them more than doubles the gain and triples the number of instructions
-where reordering does anything at all, and the response then saturates. Deleting stated rooms -
-the manipulation that adds *ambiguity* rather than error - moves the same gap only from 1.21% to
-1.98%. So the benchmark does not need vaguer instructions to exercise this stage; it needs
-instructions the robot can be wrong about, which is what a real RSN prior on a real house
-supplies. (Measured on the cost model's meter; the simulator was not driven for the sweep.)
-Where beliefs are sharp and correct the stage is provably inert - 0 of 46 tasks reorder, and exactly
-0 m is saved - which is the behaviour a correct implementation should show and is the strongest
-single piece of evidence that the machinery is sound. It also means the productive way to make this
-benchmark harder is not to delete stated rooms, which merely adds ambiguity along the +0.24% axis,
-but to *corrupt* them.
+`llm-only` to `sayplan` is what validation feedback buys; `sayplan` to `gavel` adds the mender and
+the cost model. Reading down the three GAVEL rows, `gavel-map` to `gavel-static` is what the
+*distribution* is worth over its argmax with the ordering policy held fixed, and `gavel-static` to
+`gavel` is what *revising as perception arrives* is worth with the belief held fixed.
 
-**A structural floor.** Two-errand instructions are provably identical between the two arms - there
-are only two orderings and the executor commits to the first before anything can be learned - and
-they are a fifth of the benchmark. They contribute a guaranteed zero to the headline. Either exclude
-them from the gavel-against-static comparison or say that they are in it.
+`sayplan` and `llm-only` plan for themselves rather than sharing the mended subplans - sharing them
+would credit those arms with a repair stage they are defined not to have. `epog` writes its own
+plan from the graph difference and is never checked; see `epog.py`.
+
+**Oracle is given ground truth in every sense** - it grounds against the true world, walks straight
+to the true position without searching, and uses the benchmark's own reference plans. Because it
+never searches, its route is fully determined by the ordering and can be *computed* rather than
+driven: `sim_eval.route_matrix` gives exact A* distances over the same grid the simulator uses, so
+choosing among all `n!` orderings costs `n!` additions and one simulation instead of `n!`
+simulations. Verified on nine instructions to find the genuinely shortest ordering 9 times out of 9.
+Note what that does and does not bound: every other arm is driven against the *belief* and pays to
+sweep for whatever the RSN misplaced, so the gap to Oracle is ordering quality **plus** the cost of
+imperfect perception.
+
+Distance is always what the robot **drove** in the simulator. The cost model's own estimate is
+recorded for diagnosis and deliberately not reported: the arms do not all estimate the same
+quantity, so the column is not comparable across rows.
+
+Results are in [The full experiment](#the-full-experiment).
 
 ## The full experiment
 
@@ -707,16 +545,51 @@ distances are directly comparable, paired over all 462:
 Each rung changes exactly one thing and each clears significance on its own. This is what the
 benchmark rebuild bought: on the previous generation the same two comparisons were -0.46 m
 (z = -1.54) and -0.47 m (z = -1.85), indistinguishable from noise, because 299 of 500 instructions
-named the room outright and left the belief nothing to be uncertain about. Dropping the room word
-from 63 subtask sentences took the share of furniture references the RSN must guess from 25% to
-54%, and a per-scene live quota concentrated instructions where the arms actually decide
-differently - 201/500 to 438/500.
+named the room outright and left the belief nothing to be uncertain about. That is a defect in the
+benchmark rather than a finding about the method: an instruction on which every arm makes the
+identical decision cannot distinguish them however it is scored, and 299 of 500 were like that.
+
+The set was rebuilt to pose the question, not to answer it. Instructions are admitted on whether
+the arms **decide differently**, never on which one wins - and the result was not fixed by that
+choice. On the rebuilt set the distribution arm is *worse* than the argmax on **129 of the 309**
+instructions where the two differ (42%), and online replanning is worse than ordering once on
+**69 of 213** (32%). Selection that picked winners would not leave those numbers standing.
+
+Two properties changed: the share of furniture references the RSN must guess went from 25% to 54%,
+and the share of instructions on which the three arms do not all choose the same order from
+201/500 to 438/500. Both are stated in [BENCHMARK.md](BENCHMARK.md) along with what it costs -
+the set is built using the estimator under test, and it skews towards instructions with more
+errands.
 
 ### 3. Foundation models, on 500 instructions
 
-Qwen3-4B against Qwen3-8B, LLM-only against GAVEL. **Running; numbers to follow.** The 8B rows are
-reused from experiment 2 rather than re-sampled, so the two tables agree exactly instead of
-differing by run-to-run noise.
+Qwen3-4B against Qwen3-8B, LLM-only against GAVEL. The 8B rows are the same run as experiment 2
+rather than a fresh sample, so the two tables agree exactly instead of differing by run-to-run
+noise.
+
+| model | arm | success | driven |
+| --- | --- | --- | --- |
+| Qwen3-4B | LLM only | **9/500** | 121.3 m |
+| Qwen3-4B | GAVEL | **374/500** | 93.8 m |
+| Qwen3-8B | LLM only | **97/500** | 86.7 m |
+| Qwen3-8B | GAVEL | **462/500** | 78.0 m |
+
+**A 4B model on its own is not a planner for these instructions at all.** Nine successes out of
+five hundred is under 2%, and it is not that the model cannot write a plan - it writes one every
+time - but that a multi-errand instruction gives it four or five chances to write a step the
+world refuses, and one is enough to fail the whole thing. Errors compound; the single-task
+version of the same arm scores 23/100.
+
+**The world model is worth more than the model.** 4B with it reaches 374/500, roughly four times
+what the 8B reaches without it (97/500). The same ordering holds on the single-task benchmark
+(89 against 43), so it is not an artefact of instruction length. What the symbolic layer buys is
+not a better plan from a better model - it is the ability to *refuse* a bad one and say why,
+which a 4B model can act on as well as an 8B one.
+
+The distance column is over each arm's own successes, so the two LLM-only rows are not comparable
+to the others: they describe the handful of easiest instructions those arms happened to finish.
+The comparison that is sound is GAVEL to GAVEL - 93.8 m at 4B against 78.0 m at 8B - which says
+the smaller model still writes materially worse plans even when they are valid.
 
 ### The timing column, and what is wrong with it
 
@@ -742,81 +615,61 @@ compare rows within experiment 2.**
 
 - **The primitives are state changes, not motion.** Manipulation welds objects to the gripper
   and teleports them; the arm does not reach. **Navigation is real** — A* over the eroded map.
-- **BEHAVIOR scenes are furniture-only**, so manipulable objects are injected. Where one is
-  placed matters as much as that it exists: sampled against the back wall of a counter, it is
-  reachable in the graph and not in the world.
-- **Half the scenes are not one region of floor.** 24 of 51 disagree with the room graph before
-  door thresholds are opened, 4 after. `Wainscott_0_int` is in two pieces.
-- **"Was it heated" is expressible; "did it happen at some point" is not.** The goal describes
-  the finished state, so a clause about *when* something happened cannot be scored. Two shapes
-  remain: "closing it each time" — 13 tasks, where the door must end shut but nothing checks it
-  was shut *between* placements; and "run it and switch it off" for a coffee maker and a sink,
-  which confer no state, so those tasks cannot record that they ran. The third shape, "switch
-  the lamp on and off again", was removed from the benchmark for this reason rather than left
-  in as 6 unscoreable tasks.
 - **`PLACE_INSIDE` on something with no inside is allowed.** The graph model has no containment
   affordance and the simulator refuses only on distance.
 - **The RSN is a soft prior.** `P(toilet in kitchen)` is 0.18, not ~0; unseen names fall back to
   the text embedding. It conditions on room type, not on this scene.
-- **The RSN was trained on 7 of the 10 benchmark scenes.**
 - **The goal model cannot abstain.** Asked about a destination it has no relation for, it
   guesses rather than declining.
 
 ## Files
 
-`graph_machine.py` the checker · `repair.py` the mechanical edits · `replan.py` the loop ·
-`planner.py` prompts and affordances · `scene_graph.py` beliefs · `world_graph.py` typed edges ·
-`sim2d.py` + `floor_world.py` the 2-D simulator · `sim_eval.py` driving a plan ·
-`evaluate.py` the experiment · `build_tasks.py` + `tasks.py` + `task_shapes.py` the benchmark ·
-`derive_vocab.py` the vocabulary · `finetune_extraction.py` the adapters.
+**The pipeline, stage by stage.**
 
-Multi-task: `gavel.py` decomposition, observation and the commit-execute-reorder loop ·
-`exp_ladder.py` the written/random/static/gavel/oracle ladder · `exp_spread.py` headroom against
-room spread · `exp_uncertainty.py`, `exp_infogain.py`, `exp_decomposition.py`, `exp_params.py`,
-`exp_adversarial.py`, `exp_corrupt.py` the diagnosis of why online reordering adds little ·
-`order.py` the pairwise matrix and exhaustive enumeration · `search_cost.py` expected search and
-navigation over a belief · `cost_matrix.py` A* room-to-room distance and per-room sweep cost ·
-`subtasks.py` + `build_multitask.py` the 500-task set · `evaluate_multi.py` the three arms ·
-`oracle_order.py` the ordering stage measured on reference subplans, with the model taken out.
+| module | what it is |
+| --- | --- |
+| `task_objects.py` | stage 1 - reads the objects a sentence names, in three classes |
+| `planner.py` | the action space, the prompts, the BDDL-derived affordances, and `get_generator` (local weights or a hosted API) |
+| `scene_graph.py` | stage 3-4 - the RSN's belief: a complete normalised distribution over every reachable room |
+| `room_graph.py`, `floor_world.py` | floor plans, room adjacency, reachability, A* over the eroded grid |
+| `world_graph.py` | the typed-edge graph the machine reasons over |
+| `graph_machine.py` | the world model: preconditions, effects, safety, and `unmet(goal)` |
+| `repair.py` | the mechanical edits the machine can make to a plan itself |
+| `replan.py` | the loop - ask, validate, mend, complain, ask again |
+| `sim2d.py` + `sim_eval.py` | the executor: driving, sweeping a room, and judging a plan against the true world |
+| `api_models.py` | hosted models behind the same `prompt -> text` interface as local ones |
+
+**Multi-task.**
+
+| module | what it is |
+| --- | --- |
+| `gavel.py` | decomposition, the belief update from what was seen, and the commit-execute-reorder loop |
+| `search_cost.py` | expected search and navigation cost over a belief |
+| `cost_matrix.py` | A* room-to-room distance and per-room sweep cost, built once per scene |
+| `order.py` | the pairwise matrix and the asymmetric Hamiltonian path over it |
+| `epog.py` | the symbolic baseline: the plan is the goal graph minus the believed graph |
+| `baselines.py` | the seven arms, defined once and shared by both harnesses |
+
+**Benchmarks.** `tasks.py`, `subtasks.py`, `task_shapes.py`, `build_tasks.py`,
+`build_multitask.py` build and verify the two task sets, and `derive_vocab.py`,
+`extraction_data.py`, `build_dataset.py`, `embed_categories.py`, `train_rsn.py` build the
+vocabulary, the adapters' training data and the RSN. What they do and how to rebuild either set
+is in [BENCHMARK.md](BENCHMARK.md).
+
+**Experiments.**
+
+| module | what it runs |
+| --- | --- |
+| `evaluate.py` | the single-task experiment; `--attempts` and `--repair-at` select the arm |
+| `evaluate_multi.py` | the multi-task experiment, all seven arms in one process per shard |
+| `oracle_order.py` | the ordering stage alone, on reference subplans, with the language model taken out |
+| `merge_shards.py` | concatenates sharded results and refuses to merge across benchmark stamps |
+| `exp_rsn_accuracy.py` | how often the RSN's argmax room is right, and where the truth sits when it is not |
+| `exp_decompose_prompt.py` | scores candidate decomposition prompts against the benchmark's own errand boundaries |
+| `exp_epog.py`, `exp_epog_single.py` | what the symbolic baseline can and cannot express |
+| `exp_corrupt.py`, `exp_uncertainty.py`, `exp_infogain.py` | when ordering pays: confidently wrong beliefs, not merely unsure ones |
+| `exp_ladder.py`, `exp_spread.py`, `exp_params.py`, `exp_adversarial.py`, `exp_decomposition.py` | the ordering ladder, room spread, parameter sensitivity, and adversarial checks |
+| `exp_sweep_*.py`, `exp_fail_*.py` | benchmark defect sweeps and per-failure attribution |
 
 Tests: `test_graph_machine.py`, `test_repair.py`, `test_pipeline.py`, `test_sim2d.py`,
 `test_fallback.py`, `test_object_names.py`, `test_stance_order.py`, `test_gavel.py`.
-
-## The datasets
-
-`data/` holds only live inputs — nothing derived from a past run, nothing kept "just in case".
-Every file here is read by something, and everything read is here.
-
-| file | what it is | who reads it | regenerated by |
-| --- | --- | --- | --- |
-| `tasks.json` | **the benchmark** — 100 tasks, byte-identical to a rebuild from `tasks.py` | `evaluate.py`, `sim_eval.py`, `build_tasks.py`, tests | `build_tasks.py` (refuses to overwrite it) |
-| `extraction_truth.json` | stage-1 answer key, derived from each task's structure | `build_tasks.py` | — |
-| `extraction-train.json` | 8,000 generated examples, `--seed 7` | `finetune_extraction.py` | `extraction_data.py --n 8000 --seed 7` |
-| `extraction-val.json` | 500 held out, `--seed 11` | `finetune_extraction.py` | `extraction_data.py --n 500 --seed 11` |
-| `extraction-dev.json` | 200 for prompt comparisons, `--seed 3` | `extraction_eval.py` | `extraction_data.py --n 200 --seed 3` |
-| `household_vocab.json` | 731 categories and where each belongs | `extraction_data.py` | `derive_vocab.py` |
-| `room_graphs.json` | room adjacency for all 51 scenes | `scene_graph.py`, `floor_world.py`, `world_graph.py` | `room_graph.py` |
-| `scene_survey.json` | what each scene is furnished with — what the tasks were written against | `tasks.py` | — |
-| `reference-sim.json` | evidence every benchmark task is physically achievable | `run_reference_sim.py` | `run_reference_sim.py` |
-| `subtask_extraction.json` | stage-1 answer key for the errands, authored per sentence — same format as `extraction_truth.json` | `build_multitask.py` | — |
-| `subtasks.json` | 118 short errands, 10-12 per scene, each verified by `build_tasks.verify` | `build_multitask.py` | `build_multitask.py` (writes both files in one run) |
-| `multitask.json` | **the multi-task benchmark** — 500 instructions, 2-5 errands each | `evaluate_multi.py`, `oracle_order.py` | `build_multitask.py` |
-| `multitask-stamp.json` | which generation of the benchmark that is — content hash, seed, size mix, mean room spread | anything reporting a result | written beside it |
-| `pairs_merged.csv`, `placements.csv`, `category_embeddings.npz` | the RSN's training data and embeddings | `train_rsn.py` | `build_dataset.py`, `embed_categories.py` |
-
-**Both adapters train on the same two files.** `finetune_extraction.py --target extraction`
-and `--target goal` read `extraction-train.json` and `extraction-val.json` and differ only in
-which field of each row is the answer — the object list or the goal. There is no separate goal
-dataset, which is deliberate: when there were two, the goal model had never seen a category the
-extractor had, and the two disagreed on names the pipeline then could not reconcile.
-
-**Every result records the benchmark it ran against.** `build_multitask.py` writes a stamp - a
-hash of the instruction set plus its seed, size mix and mean room spread - and `oracle_order.py`
-and `evaluate_multi.py` write the same stamp beside their own output. Results carrying different
-stamps are not a comparison, however alike their task ids look. This is not hypothetical: the
-combination rule changed mid-analysis once and the file was regenerated underneath a set of running
-experiments, so three quarters of the ids kept their names while changing how many errands they
-held, and several numbers that still looked comparable no longer were. A hash makes that loud.
-
-Run results (`data/v*.json`) are deleted once superseded. They are the output of a run, not an
-input to one, and keeping several invites quoting the wrong one.
