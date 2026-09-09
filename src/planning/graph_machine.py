@@ -63,8 +63,15 @@ def _object_categories():
     global _CATALOGUE
     if _CATALOGUE is None:
         try:
-            with open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                   "data", "vocab.json")) as handle:
+            # Anchored on the repo root, found by walking up to a marker, not on this file's
+            # own directory: the catalogue lives beside the benchmarks and this module has
+            # moved once already. A wrong path here fails *silently* - the except below
+            # returns an empty catalogue and every check that consults it quietly weakens.
+            _root = os.path.dirname(os.path.abspath(__file__))
+            while _root != os.path.dirname(_root) and not os.path.isdir(
+                    os.path.join(_root, "data")):
+                _root = os.path.dirname(_root)
+            with open(os.path.join(_root, "data", "vocab.json")) as handle:
                 vocab = json.load(handle)
             _CATALOGUE = frozenset(vocab.get("object_categories", ())) | frozenset(
                 vocab.get("merged_categories", ()))

@@ -1,0 +1,42 @@
+# GAVEL - pinned to the versions the reported results were produced with (Python 3.11.15).
+#
+#   python -m venv .venv && . .venv/bin/activate
+#   pip install -r requirements.txt
+#
+# This installs the 2-D pipeline: everything in `src/`, `benchmark/` and `experiments/`, which
+# is all that is needed to reproduce the three experiments. The OmniGibson branch is separate
+# and optional - see the bottom of this file.
+
+# --- planning, extraction and the goal adapter ---------------------------------------------
+torch==2.7.0                 # +cu126 in our environment; any build matching your CUDA is fine
+transformers==5.15.1
+peft==0.20.0                 # the LoRA adapters in models/
+accelerate==1.14.0
+safetensors==0.8.0
+
+# --- the RSN (SEEK-style room prior) -------------------------------------------------------
+sentence-transformers==6.0.0 # frozen BAAI/bge-small-en-v1.5 encoder
+datasets==4.8.5              # only for building the adapters' training data
+
+# --- graphs, geometry and the 2-D simulator ------------------------------------------------
+numpy==1.26.0
+scipy==1.15.3
+networkx==3.3
+pillow==11.0.0               # reads the BEHAVIOR-1K floor-plan segmentation PNGs
+
+# --- figures and run recordings ------------------------------------------------------------
+matplotlib==3.10.3
+imageio==2.37.0
+
+# --- hosted models (experiment 3 only) -----------------------------------------------------
+httpx==0.28.1                # the only dependency of src/llm/api_models.py
+
+# --- NOT installed here --------------------------------------------------------------------
+# omnigibson, opencv-python and pyyaml are imported only by `omnigibson_runtime/`, the Isaac
+# branch that drives a validated plan in the full simulator. Nothing in the 2-D pipeline or in
+# any reported number imports them. Install BEHAVIOR-1K by its own instructions if you want it.
+#
+# The BEHAVIOR-1K assets themselves are not a pip package. Point the pipeline at your copy:
+#   export BEHAVIOR_ASSETS=/path/to/behavior-1k-assets
+#   export BEHAVIOR_BDDL_DATA=/path/to/bddl/generated_data
+#   export BEHAVIOR_BDDL_ACTIVITIES=/path/to/bddl/activity_definitions

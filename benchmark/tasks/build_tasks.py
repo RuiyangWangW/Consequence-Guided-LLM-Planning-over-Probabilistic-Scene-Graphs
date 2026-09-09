@@ -23,6 +23,22 @@ dataset the RSN will later be measured against, so its object locations have to 
     python build_tasks.py --scene Rs_int --verbose
 """
 
+import os as _os, sys as _sys
+# Runnable as a script from anywhere. The other stages are sibling folders under src/, which
+# are not on the path when this file is the one being executed, so find the repo root by
+# marker and add every stage. A no-op when an entry point has already done it.
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d) and not _os.path.isdir(_os.path.join(_d, 'src')):
+    _d = _os.path.dirname(_d)
+_roots = [_d, _os.path.join(_d, 'omnigibson_runtime')]
+_roots += [_f.path for _r in ('src', 'benchmark')
+           for _f in _os.scandir(_os.path.join(_d, _r))
+           if _f.is_dir() and not _f.name.startswith(('.', '_'))]
+for _p in _roots:
+    if _p not in _sys.path:
+        _sys.path.insert(0, _p)
+
+
 import argparse
 import re
 
@@ -343,13 +359,14 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--scene", help="verify only this scene")
     parser.add_argument("--verbose", action="store_true")
-    # NOT `data/tasks.json`. The benchmark carries corrections that are applied to the
-    # JSON by hand - conferred cooked/washed/dried conditions, the stripped safety
-    # conditions the machine now enforces itself, and three goals whose lamp must end on -
-    # and regenerating from `tasks.py` silently discards every one of them. That happened:
-    # a run of this script wiped 22 conferred states, 111 strips and 3 goal corrections,
-    # and nothing failed, because the regenerated file is perfectly valid. Verification is
-    # what this script is for; writing the benchmark is not.
+    # NOT `data/tasks.json`. The corrections that were once applied to that JSON by hand -
+    # conferred cooked/washed/dried conditions, the stripped safety conditions the machine
+    # now enforces itself, and three goals whose lamp must end on - have since been folded
+    # back into `tasks.py` and `task_shapes.py`, so this script now reproduces the committed
+    # benchmark byte for byte. The guard stays anyway: it once wiped 22 conferred states,
+    # 111 strips and 3 goal corrections without failing, because a regenerated file is
+    # perfectly valid whether or not it is the benchmark. Writing to `--out` and diffing
+    # turns a silent divergence into a visible one.
     parser.add_argument("--out", default="data/tasks.check.json")
     args = parser.parse_args()
 
@@ -385,4 +402,8 @@ def main():
 
 
 if __name__ == "__main__":
+    # Only here, not at import: this module is also imported at run time for `seed_graph`,
+    # and a chdir on that path would move the working directory out from under a caller.
+    # As a build it writes relative `data/...`, so it has to run from the repo root.
+    _os.chdir(_d)
     raise SystemExit(main())

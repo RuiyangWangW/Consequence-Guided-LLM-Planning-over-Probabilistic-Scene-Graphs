@@ -31,27 +31,32 @@ floor plan ──> rooms ──────┼─┘       (RSN)      └─> LL
 
 | Stage | Module | What it does |
 | --- | --- | --- |
-| 1 | `task_objects.py` | task text -> the objects the task needs |
-| 2 | `finetune_extraction.py` | a second small model reads the **goal state** out of the same sentence |
-| 3 | `room_graph.py` | floor plans -> room adjacency |
-| 4 | `scene_graph.py` | the RSN places the objects in rooms, with confidences |
-| 5 | `planner.py` + `graph_machine.py` | the LLM proposes primitives; the machine checks every precondition |
-| 6 | `repair.py` + `replan.py` | the machine mends what its refusals imply; what it cannot mend goes back to the LLM, up to 5 times |
-| 7 | `sim2d.py` / `execute_plan.py` | the plan is **driven** — 2-D in a second, or OmniGibson with video |
+| 1 | `src/extraction/task_objects.py` | task text -> the objects the task needs |
+| 2 | `src/planning/planner.py` (`parse_goal`) | a second small model reads the **goal state** out of the same sentence |
+| 3 | `src/world/room_graph.py` | floor plans -> room adjacency |
+| 4 | `src/rsn/scene_graph.py` | the RSN places the objects in rooms, with confidences |
+| 5 | `src/planning/` | the LLM proposes primitives; the machine checks every precondition |
+| 6 | `src/replanning/` | the machine mends what its refusals imply; what it cannot mend goes back to the LLM, up to 5 times |
+| 7 | `src/simulator/` / `omnigibson_runtime/` | the plan is **driven** — 2-D in a second, or OmniGibson with video |
 
-Supporting: `derive_vocab.py` derives the household vocabulary from BEHAVIOR's own activity
-definitions. The benchmarks are built and verified separately.
-The builder refuses to write
-`data/tasks.json`: that file carries corrections applied by hand, and regenerating discards
-them silently. A rebuild goes elsewhere and is diffed. `evaluate.py` runs the experiment and
-`ablate_plan.py` measures where the two checkers disagree.
+Each stage is a folder under `src/`, and the three that are not a stage of the pipeline sit
+beside them: `src/ordering/` and `src/methods/` are the multi-task half, and `src/llm/` holds
+the model backends the stages share.
+
+The benchmarks are built and verified separately, by the scripts in `benchmark/`, and both
+regenerate exactly: `benchmark/rsn/extract_scene_data.py` reproduces `data/vocab.json` and
+`data/placements.csv` byte for byte, and `benchmark/tasks/build_tasks.py` reproduces the 100
+single-task benchmark byte for byte. The builders write to `--out` and refuse to overwrite the
+committed copies, so a rebuild is always diffed rather than assumed.
 
 ```bash
+pip install -r requirements.txt
+export BEHAVIOR_ASSETS=/path/to/behavior-1k-assets     # see requirements.txt for the three roots
 source ~/safety_filter/setup_behavior_env.sh
 
-python pipeline.py --scene Beechwood_0_int --task "open the fridge in the kitchen" --json plan.json
-python sim2d.py --plan plan.json --scene Beechwood_0_int --gif figures/run.gif   # ~1 s
-python execute_plan.py --plan plan.json --video figures/run.mp4                  # ~17 min
+python src/pipeline.py --scene Beechwood_0_int --task "open the fridge in the kitchen" --json plan.json
+python src/simulator/sim2d.py --plan plan.json --scene Beechwood_0_int --gif figures/run.gif   # ~1 s
+python omnigibson_runtime/execute_plan.py --plan plan.json --video figures/run.mp4             # ~17 min
 ```
 
 ## The action space
@@ -283,7 +288,7 @@ to read the results below.
 
 ## The experiment
 
-`evaluate.py` runs the whole pipeline over the benchmark. Both arms come from **one run per
+`experiments/evaluate.py` runs the whole pipeline over the benchmark. Both arms come from **one run per
 task**, so the comparison is exact: decoding is greedy, so the first plan is the same plan in
 both arms, and they differ only in whether anything is done about a bad one.
 
@@ -302,10 +307,10 @@ believed it was finished against how often it actually was**. The gap between th
 of a wrong goal prediction, which nothing measured before.
 
 ```bash
-HF_HOME=/mnt/check/ruiyangw/hf_cache python evaluate.py \
+python experiments/evaluate.py \
     --model Qwen/Qwen3-8B --extractor models/h1-1.7b-v5 --goal-model models/state-1.7b-v5 \
     --attempts 5 --repair-at loop \
-    --json data/run.json
+    --json runs/exp1-8b-gavel.json
 ```
 
 **The pipeline never sees ground truth.** It gets the instruction, its own extraction, and the
@@ -350,11 +355,9 @@ greedy - `do_sample=False`, one question one answer - and three generations in o
 byte-identical. Across processes they are not: the same prompt, the same model, the same card
 gives a different plan than a stored run did, because which CUDA kernels are chosen depends on
 what else is resident, and a different reduction order flips a near-tied argmax. The consequence
-is that no single run's total should be read to the task, and a change worth one or two tasks
-cannot be demonstrated by running the benchmark twice and subtracting.
-
-A change worth one or two tasks therefore cannot be demonstrated by running the benchmark twice
-and subtracting; it has to be shown on tasks named in advance, with the mechanism checked on each.
+is that no single run's total should be read to the task: a change worth one or two tasks cannot
+be demonstrated by running the benchmark twice and subtracting, only on tasks named in advance
+with the mechanism checked on each.
 
 **The failures.** Nineteen across both models, and they cluster into three shapes.
 
@@ -396,17 +399,18 @@ gives a distribution over rooms, not a location, so reaching an object costs an 
 bowl. That is the whole lever: information gathered doing one errand changes what the others
 cost.
 
-| Stage | Module | What it does |
+| Step | Module | What it does |
 | --- | --- | --- |
-| 5 | `gavel.decompose` | the instruction is split into one sentence per errand |
-| 6 | `replan.py` | each errand is planned, validated and mended **exactly as a single task** |
-| 7 | `cost_matrix.py` + `search_cost.py` + `order.py` | the errands are sequenced by expected distance |
-| 8 | `gavel.compose` | the concatenation is checked — subplans valid alone can still break together |
-| 9-11 | `gavel.solve` | commit one errand, execute it, update the belief with what was seen, re-optimise |
+| a | `gavel.decompose` | the instruction is split into one sentence per errand |
+| b | the single-task pipeline | each errand is planned, validated and mended **exactly as a single task** |
+| c | `src/ordering/` | the errands are sequenced by expected distance |
+| d | `gavel.compose` | the concatenation is checked — subplans valid alone can still break together |
+| e | `gavel.solve` | commit one errand, execute it, update the belief with what was seen, re-optimise |
 
-Stages 1-4 and 6 are the single-task pipeline unchanged, and that is deliberate: the multi-task
-arm reuses the same extractor, the same RSN, the same `GraphMachine`, the same repair loop and the
-same simulator, so a difference in the results is the new stages and not a new pipeline.
+Step **b** is stages 1-6 of the single-task pipeline, unchanged, and that is deliberate: the
+multi-task arm reuses the same extractor, the same RSN, the same `GraphMachine`, the same repair
+loop and the same simulator, so a difference in the results is the new steps and not a new
+pipeline.
 
 Two properties of the instructions matter for what follows, and both are enforced when the set is
 built rather than assumed here. The errands in one instruction **share no object**, which is what
@@ -451,10 +455,10 @@ not lose that room from their candidates. Ruling a room out is worth as much as 
 something, and it is why the estimate for an errand elsewhere can go *up* once its likeliest
 room has been eliminated.
 
-Execution reads rooms from the **truth** graph and the estimator reads them from the belief.
-Confusing the two was the one bug that made the whole stage meaningless: reading rooms off the
-belief makes the robot "find" the mug in whichever room the RSN guessed, so a wrong guess is
-never paid for and never corrected, and search stops costing or teaching anything.
+Execution reads rooms from the **truth** graph and the estimator reads them from the belief, and
+the separation is what makes the stage mean anything: an executor that read rooms off the belief
+would "find" the mug in whichever room the RSN guessed, so a wrong guess would never be paid for
+and never corrected, and search would stop costing or teaching anything.
 
 When ruling out leaves an object with no candidate the robot can reach, the belief has been
 *refuted*, not sharpened — the object exists, so it is somewhere nobody looked. The distribution
@@ -518,13 +522,13 @@ Qwen3-4B and Qwen3-8B.
 
 | method | success | driven | planning time |
 | --- | --- | --- | --- |
-| LLM only | 97/500 | 86.7 m | 37.1 ± 15.5 s |
-| SayPlan — validate, feed back, 5 tries, no repair, no ordering | 387/500 | 83.0 m | 59.9 ± 39.3 s |
-| EPoG — graph edits from the MAP belief, no model, no repair | 301/500 | 84.5 m | 14.9 ± 4.3 s |
-| GAVEL-MAP — argmax belief, ordered once | **462/500** | 82.5 m | 43.1 ± 25.6 s |
-| GAVEL Static — full distribution, ordered once | **462/500** | 79.7 m | 43.1 ± 25.6 s |
-| **GAVEL** — full distribution, reordered online | **462/500** | **78.0 m** | 43.1 ± 25.6 s |
-| Oracle — ground truth throughout | 500/500 | 56.2 m | 0.9 ± 0.5 s |
+| LLM only | 97/500 | 86.7 m | 31.8 ± 10.5 s |
+| SayPlan — validate, feed back, 5 tries, no repair, no ordering | 387/500 | 83.0 m | 51.4 ± 27.6 s |
+| EPoG — graph edits from the MAP belief, no model, no repair | 301/500 | 84.5 m | 13.9 ± 3.9 s |
+| GAVEL-MAP — argmax belief, ordered once | **462/500** | 82.5 m | 39.3 ± 22.6 s |
+| GAVEL Static — full distribution, ordered once | **462/500** | 79.7 m | 39.3 ± 22.6 s |
+| **GAVEL** — full distribution, reordered online | **462/500** | **78.0 m** | 39.3 ± 22.6 s |
+| Oracle — ground truth throughout | 500/500 | 56.2 m | 0.9 ± 0.4 s |
 
 Oracle solves every instruction, so each of GAVEL's 38 failures is a real one rather than an
 impossible task. `LLM only` collapses to 19% here against 43% on single tasks - errands compound,
@@ -542,18 +546,16 @@ distances are directly comparable, paired over all 462:
 | GAVEL | 78.01 m | online replanning **-1.68 m**, z = -3.41 |
 | | | both **-4.45 m**, z = -5.11 |
 
-Each rung changes exactly one thing and each clears significance on its own. This is what the
-benchmark rebuild bought: on the previous generation the same two comparisons were -0.46 m
-(z = -1.54) and -0.47 m (z = -1.85), indistinguishable from noise, because 299 of 500 instructions
-named the room outright and left the belief nothing to be uncertain about. That is a defect in the
-benchmark rather than a finding about the method: an instruction on which every arm makes the
-identical decision cannot distinguish them however it is scored, and 299 of 500 were like that.
+Each rung changes exactly one thing and each clears significance on its own.
 
-The set was rebuilt to pose the question, not to answer it. Instructions are admitted on whether
-the arms **decide differently**, never on which one wins - and the result was not fixed by that
-choice. On the rebuilt set the distribution arm is *worse* than the argmax on **129 of the 309**
-instructions where the two differ (42%), and online replanning is worse than ordering once on
-**69 of 213** (32%). Selection that picked winners would not leave those numbers standing.
+**What the benchmark admits, and why it is not selection.** An instruction that names the room
+outright leaves the belief nothing to be uncertain about, so every arm makes the identical
+decision and the instruction cannot separate them however it is scored. The generator therefore
+admits an instruction on whether the arms **decide differently** - never on which one wins. That
+distinction is checkable, and it holds: the distribution arm is *worse* than the argmax on **129
+of the 309** instructions where the two differ (42%), and online replanning is worse than
+ordering once on **69 of 213** (32%). Selection that picked winners would not leave those
+numbers standing.
 
 Two properties changed: the share of furniture references the RSN must guess went from 25% to 54%,
 and the share of instructions on which the three arms do not all choose the same order from
@@ -607,25 +609,34 @@ anything.
 Each result also carries a `-stamp.json` naming the benchmark it ran against; `merge_shards.py`
 refuses to combine shards whose stamps disagree.
 
-### The timing column, and what is wrong with it
+### The timing column, and what it is measured on
 
 **Planning time is compute only** - decomposition, extraction, grounding, the goal adapter, every
 planning attempt, every repair, and the ordering - and excludes the robot's driving time, which is
 the simulator's speed rather than the method's.
 
-The experiment-2 figures above are **internally comparable but absolutely inflated**. All seven
-arms run inside one process per shard, back to back on one GPU, so they meet identical conditions
-and the comparison between rows is sound; but four shards ran concurrently on four GPUs, so the
-absolute scale is not what a single uncontended run would give.
+**The timings come from a separate sequential pass, not from the runs that produced the success
+and distance columns.** Timing needs an idle machine and the reported runs were sharded across
+four GPUs; the contention was not a small effect. Measured on the sharded runs: on 76 tasks where
+two arms produced **byte-identical plans** from identical prompts, one arm was recorded at 1.37 s
+per emitted step and the other at 0.65 s - the same work, 2.1x apart.
 
-Experiment 1's timings are worse than that and are deliberately omitted, because each arm was a
-*separate process on a separate GPU*. Measured there: on 76 tasks where two arms produced
-**byte-identical plans** from identical prompts, one arm was recorded at 1.37 s per emitted step
-and the other at 0.65 s - the same work, 2.1x apart. Running the same two arms sequentially in one
-process removes the gap. A dedicated sequential pass, one arm at a time on an idle machine and
-discarding the first task per process to exclude the ~40 s of CUDA warm-up, is what these tables
-will eventually quote. Until then: **treat every absolute second here as an upper bound, and only
-compare rows within experiment 2.**
+So the timing pass re-runs the arms one at a time, one process, one GPU, nothing else on the
+machine, discarding each process's first task to exclude the ~40 s of CUDA warm-up. It covers a
+**30-instruction subsample**, not all 500, because it cannot be parallelised; the ± is the spread
+across those 30 instructions. Success and distance in every table above are from the full runs.
+
+Experiment 1 under the same conditions, in compute-seconds per task:
+
+| arm | Qwen3-4B | Qwen3-8B |
+| --- | --- | --- |
+| LLM-only | 9.2 ± 1.0 s | 13.3 ± 6.4 s |
+| LLM + feedback | 27.6 ± 12.0 s | 24.6 ± 15.8 s |
+| GAVEL | 15.0 ± 11.1 s | 15.5 ± 9.4 s |
+
+Feedback alone is the most expensive arm at both sizes - it retries against faults it cannot fix -
+and adding repair makes the pipeline both more accurate and roughly 40% faster than feedback
+alone, which is the same story the attempt counts tell.
 
 ## Known limitations
 
@@ -642,34 +653,21 @@ compare rows within experiment 2.**
 
 **The pipeline, stage by stage.**
 
-| module | what it is |
+`src/` is the pipeline, one folder per stage:
+
+| folder | what is in it |
 | --- | --- |
-| `task_objects.py` | stage 1 - reads the objects a sentence names, in three classes |
-| `planner.py` | the action space, the prompts, the BDDL-derived affordances, and `get_generator` (local weights or a hosted API) |
-| `scene_graph.py` | stage 3-4 - the RSN's belief: a complete normalised distribution over every reachable room |
-| `room_graph.py`, `floor_world.py` | floor plans, room adjacency, reachability, A* over the eroded grid |
-| `world_graph.py` | the typed-edge graph the machine reasons over |
-| `graph_machine.py` | the world model: preconditions, effects, safety, and `unmet(goal)` |
-| `repair.py` | the mechanical edits the machine can make to a plan itself |
-| `replan.py` | the loop - ask, validate, mend, complain, ask again |
-| `sim2d.py` + `sim_eval.py` | the executor: driving, sweeping a room, and judging a plan against the true world |
-| `api_models.py` | hosted models behind the same `prompt -> text` interface as local ones |
+| `src/extraction/` | stage 1 - `task_objects.py` reads the objects a sentence names, in three classes; `object_names.py` decides when two names mean the same thing |
+| `src/world/` | `room_graph.py` (stage 3 - floor plans to room adjacency) and `world_graph.py`, the typed-edge graph the machine reasons over |
+| `src/rsn/` | stage 4 - `scene_graph.py` holds the RSN's belief, a complete normalised distribution over every reachable room; `train_rsn.py`, `embed_categories.py` and `query_rsn.py` train and query the network |
+| `src/planning/` | stage 5 - `planner.py` is the action space, the prompts, the BDDL-derived affordances and `get_generator`; `graph_machine.py` is the world model: preconditions, effects, safety and `unmet(goal)` |
+| `src/replanning/` | stage 6 - `repair.py` makes the edits the machine's refusals imply; `replan.py` is the loop: ask, validate, mend, complain, ask again |
+| `src/simulator/` | stage 7 - `sim2d.py` and `sim_eval.py` drive a plan and judge it against the true world, over `floor_world.py`'s eroded grid |
+| `src/ordering/` | the multi-task cost model: `cost_matrix.py` (A* room-to-room distance and per-room sweep cost, once per scene), `search_cost.py` (expected cost over a belief), `order.py` (the pairwise matrix and the asymmetric Hamiltonian path over it) |
+| `src/methods/` | the arms being compared: `gavel.py`, `epog.py`, and `baselines.py`, which defines all seven once so both harnesses share them |
+| `src/llm/` | the model backends: `api_models.py` puts a hosted model behind the same `prompt -> text` interface as local weights, `finetune_extraction.py` trains the adapters |
 
-**Multi-task.**
-
-| module | what it is |
-| --- | --- |
-| `gavel.py` | decomposition, the belief update from what was seen, and the commit-execute-reorder loop |
-| `search_cost.py` | expected search and navigation cost over a belief |
-| `cost_matrix.py` | A* room-to-room distance and per-room sweep cost, built once per scene |
-| `order.py` | the pairwise matrix and the asymmetric Hamiltonian path over it |
-| `epog.py` | the symbolic baseline: the plan is the goal graph minus the believed graph |
-| `baselines.py` | the seven arms, defined once and shared by both harnesses |
-
-**Benchmarks.** `tasks.py`, `subtasks.py`, `task_shapes.py`, `build_tasks.py`,
-`build_multitask.py` build and verify the two task sets, and `derive_vocab.py`,
-`extraction_data.py`, `build_dataset.py`, `embed_categories.py`, `train_rsn.py` build the
-vocabulary, the adapters' training data and the RSN.
+`src/pipeline.py` runs stages 1-6 end to end for a single task.
 
 **Experiments.** `experiments/` holds the harnesses that produce the reported results, each
 runnable from the repo root:
@@ -681,26 +679,24 @@ runnable from the repo root:
 | `merge_shards.py` | concatenates sharded results, and refuses to merge across benchmark stamps |
 | `exp_rsn_accuracy.py` | the RSN's per-guess accuracy behind the 47% quoted above |
 
-Each inserts the repo root on `sys.path` itself, anchored on a marker file rather than a fixed
-number of parent directories, so `data/` paths resolve against the working directory and a script
-that moves does not silently lose its imports.
+Each finds the repo root itself by walking up to a marker rather than counting parent
+directories, then puts every folder under `src/` and `benchmark/` on the import path. So a
+module can be run from anywhere, and moving one between stage folders changes no import.
 
 **Benchmarks.** `benchmark/` holds the builders, in three groups:
 
 | folder | scripts |
 | --- | --- |
-| `benchmark/tasks/` | `build_multitask.py`, `subtasks.py`, `run_reference_sim.py` |
+| `benchmark/tasks/` | `tasks.py`, `task_shapes.py`, `build_tasks.py`, `subtasks.py`, `build_multitask.py`, `run_reference_sim.py` |
 | `benchmark/extraction/` | `derive_vocab.py`, `extraction_data.py`, `extraction_eval.py` |
 | `benchmark/rsn/` | `extract_scene_data.py`, `category_merge.py`, `build_dataset.py` |
 
-Each changes the working directory to the repo root before doing anything, so its outputs land
-in `data/` whether it is run as `python benchmark/tasks/build_multitask.py` from the root or
-from inside its own folder.
-
-`tasks.py`, `task_shapes.py` and `build_tasks.py` stay at the root: `build_tasks.verify` is
-imported by `sim_eval`, `gavel` and `baselines`, and a root module cannot import from a
-subfolder. The same holds for `query_rsn.py`, which `scene_graph` imports, and the two RSN
-training scripts beneath it.
+Each moves to the repo root before writing anything, so its outputs land in `data/` whether it
+is run from the root or from inside its own folder, and each writes to `--out` rather than over
+the committed copy. `build_tasks.py` sits here even though `sim_eval`, `gavel` and `baselines`
+import its `seed_graph` at run time - every entry point puts all of `src/`, `benchmark/` and
+`omnigibson_runtime/` on the import path, so a module's folder does not constrain what may
+import it.
 
 **OmniGibson.** `omnigibson_runtime/` holds the Isaac-side branch, which nothing in the 2-D
 pipeline imports: `execute_plan.py` drives a validated plan and records video, `primitive_patches.py`

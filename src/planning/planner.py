@@ -12,6 +12,7 @@ other primitive takes exactly one object.
 """
 
 import json
+import os
 import re
 
 from object_names import canonical
@@ -82,7 +83,10 @@ PRIMITIVES = {
 #
 # One place, so the validator, the graph machine and the 2-D world cannot disagree.
 
-BDDL_DATA = "/mnt/check/ruiyangw/omnigibson/BEHAVIOR-1K/bddl3/bddl/generated_data"
+BDDL_DATA = os.environ.get(
+    "BEHAVIOR_BDDL_DATA",
+    "/mnt/check/ruiyangw/omnigibson/BEHAVIOR-1K/bddl3/bddl/generated_data",
+)
 
 # An instruction says "the cabinet" and "the lamp"; the dataset ships `bottom_cabinet` and
 # `table_lamp`. A generic word inherits an affordance when EVERY category it abbreviates

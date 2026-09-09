@@ -13,6 +13,22 @@ category reads the same across every scene and figures can be compared side by s
     python visualize_graph.py --all                         # every scene in the dataset
 """
 
+import os as _os, sys as _sys
+# Runnable as a script from anywhere. The other stages are sibling folders under src/, which
+# are not on the path when this file is the one being executed, so find the repo root by
+# marker and add every stage. A no-op when an entry point has already done it.
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d) and not _os.path.isdir(_os.path.join(_d, 'src')):
+    _d = _os.path.dirname(_d)
+_roots = [_d, _os.path.join(_d, 'omnigibson_runtime')]
+_roots += [_f.path for _r in ('src', 'benchmark')
+           for _f in _os.scandir(_os.path.join(_d, _r))
+           if _f.is_dir() and not _f.name.startswith(('.', '_'))]
+for _p in _roots:
+    if _p not in _sys.path:
+        _sys.path.insert(0, _p)
+
+
 import argparse
 import os
 
