@@ -14,6 +14,8 @@ _d = _os.path.dirname(_os.path.abspath(__file__))
 while _d != _os.path.dirname(_d) and not _os.path.exists(_os.path.join(_d, 'graph_machine.py')):
     _d = _os.path.dirname(_d)
 _sys.path.insert(0, _d)
+for _sub in ('benchmark/tasks', 'benchmark/extraction', 'benchmark/rsn'):
+    _sys.path.insert(0, _os.path.join(_d, _sub))
 
 
 import argparse

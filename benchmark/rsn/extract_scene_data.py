@@ -9,6 +9,17 @@ Writes two files to --out-dir:
   vocab.json      the room-type / object-category vocabularies and scene list
 """
 
+import os as _os, sys as _sys
+# Run from anywhere. Find the repo root by marker, put it on the import path, and make
+# it the working directory - every path in this file is written 'data/...', so without
+# the chdir a build invoked from inside its own folder would quietly write benchmark/data/.
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d) and not _os.path.exists(_os.path.join(_d, 'graph_machine.py')):
+    _d = _os.path.dirname(_d)
+_sys.path.insert(0, _d)
+_os.chdir(_d)
+
+
 import argparse
 import csv
 import json

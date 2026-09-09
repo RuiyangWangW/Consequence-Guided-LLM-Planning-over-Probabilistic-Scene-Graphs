@@ -685,6 +685,23 @@ Each inserts the repo root on `sys.path` itself, anchored on a marker file rathe
 number of parent directories, so `data/` paths resolve against the working directory and a script
 that moves does not silently lose its imports.
 
+**Benchmarks.** `benchmark/` holds the builders, in three groups:
+
+| folder | scripts |
+| --- | --- |
+| `benchmark/tasks/` | `build_multitask.py`, `subtasks.py`, `run_reference_sim.py` |
+| `benchmark/extraction/` | `derive_vocab.py`, `extraction_data.py`, `extraction_eval.py` |
+| `benchmark/rsn/` | `extract_scene_data.py`, `category_merge.py`, `build_dataset.py` |
+
+Each changes the working directory to the repo root before doing anything, so its outputs land
+in `data/` whether it is run as `python benchmark/tasks/build_multitask.py` from the root or
+from inside its own folder.
+
+`tasks.py`, `task_shapes.py` and `build_tasks.py` stay at the root: `build_tasks.verify` is
+imported by `sim_eval`, `gavel` and `baselines`, and a root module cannot import from a
+subfolder. The same holds for `query_rsn.py`, which `scene_graph` imports, and the two RSN
+training scripts beneath it.
+
 **OmniGibson.** `omnigibson_runtime/` holds the Isaac-side branch, which nothing in the 2-D
 pipeline imports: `execute_plan.py` drives a validated plan and records video, `primitive_patches.py`
 supplies the nine working primitives, `nav_controller.py` + `object_map.py` are the low-level
