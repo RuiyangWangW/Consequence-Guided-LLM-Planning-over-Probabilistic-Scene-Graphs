@@ -51,3 +51,6 @@ docs/
 # API credentials - never commit
 .behavior_api_keys
 *api_keys*
+
+# benchmark construction - kept locally, not published
+BENCHMARK.md

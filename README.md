@@ -40,7 +40,7 @@ floor plan ──> rooms ──────┼─┘       (RSN)      └─> LL
 | 7 | `sim2d.py` / `execute_plan.py` | the plan is **driven** — 2-D in a second, or OmniGibson with video |
 
 Supporting: `derive_vocab.py` derives the household vocabulary from BEHAVIOR's own activity
-definitions. The benchmarks are built and verified separately - see [BENCHMARK.md](BENCHMARK.md).
+definitions. The benchmarks are built and verified separately.
 The builder refuses to write
 `data/tasks.json`: that file carries corrections applied by hand, and regenerating discards
 them silently. A rebuild goes elsewhere and is diffed. `evaluate.py` runs the experiment and
@@ -278,8 +278,8 @@ robot could pick up - so anything to manipulate is injected, from categories the
 ships.
 
 Both sets are fixed artefacts with a content stamp, and every result records the stamp it ran
-against. How they are constructed, verified and rebuilt is in **[BENCHMARK.md](BENCHMARK.md)**;
-none of it is needed to read the results below.
+against. How they are constructed and verified is documented separately; none of it is needed
+to read the results below.
 
 ## The experiment
 
@@ -412,7 +412,7 @@ Two properties of the instructions matter for what follows, and both are enforce
 built rather than assumed here. The errands in one instruction **share no object**, which is what
 makes every ordering legal and lets the expected-cost objective decompose into a pairwise matrix.
 And no furniture *category* appears in two different rooms across them, so `NAVIGATE_TO bookcase`
-always has one referent. See [BENCHMARK.md](BENCHMARK.md).
+always has one referent.
 
 ### What the ordering costs to compute
 
@@ -557,9 +557,9 @@ instructions where the two differ (42%), and online replanning is worse than ord
 
 Two properties changed: the share of furniture references the RSN must guess went from 25% to 54%,
 and the share of instructions on which the three arms do not all choose the same order from
-201/500 to 438/500. Both are stated in [BENCHMARK.md](BENCHMARK.md) along with what it costs -
-the set is built using the estimator under test, and it skews towards instructions with more
-errands.
+201/500 to 438/500. Both carry a cost worth stating: the set is built using the estimator
+under test, and it skews towards instructions with more errands (two-errand instructions fell
+from 106 to 41), which should be noted wherever the online increment is quoted.
 
 ### 3. Foundation models, on 500 instructions
 
@@ -670,8 +670,7 @@ compare rows within experiment 2.**
 **Benchmarks.** `tasks.py`, `subtasks.py`, `task_shapes.py`, `build_tasks.py`,
 `build_multitask.py` build and verify the two task sets, and `derive_vocab.py`,
 `extraction_data.py`, `build_dataset.py`, `embed_categories.py`, `train_rsn.py` build the
-vocabulary, the adapters' training data and the RSN. What they do and how to rebuild either set
-is in [BENCHMARK.md](BENCHMARK.md).
+vocabulary, the adapters' training data and the RSN.
 
 **Experiments.**
 
