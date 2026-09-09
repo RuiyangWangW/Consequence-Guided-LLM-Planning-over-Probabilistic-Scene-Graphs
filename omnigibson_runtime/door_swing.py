@@ -29,6 +29,15 @@ hinge's inset from the edge, and every radius comes out smaller than the object'
 footprint - which is the bound a door swing can never exceed.
 """
 
+import os as _os, sys as _sys
+# The repo root, found by marker rather than by counting parents, so these run from
+# wherever they are filed. They import `world_graph` and `graph_machine` from there.
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d) and not _os.path.exists(_os.path.join(_d, 'graph_machine.py')):
+    _d = _os.path.dirname(_d)
+_sys.path.insert(0, _d)
+
+
 import json
 import math
 import os

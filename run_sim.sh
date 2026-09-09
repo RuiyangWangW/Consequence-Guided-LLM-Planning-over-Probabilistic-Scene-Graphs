@@ -18,4 +18,4 @@ mkdir -p "$(dirname "$VIDEO")"
 rm -f "$VIDEO" "$LOG"
 
 source ~/safety_filter/setup_behavior_env.sh >/dev/null 2>&1
-exec python -u execute_plan.py --plan "$PLAN" --video "$VIDEO" "$@"
+exec python -u omnigibson_runtime/execute_plan.py --plan "$PLAN" --video "$VIDEO" "$@"

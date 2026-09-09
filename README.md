@@ -685,6 +685,17 @@ Each inserts the repo root on `sys.path` itself, anchored on a marker file rathe
 number of parent directories, so `data/` paths resolve against the working directory and a script
 that moves does not silently lose its imports.
 
+**OmniGibson.** `omnigibson_runtime/` holds the Isaac-side branch, which nothing in the 2-D
+pipeline imports: `execute_plan.py` drives a validated plan and records video, `primitive_patches.py`
+supplies the nine working primitives, `nav_controller.py` + `object_map.py` are the low-level
+navigation and semantic map, `scene_setup.py` chooses each suite's furniture offline,
+`world_trace.py` renders the world model as it is built, `door_swing.py` derives the `DOOR_SWING`
+table, and `solve_simple_task.py` is the minimal pick-and-place reference. `run_sim.sh` invokes
+`execute_plan.py` there.
+
+**Note it is not covered by the offline gate.** Its two tests need Isaac and a free GPU, so
+changes to this folder are verified by running them, not by the 19-second suite.
+
 The development notebook - the sweeps, ablations and per-failure diagnostics that answered
 questions this document now states outright, together with the test suite - lives in `cached/`
 and is not tracked.
