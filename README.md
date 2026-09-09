@@ -272,7 +272,7 @@ plan that is known to reach its goal in the simulator, so a failure is always th
 **Multi-task: 500 instructions over the same 10 scenes**, each asking for 2-5 independent errands
 in one sentence - "put the notebook in the office bookcase, take the casserole out of the fridge,
 warm it in the microwave, and leave it on the breakfast table". Predicate counts: `on_top` 964,
-`object_inside` 869, `cooked` 110, `toggled` 99, `washed` 65, `dried` 62; 173 of the 500 ask for a
+`object_inside` 869, `cooked` 110, `toggled` 99, `washed` 65, `dried` 62; 199 of the 500 ask for a
 state an appliance confers. The errands in one instruction never share an object, so every
 ordering is legal and the robot's only reason to prefer one is that it has to walk.
 
@@ -531,7 +531,7 @@ Qwen3-4B and Qwen3-8B.
 Oracle solves every instruction, so each of GAVEL's 38 failures is a real one rather than an
 impossible task. `LLM only` collapses to 19% here against 43% on single tasks - errands compound,
 and one unrepaired plan fails the whole instruction. `EPoG` is at 60% because it cannot express
-`cooked`/`washed`/`dried` at all: those name no edge to add or remove, and about a third of the
+`cooked`/`washed`/`dried` at all: those name no edge to add or remove, and 199 of the 500
 instructions contain one.
 
 **The ordering ladder.** The three GAVEL variants share an identical success set, so their
@@ -787,7 +787,10 @@ table, and `solve_simple_task.py` is the minimal pick-and-place reference. `run_
 `execute_plan.py` there.
 
 **Note it is not covered by the offline gate.** Its two tests need Isaac and a free GPU, so
-changes to this folder are verified by running them, not by the 19-second suite.
+changes to this folder are verified by running them, not by the 19-second suite. Running it
+correctly is not obvious - `setup_behavior_env.sh` has to be sourced, `CUDA_VISIBLE_DEVICES`
+must not be set, and Isaac exits in a way that discards buffered output - so
+[OMNIGIBSON.md](OMNIGIBSON.md) documents the procedure and what each part is for.
 
 The development notebook - the sweeps, ablations and per-failure diagnostics that answered
 questions this document now states outright, together with the test suite - lives in `cached/`
