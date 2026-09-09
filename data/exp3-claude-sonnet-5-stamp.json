@@ -1,0 +1,34 @@
+{
+ "content": "50bdbedd1d478e99",
+ "seed": null,
+ "per_scene": null,
+ "tasks": 500,
+ "sizes": {
+  "2": 41,
+  "3": 148,
+  "4": 149,
+  "5": 162
+ },
+ "mean_rooms": 4.66,
+ "scenes": [
+  "Beechwood_0_int",
+  "Beechwood_1_int",
+  "Benevolence_1_int",
+  "Ihlen_1_int",
+  "Merom_1_int",
+  "Pomaria_0_int",
+  "Pomaria_1_int",
+  "Rs_int",
+  "Wainscott_0_int",
+  "Wainscott_1_int"
+ ],
+ "model": "claude-sonnet-5",
+ "api_usage": {
+  "claude-sonnet-5": {
+   "calls": 854,
+   "input": 1742999,
+   "output": 69779,
+   "reasoning": 0
+  }
+ }
+}

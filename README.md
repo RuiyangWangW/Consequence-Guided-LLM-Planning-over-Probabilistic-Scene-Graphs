@@ -567,12 +567,12 @@ Qwen3-4B against Qwen3-8B, LLM-only against GAVEL. The 8B rows are the same run 
 rather than a fresh sample, so the two tables agree exactly instead of differing by run-to-run
 noise.
 
-| model | arm | success | driven |
-| --- | --- | --- | --- |
-| Qwen3-4B | LLM only | **9/500** | 121.3 m |
-| Qwen3-4B | GAVEL | **374/500** | 93.8 m |
-| Qwen3-8B | LLM only | **97/500** | 86.7 m |
-| Qwen3-8B | GAVEL | **462/500** | 78.0 m |
+| model | arm | success | driven | planning time |
+| --- | --- | --- | --- | --- |
+| Qwen3-4B | LLM only | **9/500** | 121.3 m | 23.0 ± 7.4 s |
+| Qwen3-4B | GAVEL | **374/500** | 93.8 m | 35.0 ± 31.2 s |
+| Qwen3-8B | LLM only | **97/500** | 86.7 m | 31.8 ± 10.5 s |
+| Qwen3-8B | GAVEL | **462/500** | 78.0 m | 39.3 ± 22.6 s |
 
 **A 4B model on its own is not a planner for these instructions at all.** Nine successes out of
 five hundred is under 2%, and it is not that the model cannot write a plan - it writes one every
@@ -591,6 +591,39 @@ to the others: they describe the handful of easiest instructions those arms happ
 The comparison that is sound is GAVEL to GAVEL - 93.8 m at 4B against 78.0 m at 8B - which says
 the smaller model still writes materially worse plans even when they are valid.
 
+#### Hosted models
+
+Two frontier models run the same pipeline through `src/llm/api_models.py`, over a
+**100-instruction stride** of the same benchmark. The local rows are re-scored on exactly those
+100 rather than quoting their 500-instruction totals, so every row is one task set. Stages 1
+and 2 are the same local adapters throughout; only the decomposer and planner change.
+
+| model | LLM only | GAVEL | GAVEL driven | planning |
+| --- | --- | --- | --- | --- |
+| Qwen3-4B | 1/100 | 77/100 | 93.5 m | 35.0 s |
+| Qwen3-8B | 24/100 | 89/100 | 77.7 m | 39.3 s |
+| gpt-5.6-sol | 23/100 | **100/100** | 72.7 m | 16.5 s |
+| claude-sonnet-5 | 39/100 | **100/100** | 72.8 m | 18.2 s |
+
+**Both frontier models solve every instruction with the world model, and neither comes close
+without it** - the best unaided score is 39/100. `gpt-5.6-sol` alone scores 23, against the 8B's
+24. A multi-errand instruction offers four or five chances to write a step the world refuses,
+and one is enough to fail the whole thing.
+
+Two further results. Paired over the 71 instructions every model solved, GAVEL drives 95.7 m at
+4B, 78.6 m at 8B and 75.8 m at gpt-5.6-sol; against the 8B both hosted models are reliably
+shorter (gpt -2.96 m, 26 wins to 4 over the 30 routes that differ, z = +4.02; claude -2.60 m, 26
+to 6, z = +3.54 - the rest are exact ties, since the same errand ordering gives the same route).
+And on the 16 instructions carrying a stage-1 extraction error, GAVEL recovered **16/16** with
+either hosted model against **10/16** with the 8B.
+
+The planning column is not an efficiency comparison: the local rows are GPU compute on an idle
+card, the hosted rows wall-clock against another party's serving stack. Nor are these columns
+reproducible the way the local ones are - a hosted model can change under a stable id, so each
+run records its model id, date and token spend (854 calls each: 1.17M input and 34.9K output for
+gpt-5.6-sol, 1.74M and 69.8K for claude-sonnet-5). Both were given the minimum thinking their
+provider allows, matched to the local runs' `enable_thinking=False`.
+
 ### Where these numbers come from
 
 Every figure above is read off a file in `data/`, so a claim can be checked without re-running
@@ -601,6 +634,7 @@ anything.
 | `exp1-{4b,8b}-{llmonly,feedback,gavel}.json` | experiment 1 - six runs, 100 tasks each, per-task plan, verdict, attempts and per-stage timing |
 | `exp2.json` | experiment 2 - 500 instructions, seven arms, Qwen3-8B |
 | `exp3.json` | experiment 3 - 500 instructions, `llm-only` and `gavel`, Qwen3-4B |
+| `exp3-gpt-5.6-sol.json`, `exp3-claude-sonnet-5.json` | experiment 3's hosted rows - the 100-instruction stride, with each run's token spend in its stamp |
 | `rsn-accuracy.json` | the RSN's per-guess accuracy: believed room, true room, rank and confidence |
 | `multitask-stamp.json` | which generation of the benchmark all of the above ran against |
 
