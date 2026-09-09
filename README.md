@@ -1,4 +1,4 @@
-# LLM safety filter for BEHAVIOR-1K
+# GAVEL — Graph World Models for Verified and Efficient Long-Horizon LLM Planning
 
 Turns a natural-language task and a scene into a **validated sequence of BEHAVIOR-1K action
 primitives**, then drives it.
@@ -20,11 +20,11 @@ actually drive. A plan validated here is a plan in BEHAVIOR-1K's action space, o
 objects, in a BEHAVIOR-1K house.
 
 ```
-task text ──> objects ────┐                       ┌─> graph machine ──> repair ──┐
-          └─> goal state ──┐ ├──> scene graph ──┐    │                              │
-floor plan ──> rooms ──────┼─┘       (RSN)      └─> LLM plan                        │
-                           └────────────────────────────> 2-D simulator <───────────┘
-                                                          or OmniGibson (video)
+task text ─┬─> objects ────┐
+           └─> goal state ─┤
+                           ├─> scene graph ─> LLM plan ─> graph machine ─┬─> 2-D simulator
+floor plan ──> room graph ─┘      (RSN)          ^                       │   or OmniGibson
+                                                 └─────── repair ────────┘
 ```
 
 ## The pipeline
@@ -116,14 +116,12 @@ appliances that confer it, and `TOGGLE_ON` writes that state onto the appliance'
 benchmark uses only `toggled`, on 9 tasks, and all 9 want the appliance left **on** — six lamps
 and three televisions. No benchmark goal uses `open` at all.
 
-Nothing asks for a device to be left **off**. It used to: six tasks said "switch the lamp on and
-off again", whose goal is `toggled(lamp, False)` — a state indistinguishable from never having
-touched the switch. A goal describes how the world ends, so a task whose only requirement is
-satisfied by doing nothing cannot be scored, and those six were removed rather than kept as
-noise. Leaving an appliance off is still enforced, but by the safety check, which is a
-different question from the goal: `MUST_SWITCH_OFF` is derived from BDDL's `heatSource` and
-`waterSource` properties, so a plan that leaves the oven running fails whether or not the task
-mentioned the oven.
+No goal asks for a device to be left **off**, and none can: `toggled(lamp, False)` is
+indistinguishable from never having touched the switch, so a task whose only requirement is
+satisfied by doing nothing cannot be scored. Leaving an appliance off is enforced instead by the
+safety check, which asks a different question: `MUST_SWITCH_OFF` is derived from BDDL's
+`heatSource` and `waterSource` properties, so a plan that leaves the oven running fails whether
+or not the task mentioned the oven.
 
 **Known inconsistency:** `finetune_extraction.goal_target` emits whatever the training row's
 goal holds, so 1,007 of the 8,000 training targets contain `open(...)` conditions the prompt
@@ -255,7 +253,7 @@ same preconditions in the same code and differ only in where the edges came from
 
 ### Where the two checkers disagree
 
-`ablate_plan.py --fuzz` builds plans the graph machine accepts, then drives them. With `near`
+A fuzzer builds plans the graph machine accepts, then drives them. With `near`
 as a room, about a fifth were undrivable; with the `nearby` edge, 480 of 480 across two scenes
 were drivable, and the remaining disagreements were the graph model being *conservative* —
 demanding a `NAVIGATE_TO` geometry says is unnecessary, which costs a step rather than the run.
@@ -283,8 +281,8 @@ robot could pick up - so anything to manipulate is injected, from categories the
 ships.
 
 Both sets are fixed artefacts with a content stamp, and every result records the stamp it ran
-against. How they are constructed and verified is documented separately; none of it is needed
-to read the results below.
+against. The scripts in `benchmark/` construct and verify them; none of that is needed to read
+the results below.
 
 ## The experiment
 
@@ -609,6 +607,33 @@ anything.
 Each result also carries a `-stamp.json` naming the benchmark it ran against; `merge_shards.py`
 refuses to combine shards whose stamps disagree.
 
+**Reproducing them.** `ADAPT="--extractor models/h1-1.7b-v5 --goal-model models/state-1.7b-v5"`
+in each command below; the planner and decomposer are the base model named by `--model`.
+
+```bash
+mkdir -p runs
+
+# 1. the single-task ladder - six runs, one per (model, arm)
+python experiments/evaluate.py --model Qwen/Qwen3-8B $ADAPT \
+    --attempts 1 --repair-at off  --json runs/exp1-8b-llmonly.json   # LLM-only
+    #  --attempts 5 --repair-at off                                   # + feedback
+    #  --attempts 5 --repair-at loop                                  # GAVEL
+
+# 2. seven arms over all 500 instructions, split across four GPUs
+for i in 0 1 2 3; do
+  CUDA_VISIBLE_DEVICES=$i python experiments/evaluate_multi.py --model Qwen/Qwen3-8B $ADAPT \
+    --shards 4 --shard $i --arms llm-only,sayplan,epog,gavel-map,gavel-static,gavel,oracle \
+    --out runs/exp2-shard$i.json &
+done; wait
+python experiments/merge_shards.py --pattern "runs/exp2-shard*.json" --out runs/exp2.json
+
+# 3. the same 500 instructions, two arms, one model per run
+python experiments/evaluate_multi.py --model Qwen/Qwen3-4B $ADAPT \
+    --arms llm-only,gavel --out runs/exp3-4b.json
+```
+
+Timings are **not** reproduced by these commands - see below.
+
 ### The timing column, and what it is measured on
 
 **Planning time is compute only** - decomposition, extraction, grounding, the goal adapter, every
@@ -680,8 +705,9 @@ runnable from the repo root:
 | `exp_rsn_accuracy.py` | the RSN's per-guess accuracy behind the 47% quoted above |
 
 Each finds the repo root itself by walking up to a marker rather than counting parent
-directories, then puts every folder under `src/` and `benchmark/` on the import path. So a
-module can be run from anywhere, and moving one between stage folders changes no import.
+directories, then puts every folder under `src/`, `benchmark/` and `omnigibson_runtime/` on the
+import path. So a module can be run from anywhere, and moving one between stage folders changes
+no import.
 
 **Benchmarks.** `benchmark/` holds the builders, in three groups:
 
