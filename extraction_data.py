@@ -45,7 +45,7 @@ import os
 import random
 import re
 
-from evaluate import same_object
+from object_names import same as same_object
 from floor_world import DEFAULT_DATASET
 from planner import CONFERS
 

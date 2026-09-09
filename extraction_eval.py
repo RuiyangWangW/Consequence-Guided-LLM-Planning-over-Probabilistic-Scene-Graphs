@@ -23,7 +23,7 @@ import json
 import os
 import re
 
-from evaluate import same_object
+from object_names import same as same_object
 
 # Names that are rooms rather than objects. The prompt says to skip them; measured, it
 # returns one anyway about once every six tasks, and a room in the object list becomes a

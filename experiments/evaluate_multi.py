@@ -22,6 +22,16 @@ Every arm is judged by the 2-D simulator against the true world. Two distances a
     python evaluate_multi.py --tasks data/multitask.json --limit 50 --out data/multi-4b.json
 """
 
+import os as _os, sys as _sys
+# Walk up to the repo root - the directory holding the library modules - so this file
+# runs from wherever it is filed. Anchored on a marker rather than a fixed number of
+# parents, so moving it a level deeper does not silently break the import.
+_d = _os.path.dirname(_os.path.abspath(__file__))
+while _d != _os.path.dirname(_d) and not _os.path.exists(_os.path.join(_d, 'graph_machine.py')):
+    _d = _os.path.dirname(_d)
+_sys.path.insert(0, _d)
+
+
 import argparse
 import json
 import time
