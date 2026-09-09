@@ -672,22 +672,21 @@ compare rows within experiment 2.**
 `extraction_data.py`, `build_dataset.py`, `embed_categories.py`, `train_rsn.py` build the
 vocabulary, the adapters' training data and the RSN.
 
-**Experiments.** `experiments/` holds 17 scripts that nothing imports - a lab notebook. Each is
-runnable from the repo root (`python experiments/exp_ladder.py`) and inserts the root on
-`sys.path` itself, so `data/` paths resolve against the working directory as before.
+**Experiments.** `experiments/` holds the harnesses that produce the reported results, each
+runnable from the repo root:
 
 | script | what it runs |
 | --- | --- |
-| `exp_rsn_accuracy.py` | how often the RSN's argmax room is right, and where the truth sits when it is not |
-| `exp_decompose_prompt.py` | scores candidate decomposition prompts against the benchmark's own errand boundaries |
-| `exp_epog.py`, `exp_epog_single.py` | what the symbolic baseline can and cannot express |
-| `exp_corrupt.py`, `exp_uncertainty.py`, `exp_infogain.py` | when ordering pays: confidently wrong beliefs, not merely unsure ones |
-| `exp_ladder.py`, `exp_spread.py`, `exp_params.py`, `exp_adversarial.py`, `exp_decomposition.py` | the ordering ladder, room spread, parameter sensitivity, adversarial checks |
-| `exp_sweep_*.py` | benchmark defect sweeps - re-run these when the task sets change |
-| `ablate_plan.py` | where the graph checker and the simulator disagree |
+| `evaluate.py` | experiment 1 - the single-task ladder; `--attempts` and `--repair-at` select the arm |
+| `evaluate_multi.py` | experiments 2 and 3 - all seven arms in one process per shard |
+| `oracle_order.py` | the ordering ladder measured on reference subplans, with the language model taken out |
+| `merge_shards.py` | concatenates sharded results, and refuses to merge across benchmark stamps |
+| `exp_rsn_accuracy.py` | the RSN's per-guess accuracy behind the 47% quoted above |
 
-**Tests.** `tests/` - `python tests/test_x.py` or `pytest tests/`. Six run offline in ~19 seconds
-and are the gate for any change: `test_object_names`, `test_pipeline`, `test_fallback`,
-`test_graph_machine`, `test_gavel`, `test_sim2d`. `test_repair` additionally loads the RSN;
-`test_primitives` and `test_stance_order` need Isaac and a free GPU.
-`test_fallback.py`, `test_object_names.py`, `test_stance_order.py`, `test_gavel.py`.
+Each inserts the repo root on `sys.path` itself, anchored on a marker file rather than a fixed
+number of parent directories, so `data/` paths resolve against the working directory and a script
+that moves does not silently lose its imports.
+
+The development notebook - the sweeps, ablations and per-failure diagnostics that answered
+questions this document now states outright, together with the test suite - lives in `cached/`
+and is not tracked.
