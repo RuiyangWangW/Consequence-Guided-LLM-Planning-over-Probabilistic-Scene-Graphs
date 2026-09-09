@@ -47,3 +47,7 @@ data/spread-headroom.json
 # Papers and other reference material that is not an input to anything here.
 docs/
 
+
+# API credentials - never commit
+.behavior_api_keys
+*api_keys*

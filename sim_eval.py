@@ -20,6 +20,7 @@ disagree the robot has to discover it the way it would in the house.
 """
 
 import json
+import math
 
 from floor_world import FloorWorld
 from object_names import match
@@ -223,6 +224,94 @@ def ground(name, world, graph):
             or next((i for i in here if can_reach(i)), None)
             or next((i for i in instances if can_reach(i)), None)
             or (stated or here or instances)[0])
+
+
+def route_matrix(task, graph, steps, start_room=None):
+    """Exact pairwise drive distances between everything a plan navigates to.
+
+    Oracle knows where every object is, so its route is fully determined by the ordering and
+    it never searches. That means the route can be *computed* rather than driven - and it can
+    be computed exactly, not estimated, because this uses the same A* on the same eroded grid
+    the simulator itself drives on, between the same stance cells.
+
+    What makes a single matrix enough is a property `build_multitask.combine` enforces: the
+    errands in one instruction **share no movable object**. So every `NAVIGATE_TO` target is
+    either a source object still at its spawn position or a fixed piece of furniture; nothing
+    a later errand drives to has been moved by an earlier one, and every target's position is
+    known before any ordering is chosen. Any ordering's cost is then a sum of consecutive legs
+    out of this matrix, and 120 permutations cost 120 additions instead of 120 simulations.
+
+    Returns `(legs, start)` where `legs[(a, b)]` is metres from target `a` to target `b` and
+    `start[a]` is metres from where the robot begins. Unreachable pairs are absent.
+    """
+    from floor_world import astar
+
+    plan = [(s["action"], s.get("object")) if isinstance(s, dict) else (s[0], s[1])
+            for s in steps]
+    world, _ = build_world(task, graph, [a for _, a in plan])
+    # Keyed by the name the PLAN uses, not the instance it grounds to: `route_cost` walks a
+    # plan, and grounding is a deterministic function of (name, world, belief), so the two
+    # agree by construction while the caller never has to ground anything itself.
+    names = list(dict.fromkeys(arg for action, arg in plan
+                               if action == "NAVIGATE_TO" and arg))
+    probe = Sim2D(world, start_room=start_room, room_hints={}, focus=set(), verbose=False)
+
+    mask, _labels = world.traversable(probe.radius)
+    cells = {}
+    for name in names:
+        instance = ground(name, world, graph)
+        if not instance:
+            continue
+        stance = next((st for st in probe.stances_for(instance)
+                       if probe.route_to(st) is not None), None)
+        if stance is not None:
+            cells[name] = stance
+    begin = world.nearest_free_cell(probe.x, probe.y, probe.radius)
+
+    def metres(route):
+        if not route:
+            return None
+        total, (row, col) = 0.0, route[0]
+        x, y = world.to_world(row, col)
+        for nrow, ncol in route[1:]:
+            nx, ny = world.to_world(nrow, ncol)
+            total += math.hypot(nx - x, ny - y)
+            x, y = nx, ny
+        return total
+
+    legs, start = {}, {}
+    for name, cell in cells.items():
+        if begin is not None:
+            got = metres(astar(mask, begin, cell))
+            if got is not None:
+                start[name] = got
+    for a, cell_a in cells.items():
+        for b, cell_b in cells.items():
+            if a == b:
+                legs[(a, b)] = 0.0
+                continue
+            got = metres(astar(mask, cell_a, cell_b))
+            if got is not None:
+                legs[(a, b)] = got
+    return legs, start
+
+
+def route_cost(plan, legs, start, world=None, graph=None):
+    """What driving `plan` costs, out of a `route_matrix`. None if any leg is unreachable."""
+    total, here = 0.0, None
+    for action, name in plan:
+        if action != "NAVIGATE_TO" or not name:
+            continue
+        if here is None:
+            if name not in start:
+                return None
+            total += start[name]
+        else:
+            if (here, name) not in legs:
+                return None
+            total += legs[(here, name)]
+        here = name
+    return total
 
 
 def run_plan(task, graph, steps, start_room=None, verbose=False):

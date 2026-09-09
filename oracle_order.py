@@ -22,7 +22,8 @@ import argparse
 import json
 
 from scene_graph import DEFAULT_MODEL, DEFAULT_THRESHOLD, populate
-from sim_eval import run_plan
+from sim_eval import route_cost, route_matrix, run_plan
+from build_tasks import seed_graph
 from world_graph import WorldGraph
 
 import baselines
@@ -78,10 +79,31 @@ def main():
             except Exception:
                 return None
 
+        # Oracle gets ground truth throughout - see `baselines.oracle`.
+        truth_graph = seed_graph(task)
+        cached = {}
+
+        def oracle_drive(ordered):
+            steps, _ = gavel.compose(seed, ordered, goal)
+            try:
+                return run_plan(task, truth_graph, steps, verbose=False)["driven"]
+            except Exception:
+                return None
+
+        def oracle_measure(order):
+            steps, _ = gavel.compose(seed, [plans[i] for i in order], goal)
+            if "legs" not in cached:
+                cached["legs"], cached["start"] = route_matrix(task, truth_graph, steps)
+            return route_cost(steps, cached["legs"], cached["start"])
+
         for method in arms:
             if method == baselines.ORACLE and args.no_sim:
                 continue
-            result = baselines.run(method, task, plans, graph, seed, drive=drive, goal=goal)
+            is_oracle = method == baselines.ORACLE
+            result = baselines.run(
+                method, task, plans, truth_graph if is_oracle else graph, seed,
+                drive=oracle_drive if is_oracle else drive,
+                measure=oracle_measure if is_oracle else None, goal=goal)
             if result.get("steps") is not None:
                 steps = result["steps"]                       # EPoG wrote its own plan
                 composed = GraphMachine(seed.copy()).run(steps, goal)
@@ -97,8 +119,9 @@ def main():
             if not args.no_sim:
                 if method == baselines.ORACLE and result.get("driven") is not None:
                     # Re-drive the ordering it chose, so its step count and success are
-                    # measured the same way as everyone else's.
-                    sim = run_plan(task, graph, steps, verbose=False)
+                    # measured the same way as everyone else's - against the truth graph,
+                    # which is what Oracle is given.
+                    sim = run_plan(task, truth_graph, steps, verbose=False)
                     entry.update({"ok": sim["ok"], "driven": sim["driven"],
                                   "sim_steps": sim["sim_steps"],
                                   "sim_seconds": sim["sim_seconds"], "why": sim["why"][:200]})

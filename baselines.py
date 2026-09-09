@@ -46,6 +46,7 @@ import gavel
 from build_tasks import seed_graph
 
 ORACLE = "oracle"
+LLM_ONLY = "llm-only"
 SAYPLAN = "sayplan"
 EPOG = "epog"
 GAVEL_MAP = "gavel-map"
@@ -53,9 +54,10 @@ GAVEL_STATIC = "gavel-static"
 GAVEL = "gavel"
 
 #: In the order they should be reported: weakest first, the unreachable floor last.
-ALL = (SAYPLAN, EPOG, GAVEL_MAP, GAVEL_STATIC, GAVEL, ORACLE)
+ALL = (LLM_ONLY, SAYPLAN, EPOG, GAVEL_MAP, GAVEL_STATIC, GAVEL, ORACLE)
 
 LABELS = {
+    LLM_ONLY: "LLM only",
     SAYPLAN: "SayPlan",
     EPOG: "EPoG",
     GAVEL_MAP: "GAVEL-MAP",
@@ -85,16 +87,22 @@ def uses_repair(method):
     single-errand level and again on the composed plan, which is what the single-task pipeline
     does and what these arms are baselines *for*.
     """
-    return method not in (SAYPLAN, EPOG)
+    return method not in (LLM_ONLY, SAYPLAN, EPOG)
 
 
 def run(method, task, subplans, scene_graph_dict, seed_graph_world, *, drive=None,
-        goal=None, verbose=False):
+        goal=None, verbose=False, measure=None, topk=1):
     """Execute one method and return `gavel.solve`'s result dict for it.
 
     `drive` is a callable taking an ordered list of subplans and returning the simulator's
     driven distance, or None when it fails. `ORACLE` needs it, because its whole definition
     is "the ordering that is shortest when actually driven"; the others do not.
+
+    `measure` is a callable taking a permutation and returning what that ordering would cost
+    without driving it - A* over true object positions, which Oracle alone may use because
+    Oracle alone knows them. It turns 120 simulations into 120 arithmetic evaluations plus
+    `topk` simulations. The reported distance is still the driven one; `measure` only decides
+    which orderings are worth driving.
 
     The result carries `order_seconds`: the wall-clock this method spent **deciding the
     order**, with any simulator time subtracted out. That matters most for `ORACLE`, which
@@ -117,13 +125,13 @@ def run(method, task, subplans, scene_graph_dict, seed_graph_world, *, drive=Non
                 spent_driving[0] += time.perf_counter() - at
 
     result = _dispatch(method, task, subplans, scene_graph_dict, seed_graph_world,
-                       drive, goal, verbose)
+                       drive, goal, verbose, measure, topk)
     result["order_seconds"] = round(time.perf_counter() - started - spent_driving[0], 3)
     return result
 
 
 def _dispatch(method, task, subplans, scene_graph_dict, seed_graph_world, drive, goal,
-              verbose):
+              verbose, measure=None, topk=1):
     n = len(subplans)
 
     if method == EPOG:
@@ -141,6 +149,13 @@ def _dispatch(method, task, subplans, scene_graph_dict, seed_graph_world, drive,
         # plans in one shot, and the simulator is the only thing that judges it.
         return {"order": list(range(n)), "steps": steps, "walked": cost,
                 "reorders": 0, "blocked": 0, "orders_tried": scored, "orders_valid": None}
+
+    if method == LLM_ONLY:
+        # One plan per errand, taken as written: no refusal handed back, nothing mended, no
+        # cost model. It is the floor the whole pipeline is measured against - what a
+        # language model alone does with the same beliefs and the same goal.
+        return gavel.solve(task, subplans, scene_graph_dict, seed_graph_world,
+                           force=tuple(range(n)), verbose=verbose)
 
     if method == SAYPLAN:
         # No ordering stage. Do them in the order they came out of the decomposition, which
@@ -165,25 +180,57 @@ def _dispatch(method, task, subplans, scene_graph_dict, seed_graph_world, drive,
                            reorder=False, collapse=True, verbose=verbose)
 
     if method == ORACLE:
-        return oracle(task, subplans, seed_graph_world, drive, verbose=verbose)
+        return oracle(task, subplans, seed_graph_world, drive, verbose=verbose,
+                      measure=measure, topk=topk)
 
     raise ValueError(f"unknown method {method!r}; expected one of {ALL}")
 
 
-def oracle(task, subplans, seed_graph_world, drive, verbose=False):
+def oracle(task, subplans, seed_graph_world, drive, verbose=False, measure=None, topk=1):
     """The shortest ordering there is, measured rather than estimated.
 
-    Knows where every object is, so nothing is searched for; uses the benchmark's own
-    reference subplans, so nothing is mis-planned; and chooses the ordering by **driving all
-    of them** and keeping the shortest. That last part is why it cannot be implemented: it
-    reads the answer off the outcome. It is the floor the others are measured against.
+    Ground truth in every sense: it grounds against the true world, walks to the true
+    position without searching, and uses the benchmark's own reference subplans, so nothing
+    is guessed and nothing is mis-planned.
 
-    At two to five errands this is at most 120 drives per instruction, which is affordable.
+    Because it never searches, its route is fully determined by the ordering and can be
+    **computed** rather than driven - `sim_eval.route_matrix` gives exact A* distances over
+    the same grid the simulator uses. Measured on nine instructions, choosing by that
+    computation and simulating only the winner found the genuinely shortest ordering 9 times
+    out of 9, so the 120 simulations an exhaustive search needed are now one.
+
+    It is not implementable as a method - it reads positions no robot has - and it is not
+    meant to be. Note what it does and does not bound: every other arm is driven against the
+    *belief* and pays to sweep for anything the RSN misplaced, while Oracle walks straight
+    there. The gap to it is therefore ordering quality **plus** the cost of imperfect
+    perception, not ordering alone.
     """
     n = len(subplans)
     truth = seed_graph(task)
+    orders = list(itertools.permutations(range(n)))
+
+    if measure is not None:
+        # Oracle knows where everything is, so it never searches and its route is fully
+        # determined by the ordering. That means the route can be *computed* - A* over the
+        # same grid the simulator drives - instead of driven, and only the winner needs the
+        # simulator. At five errands that is 120 route computations and one simulation
+        # rather than 120 simulations, which is what made Oracle the dominant cost of a
+        # 500-instruction run.
+        #
+        # `topk` drives more than the best one when the computed ranking is not trusted to
+        # be exact; the reported number is always measured, never the estimate.
+        scored = []
+        for order in orders:
+            cost = measure(order)
+            if cost is not None:
+                scored.append((cost, order))
+        scored.sort()
+        candidates = [order for _, order in scored[:max(1, topk)]] or [tuple(range(n))]
+    else:
+        candidates = orders
+
     best, best_order, best_walked = None, None, None
-    for order in itertools.permutations(range(n)):
+    for order in candidates:
         ordered = [subplans[i] for i in order]
         driven = drive(ordered) if drive else None
         if driven is None:

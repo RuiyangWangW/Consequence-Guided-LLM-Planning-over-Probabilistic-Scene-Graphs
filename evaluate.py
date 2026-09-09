@@ -216,16 +216,23 @@ def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
     rows = []
     for index, task in enumerate(tasks, 1):
         started = time.time()
+        # Per-stage timing, so "planning time" can be reported as what the ALGORITHM cost
+        # rather than what the run took. `started`/`seconds` spans the simulator too, which
+        # is the robot's time and not the method's - on a long task the drive dwarfs every
+        # model call, and a table that adds them together compares the simulator's speed.
+        clock = time.perf_counter()
 
         # --- stage 1, shared by both arms so they differ only in the validation loop ---
         found = extract(task["task"],
                         generator=extractor_gen if extractor else generator,
                         prompt=extract_prompt)
         stage1 = extraction_error(task, found)
+        t_extract = time.perf_counter() - clock; clock = time.perf_counter()
 
         graph = populate(task["scene"], found["uncertain"], found["dependent"],
                          stated=found["stated"], model_path=DEFAULT_MODEL,
                          threshold=DEFAULT_THRESHOLD)
+        t_ground = time.perf_counter() - clock; clock = time.perf_counter()
         stage3, unnameable = grounding_error(task, graph)
         # Is the task already finished in the world the robot believes in? If so no plan can
         # be judged - the checker will accept one that does nothing, and the failure surfaces
@@ -244,13 +251,19 @@ def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
         # answer key, and the whole point is that a wrong prediction shows up as a failure
         # rather than being hidden by it.
         predicted = ()
+        clock = time.perf_counter()
         if goal_model:
             predicted = parse_goal("GOAL:\n" + goal_gen(
                 GOAL_INSTRUCTION.format(task=task["task"]), 200))
+        t_goal = time.perf_counter() - clock; clock = time.perf_counter()
 
         history = replan_run(task["task"], graph, goal=predicted, attempts=attempts,
                              model_name=model, verbose=False,
                              declare_goal=declare_goal, mend=mend)
+        # Every attempt, every refusal handed back, and every repair the machine made -
+        # the whole cost of insisting on a plan that passes, which is exactly what the
+        # ablation is buying.
+        t_plan = time.perf_counter() - clock
         first = (history[0].get("written") or history[0]["steps"]) if history else []
         winner = next((h for h in history if h.get("accepted")), None)
         final = (winner or history[-1])["steps"] if history else []
@@ -367,6 +380,9 @@ def evaluate(tasks, attempts=5, model=None, verbose=True, out=None,
             "sim_first": sim_first,
             "simulated": simulated,
             "seconds": round(time.time() - started, 1),
+            "module_seconds": {"extract": round(t_extract, 2), "ground": round(t_ground, 2),
+                               "goal": round(t_goal, 2), "plan": round(t_plan, 2)},
+            "compute_seconds": round(t_extract + t_ground + t_goal + t_plan, 2),
             # Kept so the whole thing can be re-scored later without re-running the LLM.
             "extracted": found, "predicted_goal": [list(g) for g in predicted],
             "first_plan": [[s["action"], s.get("object")] for s in first],

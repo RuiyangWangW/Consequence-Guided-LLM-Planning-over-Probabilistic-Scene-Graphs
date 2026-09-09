@@ -125,7 +125,8 @@ def merge_extraction(picked):
     return {"uncertain": uncertain, "stated": stated, "dependent": dependent}
 
 
-def combine(subtasks, per_scene=50, seed=0, sizes=(2, 3, 4, 5)):
+def combine(subtasks, per_scene=50, seed=0, sizes=(2, 3, 4, 5), live=None,
+            live_share=0.7):
     """Long instructions, each several subtasks of one scene done in any order.
 
     Three properties are enforced here that `build_tasks` cannot: the errands share no object,
@@ -147,6 +148,32 @@ def combine(subtasks, per_scene=50, seed=0, sizes=(2, 3, 4, 5)):
     The reference plan is the subplans concatenated in the order drawn. It is one valid
     ordering, not the cheapest: which ordering is cheapest is the question GAVEL answers,
     so the benchmark must not presuppose it.
+
+    `live`, if given, is a predicate on a finished combination and is the strongest form of
+    the spread rule above. `live_share` is the fraction of each scene's instructions to fill
+    with it before topping the scene up without it.
+
+    **It is a quota, not a filter.** A benchmark where every instruction is live would say
+    nothing about how often the question arises, and it would drop whole scenes:
+    `Pomaria_1_int` produced 0 live instructions out of 50, because its subtasks name the room
+    outright and leave the RSN almost nothing to guess. So each scene fills its quota if it
+    can, tops up with ordinary draws if it cannot, and keeps its place in the benchmark either
+    way. A scene that yields nothing live after a fair trial is abandoned early rather than
+    spending its whole attempt budget on a question it cannot pose. Spread asks that the errands be far enough apart for *some*
+    ordering to beat another; `live` asks the sharper question of whether the arms being
+    compared actually decide differently on this instruction - whether carrying the whole room
+    distribution picks a different order than carrying its argmax, or whether anything the
+    robot sees on the way makes it revise. Measured over the first 500 instructions, 299 were
+    dead by that test: every arm chose the identical order, so the instruction contributed
+    exactly nothing to the comparison, diluting the reported effect without even adding noise.
+
+    **It selects on whether the decision differs, never on which arm wins.** Selecting on the
+    outcome would manufacture the result; selecting on disagreement only concentrates
+    instructions where the question is live. It does mean the benchmark is built using the
+    estimator under test, and it skews towards more errands and towards scenes with more
+    uncertain objects - `Pomaria_1_int` offers only one distinct room guess in total, so
+    nothing there can be live. Both are the price of a benchmark that is a diagnostic for
+    ordering rather than a representative sample of household chores.
     """
     rng = random.Random(seed)
     by_scene = {}
@@ -164,60 +191,103 @@ def combine(subtasks, per_scene=50, seed=0, sizes=(2, 3, 4, 5)):
         # would quietly unbalance the benchmark. Trying the ambitious target first and dropping
         # to the next only on exhaustion keeps all ten scenes at 50 and still takes whatever
         # spread each one can actually offer.
-        for bump in (2, 1, 0):
-            if len([t for t in out if t["scene"] == scene]) >= per_scene:
-                break
-            attempts = 0
-            while len([t for t in out if t["scene"] == scene]) < per_scene:
-                attempts += 1
-                # Bounded: the draw rejects on independence, on room consistency, on spread and
-                # on repeats, so an exhausted pool would otherwise spin here forever rather
-                # than fall back to a looser target.
-                if attempts > 60000:
+        # Two passes over the same draw: the first insists on live instructions until the
+        # quota is met, the second fills whatever is left with ordinary ones.
+        quota = int(round(per_scene * live_share)) if live is not None else 0
+        tested, misses = 0, 0
+        budget = max(40, 3 * quota)
+        for want_live, target in ((quota, quota), (0, per_scene)):
+            for bump in (2, 1, 0):
+                if len([t for t in out if t["scene"] == scene]) >= target:
                     break
-                size = rng.choice(sizes)
-                picked = rng.sample(pool, size)
-                if not independent(picked):
-                    continue
-                if not one_room_each(picked):
-                    continue
-                # **Spread the errands around the house.** Only the transition term of the
-                # objective depends on the order, so an instruction whose errands all sit in
-                # one corner gives the ordering stage nothing to win however good it is - and
-                # drawing uniformly produces exactly that, because a scene's manipulable
-                # furniture clusters into a few rooms. Measured over 155 instructions, the gap
-                # between the best and the worst ordering rises monotonically with the number
-                # of rooms touched: 11.2% at two rooms, 13.0% at three, 14.3% at four, 18.5%
-                # at five, 36.6% at six. Uniform draws averaged 3.4 rooms.
-                #
-                # The target is capped at what the scene can actually reach, because some
-                # scenes cannot spread at all - every one of `Wainscott_0_int`'s twelve
-                # subtasks is in one of three rooms - and a fixed target would drop such a
-                # scene from the benchmark rather than give it the most spread it has.
-                if len(rooms_touched(picked)) < min(size + bump, caps[size]):
-                    continue
-                key = tuple(sorted(t["id"] for t in picked))
-                if key in seen:
-                    continue
-                seen.add(key)
-                index = len([t for t in out if t["scene"] == scene]) + 1
-                out.append({
-                    "id": f"{scene}-m{index:02d}", "scene": scene,
-                    "task": ", ".join(t["task"] for t in picked[:-1])
-                            + ", and " + picked[-1]["task"],
-                    "subgoals": [{"id": t["id"], "task": t["task"], "goal": t["goal"],
-                                  "plan": t["plan"]} for t in picked],
-                    "spawn": [s for t in picked for s in t["spawn"]],
-                    "goal": [g for t in picked for g in t["goal"]],
-                    "plan": [step for t in picked for step in t["plan"]],
-                    "rooms": {k: v for t in picked for k, v in (t.get("rooms") or {}).items()},
-                    "extraction": merge_extraction(picked),
-                })
+                attempts = 0
+                while len([t for t in out if t["scene"] == scene]) < target:
+                    if want_live and live is not None and (tested >= budget or misses >= 25):
+                        break      # this scene cannot pose the question; stop paying to ask
+                    attempts += 1
+                    # Bounded: the draw rejects on independence, on room consistency, on
+                    # spread and on repeats, so an exhausted pool would otherwise spin here
+                    # forever rather than fall back to a looser target.
+                    if attempts > 60000:
+                        break
+                    size = rng.choice(sizes)
+                    picked = rng.sample(pool, size)
+                    if not independent(picked):
+                        continue
+                    if not one_room_each(picked):
+                        continue
+                    # **Spread the errands around the house.** Only the transition term of the
+                    # objective depends on the order, so an instruction whose errands all sit
+                    # in one corner gives the ordering stage nothing to win however good it is
+                    # - and drawing uniformly produces exactly that, because a scene's
+                    # manipulable furniture clusters into a few rooms. Measured over 155
+                    # instructions, the gap between the best and the worst ordering rises
+                    # monotonically with the number of rooms touched: 11.2% at two rooms,
+                    # 13.0% at three, 14.3% at four, 18.5% at five, 36.6% at six. Uniform
+                    # draws averaged 3.4 rooms.
+                    #
+                    # The target is capped at what the scene can actually reach, because some
+                    # scenes cannot spread at all - every one of `Wainscott_0_int`'s twelve
+                    # subtasks is in one of three rooms - and a fixed target would drop such a
+                    # scene from the benchmark rather than give it the most spread it has.
+                    if len(rooms_touched(picked)) < min(size + bump, caps[size]):
+                        continue
+                    key = tuple(sorted(t["id"] for t in picked))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    candidate = {
+                        "id": f"{scene}-m00", "scene": scene,
+                        "task": ", ".join(t["task"] for t in picked[:-1])
+                                + ", and " + picked[-1]["task"],
+                        "subgoals": [{"id": t["id"], "task": t["task"], "goal": t["goal"],
+                                      "plan": t["plan"]} for t in picked],
+                        "spawn": [s for t in picked for s in t["spawn"]],
+                        "goal": [g for t in picked for g in t["goal"]],
+                        "plan": [step for t in picked for step in t["plan"]],
+                        "rooms": {k: v for t in picked
+                                  for k, v in (t.get("rooms") or {}).items()},
+                        "extraction": merge_extraction(picked),
+                    }
+                    if want_live and live is not None:
+                        tested += 1
+                        if not live(candidate):
+                            misses += 1
+                            continue           # every arm would choose the same order
+                        misses = 0
+                    out.append(candidate)
+        for position, task in enumerate([t for t in out if t["scene"] == scene], 1):
+            task["id"] = f"{scene}-m{position:02d}"   # ids must be dense after rejections
         got = len([t for t in out if t["scene"] == scene])
         if got < per_scene:
             print(f"  only {got} of {per_scene} combinations for {scene} - "
                   f"the pool admits no more")
     return out
+
+
+def ordering_live(task):
+    """Do the arms under comparison actually decide differently on this instruction?
+
+    Three cheap estimator runs, no simulator and no language model: order once from the
+    argmax, order once from the full distribution, and order online. The instruction is live
+    if the first two disagree about the order, or if the online arm ever revises. Anything
+    else is an instruction on which GAVEL, GAVEL Static and GAVEL-MAP do literally the same
+    thing, and which therefore cannot distinguish them however it is scored.
+    """
+    import gavel
+    from scene_graph import DEFAULT_MODEL, DEFAULT_THRESHOLD, populate
+    from world_graph import WorldGraph
+
+    extraction = task["extraction"]
+    graph = populate(task["scene"], extraction["uncertain"], extraction["dependent"],
+                     stated=extraction.get("stated") or {},
+                     model_path=DEFAULT_MODEL, threshold=DEFAULT_THRESHOLD)
+    seed = WorldGraph.from_scene_graph(graph)
+    plans = [[tuple(step) for step in sub["plan"]] for sub in task["subgoals"]]
+    argmax = gavel.solve(task, plans, graph, seed, reorder=False, collapse=True)
+    static = gavel.solve(task, plans, graph, seed, reorder=False)
+    online = gavel.solve(task, plans, graph, seed, reorder=True)
+    return argmax["order"] != static["order"] or online.get("reorders", 0) > 0
 
 
 def stamp_of(tasks, seed, per_scene):
@@ -256,6 +326,10 @@ def main():
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--no-simulate", action="store_true")
     parser.add_argument("--verify-only", action="store_true")
+    parser.add_argument("--require-live", action="store_true",
+                        help="keep only instructions on which ordering the errands from the "
+                             "full distribution, from its argmax, and online do not all give "
+                             "the same answer - see `ordering_live`")
     args = parser.parse_args()
     for path in (args.subtasks, args.out):
         if path == BENCHMARK:
@@ -273,7 +347,8 @@ def main():
     if args.verify_only:
         return 0
 
-    longs = combine(good, per_scene=args.per_scene, seed=args.seed)
+    longs = combine(good, per_scene=args.per_scene, seed=args.seed,
+                    live=ordering_live if args.require_live else None)
     print(f"\n{len(longs)} long instructions; verifying each composition")
     from build_tasks import verify
     bad = []

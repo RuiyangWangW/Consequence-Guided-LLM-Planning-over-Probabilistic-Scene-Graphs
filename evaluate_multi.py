@@ -30,10 +30,11 @@ from evaluate import extraction_error, grounding_error
 from graph_machine import GraphMachine
 from object_names import same
 from planner import get_generator, parse_goal
+from build_tasks import seed_graph
 from repair import repair
 from replan import compose_complaint, run as replan_run
 from scene_graph import DEFAULT_MODEL, DEFAULT_THRESHOLD, populate
-from sim_eval import run_plan
+from sim_eval import route_cost, route_matrix, run_plan
 from task_objects import extract
 from world_graph import WorldGraph
 
@@ -243,16 +244,31 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
     # is the baseline: validation and feedback without graph repair, and without a cost model.
     # It therefore cannot share the other arms' subplans, which were mended; sharing them was
     # crediting SayPlan with a repair stage it is defined not to have.
-    at = time.perf_counter()
-    say_subplans, say_notes = [], []
-    for part, note in zip(parts, notes):
-        steps, _goals, _ok, say_note = plan_one(part, graph, model, attempts, goal_gen, False,
-                                                predicted=[tuple(g) for g in note["goal"]])
-        say_subplans.append(steps)
-        say_notes.append(say_note)
-    t_plan_sayplan = time.perf_counter() - at
-    say_plans = [p for p in say_subplans if p]
-    row["sayplan_errands"] = say_notes
+    def replan_pass(tries, mender):
+        """Plan every errand again under a different validation regime, reusing the goal the
+        adapter already read so the pass differs only in what it was allowed to do about a
+        refusal - not in what it was aiming at."""
+        at = time.perf_counter()
+        got, got_notes = [], []
+        for part, note in zip(parts, notes):
+            steps, _g, _ok, made = plan_one(part, graph, model, tries, goal_gen, mender,
+                                            predicted=[tuple(g) for g in note["goal"]])
+            got.append(steps)
+            got_notes.append(made)
+        return [p for p in got if p], got_notes, time.perf_counter() - at
+
+    # Only pay for a pass whose arm was asked for. SayPlan sees the machine's complaint and
+    # rewrites, five times, but nothing edits its plan; LLM-only gets one attempt and is taken
+    # as written. Neither can share the mended subplans the GAVEL arms use, which was crediting
+    # them with a repair stage they are defined not to have.
+    say_plans, say_notes, t_plan_sayplan = ([], [], 0.0)
+    if baselines.SAYPLAN in arms:
+        say_plans, say_notes, t_plan_sayplan = replan_pass(attempts, False)
+        row["sayplan_errands"] = say_notes
+    only_plans, only_notes, t_plan_only = ([], [], 0.0)
+    if baselines.LLM_ONLY in arms:
+        only_plans, only_notes, t_plan_only = replan_pass(1, False)
+        row["llm_only_errands"] = only_notes
     row["extraction"] = extraction_error(task, merged) if merged else None
     row["extracted"] = {"uncertain": sorted((merged or {}).get("uncertain") or []),
                         "dependent": (merged or {}).get("dependent") or [],
@@ -277,6 +293,7 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
         "goal": round(sum(n.get("goal_seconds") or 0.0 for n in notes), 2),
         "plan": round(sum(n.get("plan_seconds") or 0.0 for n in notes), 2),
         "plan_sayplan": round(t_plan_sayplan, 2),
+        "plan_llm_only": round(t_plan_only, 2),
         "compose": round(t_compose, 2),
         "cost_table": round(t_setup, 2),
     }
@@ -287,6 +304,30 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
             return run_plan(task, graph, steps, verbose=False)["driven"]
         except Exception:
             return None
+
+    # ORACLE is given ground truth in every sense, not only when it chooses. The other arms
+    # are driven against `graph`, the belief, so the simulator makes them sweep for anything
+    # the RSN put in the wrong room; driving Oracle that way made it pay a search cost its
+    # ordering could not possibly have anticipated, and its own route computation then
+    # disagreed with what it drove on 2 of 9 tasks. Handed the truth graph it grounds to the
+    # true instance and walks straight to it, so the computed route and the driven one are the
+    # same number and one simulation is exactly optimal.
+    truth_graph = seed_graph(task)
+    oracle_legs = oracle_start = None
+
+    def oracle_drive(ordered):
+        steps, _ = gavel.compose(seed, ordered, goal)
+        try:
+            return run_plan(task, truth_graph, steps, verbose=False)["driven"]
+        except Exception:
+            return None
+
+    def oracle_measure(order):
+        nonlocal oracle_legs, oracle_start
+        steps, _ = gavel.compose(seed, [reference[i] for i in order], goal)
+        if oracle_legs is None:
+            oracle_legs, oracle_start = route_matrix(task, truth_graph, steps)
+        return route_cost(steps, oracle_legs, oracle_start)
 
     # The benchmark's own reference subplans, for the methods that do not plan with the model.
     # `baselines.uses_llm_plans` says which those are, and ORACLE is the reason it exists: it
@@ -301,6 +342,7 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
         row["arms"][arm] = {}
         uses_llm = baselines.uses_llm_plans(arm)
         theirs = (say_plans if arm == baselines.SAYPLAN else
+                  only_plans if arm == baselines.LLM_ONLY else
                   plans if uses_llm else reference)
         if not theirs or not any(theirs):
             row["arms"][arm].update({"ok": False, "why": "no plan", "walked": None,
@@ -317,6 +359,8 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
         elif arm == baselines.SAYPLAN:
             # its own planning pass, not the mended one every other arm shares
             uses = ("decompose", "extract", "ground", "goal", "plan_sayplan")
+        elif arm == baselines.LLM_ONLY:
+            uses = ("decompose", "extract", "ground", "goal", "plan_llm_only")
         else:
             uses = ("decompose", "extract", "ground", "goal", "plan", "compose",
                     "cost_table")
@@ -326,8 +370,12 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
         # goal the adapter read off the instruction, **including when that is empty**: an
         # `or goal` fallback there would hand EPoG the true goal on exactly the runs where
         # its goal adapter failed, which is the one case it should be marked down for.
-        result = baselines.run(arm, task, theirs, graph, seed, drive=drive,
-                               goal=goal if arm == baselines.ORACLE else predicted)
+        is_oracle = arm == baselines.ORACLE
+        result = baselines.run(
+            arm, task, theirs, truth_graph if is_oracle else graph, seed,
+            drive=oracle_drive if is_oracle else drive,
+            measure=oracle_measure if is_oracle else None,
+            goal=goal if is_oracle else predicted)
         entry = row["arms"][arm]
         if result.get("steps") is not None:
             steps = result["steps"]
@@ -364,7 +412,7 @@ def run_task(task, *, model, attempts, generator, extractor_gen, extract_prompt,
             # already drove each candidate ordering to choose between them, so re-driving the
             # winner is one extra run and it is what makes its step count, its control time
             # and its success measured the same way as everyone else's rather than asserted.
-            sim = run_plan(task, graph, steps, verbose=False)
+            sim = run_plan(task, truth_graph if is_oracle else graph, steps, verbose=False)
         except Exception as exc:                       # a simulator fault is not a plan fault
             sim = {"ok": False, "why": f"{type(exc).__name__}: {exc}", "error": True,
                    "failed_at": None, "driven": None, "missing": [], "unsafe": []}
@@ -451,8 +499,8 @@ def summarise(rows):
 
     # Where each method's compute goes, so the totals above are auditable.
     print("\n  compute breakdown (mean seconds per instruction):")
-    keys = ("decompose", "extract", "ground", "goal", "plan", "plan_sayplan", "compose",
-            "cost_table")
+    keys = ("decompose", "extract", "ground", "goal", "plan", "plan_sayplan",
+            "plan_llm_only", "compose", "cost_table")
     print("    " + "".join(f"{k:>11s}" for k in keys))
     shared = {k: mean([(r.get("module_seconds") or {}).get(k) or 0.0 for r in rows])
               for k in keys}
@@ -544,7 +592,13 @@ def main():
             with open(args.out, "w") as handle:
                 json.dump(rows, handle, indent=1)
             with open(args.out.replace(".json", "-stamp.json"), "w") as handle:
-                json.dump(stamp, handle, indent=1)
+                # What the run cost, when a hosted model served it. Written beside the
+                # results so a column can be priced later without re-running it, and so a
+                # rate-limited or truncated run is visible as a call count that does not
+                # match the instruction count.
+                import api_models
+                json.dump({**stamp, "model": args.model,
+                           "api_usage": api_models.spent() or None}, handle, indent=1)
     summarise(rows)
 
 

@@ -288,12 +288,25 @@ A wrong RSN room is not a failure — the search layer works down the ranking.
 
 ### Results
 
-100 tasks, both arms driven in the 2-D simulator.
+100 tasks, every arm driven in the 2-D simulator against the true world.
 
 | | Qwen3-4B | Qwen3-8B |
 | --- | --- | --- |
-| without validation | 23 | 40 |
-| **with validation + repair** | **88** | **91** |
+| LLM-only — one plan, no feedback, no repair | 23 | 43 |
+| LLM + feedback — the machine's refusal handed back, up to 5 tries | 57 | 77 |
+| **GAVEL — feedback and repair** | **89** | **92** |
+
+Both increments are large and they hold at both model sizes: validation feedback alone is worth
++34 at each, and letting the machine *edit* the plan rather than only complain about it adds a
+further +32 at 4B and +15 at 8B.
+
+**A 4B model with the world model beats an 8B model without one** - 89 against 43, and it also
+beats the 8B given feedback but no repair (77). That is the clearest statement of what the
+symbolic layer buys: it substitutes for model capacity.
+
+The mean number of attempts says why repair is not merely more accurate but cheaper. Feedback
+alone burns 3.39 attempts at 4B, grinding against faults it cannot fix; with the mender the same
+model settles in 1.69, because a fault the machine can edit is edited rather than re-asked.
 
 **These numbers carry about ±3 of run-to-run noise, and the noise is not sampling.** Decoding is
 greedy - `do_sample=False`, one question one answer - and three generations in one process are
@@ -650,6 +663,80 @@ but to *corrupt* them.
 are only two orderings and the executor commits to the first before anything can be learned - and
 they are a fifth of the benchmark. They contribute a guaranteed zero to the headline. Either exclude
 them from the gavel-against-static comparison or say that they are in it.
+
+## The full experiment
+
+Three experiments on the benchmark generation stamped `50bdbedd1d478e99` (500 instructions, ten
+scenes, 50 each). Stage 1 runs `models/h1-1.7b-v5` and the goal adapter `models/state-1.7b-v5`;
+decomposition and planning both run the **unfine-tuned base model** under test, so a "4B run"
+means a 4B decomposer and a 4B planner.
+
+### 1. Validation and repair, on 100 single long-horizon tasks
+
+The table under *Results* above. LLM-only 23/43, plus feedback 57/77, plus repair 89/92, for
+Qwen3-4B and Qwen3-8B.
+
+### 2. The baselines, on 500 multi-task instructions (Qwen3-8B)
+
+| method | success | driven | planning time |
+| --- | --- | --- | --- |
+| LLM only | 97/500 | 86.7 m | 37.1 ± 15.5 s |
+| SayPlan — validate, feed back, 5 tries, no repair, no ordering | 387/500 | 83.0 m | 59.9 ± 39.3 s |
+| EPoG — graph edits from the MAP belief, no model, no repair | 301/500 | 84.5 m | 14.9 ± 4.3 s |
+| GAVEL-MAP — argmax belief, ordered once | **462/500** | 82.5 m | 43.1 ± 25.6 s |
+| GAVEL Static — full distribution, ordered once | **462/500** | 79.7 m | 43.1 ± 25.6 s |
+| **GAVEL** — full distribution, reordered online | **462/500** | **78.0 m** | 43.1 ± 25.6 s |
+| Oracle — ground truth throughout | 500/500 | 56.2 m | 0.9 ± 0.5 s |
+
+Oracle solves every instruction, so each of GAVEL's 38 failures is a real one rather than an
+impossible task. `LLM only` collapses to 19% here against 43% on single tasks - errands compound,
+and one unrepaired plan fails the whole instruction. `EPoG` is at 60% because it cannot express
+`cooked`/`washed`/`dried` at all: those name no edge to add or remove, and about a third of the
+instructions contain one.
+
+**The ordering ladder.** The three GAVEL variants share an identical success set, so their
+distances are directly comparable, paired over all 462:
+
+| rung | driven | effect |
+| --- | --- | --- |
+| GAVEL-MAP | 82.45 m | |
+| GAVEL Static | 79.69 m | distribution over argmax **-2.77 m**, z = -3.30 |
+| GAVEL | 78.01 m | online replanning **-1.68 m**, z = -3.41 |
+| | | both **-4.45 m**, z = -5.11 |
+
+Each rung changes exactly one thing and each clears significance on its own. This is what the
+benchmark rebuild bought: on the previous generation the same two comparisons were -0.46 m
+(z = -1.54) and -0.47 m (z = -1.85), indistinguishable from noise, because 299 of 500 instructions
+named the room outright and left the belief nothing to be uncertain about. Dropping the room word
+from 63 subtask sentences took the share of furniture references the RSN must guess from 25% to
+54%, and a per-scene live quota concentrated instructions where the arms actually decide
+differently - 201/500 to 438/500.
+
+### 3. Foundation models, on 500 instructions
+
+Qwen3-4B against Qwen3-8B, LLM-only against GAVEL. **Running; numbers to follow.** The 8B rows are
+reused from experiment 2 rather than re-sampled, so the two tables agree exactly instead of
+differing by run-to-run noise.
+
+### The timing column, and what is wrong with it
+
+**Planning time is compute only** - decomposition, extraction, grounding, the goal adapter, every
+planning attempt, every repair, and the ordering - and excludes the robot's driving time, which is
+the simulator's speed rather than the method's.
+
+The experiment-2 figures above are **internally comparable but absolutely inflated**. All seven
+arms run inside one process per shard, back to back on one GPU, so they meet identical conditions
+and the comparison between rows is sound; but four shards ran concurrently on four GPUs, so the
+absolute scale is not what a single uncontended run would give.
+
+Experiment 1's timings are worse than that and are deliberately omitted, because each arm was a
+*separate process on a separate GPU*. Measured there: on 76 tasks where two arms produced
+**byte-identical plans** from identical prompts, one arm was recorded at 1.37 s per emitted step
+and the other at 0.65 s - the same work, 2.1x apart. Running the same two arms sequentially in one
+process removes the gap. A dedicated sequential pass, one arm at a time on an idle machine and
+discarding the first task per process to exclude the ~40 s of CUDA warm-up, is what these tables
+will eventually quote. Until then: **treat every absolute second here as an upper bound, and only
+compare rows within experiment 2.**
 
 ## Known limitations
 

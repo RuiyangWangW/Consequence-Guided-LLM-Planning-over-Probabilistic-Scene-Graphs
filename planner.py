@@ -662,10 +662,29 @@ _BASES = {}
 
 
 def get_generator(model_name="Qwen/Qwen2.5-7B-Instruct", adapter=None):
-    """Return a cached prompt->text function for this model."""
+    """Return a cached prompt->text function for this model, local or hosted.
+
+    A model id that names a provider - `gpt-*`, `claude-*` - is served over the API instead of
+    loaded onto the card. Everything above this line takes the same callable either way, so
+    `gavel.decompose`, `replan.run` and the goal adapter are unchanged.
+
+    An adapter is always local: the fine-tuned heads are LoRA directories on this machine, and
+    there is nothing to attach them to at the other end of an API. So a hosted planner runs
+    with local extraction and goal adapters, which is what the experiment wants anyway - only
+    the model that decomposes and plans is being varied.
+    """
     key = (model_name, adapter)
     if key not in _GENERATORS:
-        _GENERATORS[key] = _local_generator(model_name, adapter)
+        import api_models
+
+        if adapter is None and api_models.provider_of(model_name):
+            _GENERATORS[key] = api_models.generator(model_name)
+        else:
+            if api_models.provider_of(model_name):
+                raise ValueError(
+                    f"{model_name!r} is a hosted model and cannot carry the local adapter "
+                    f"{adapter!r}; adapters attach to weights on this machine.")
+            _GENERATORS[key] = _local_generator(model_name, adapter)
     return _GENERATORS[key]
 
 
