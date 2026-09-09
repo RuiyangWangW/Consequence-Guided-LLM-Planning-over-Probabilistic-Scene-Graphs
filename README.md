@@ -601,7 +601,6 @@ anything.
 | `exp1-{4b,8b}-{llmonly,feedback,gavel}.json` | experiment 1 - six runs, 100 tasks each, per-task plan, verdict, attempts and per-stage timing |
 | `exp2.json` | experiment 2 - 500 instructions, seven arms, Qwen3-8B |
 | `exp3.json` | experiment 3 - 500 instructions, `llm-only` and `gavel`, Qwen3-4B |
-| `order-sweep.json` | the ordering ladder measured without a language model, on the benchmark's own reference subplans |
 | `rsn-accuracy.json` | the RSN's per-guess accuracy: believed room, true room, rank and confidence |
 | `multitask-stamp.json` | which generation of the benchmark all of the above ran against |
 
@@ -679,7 +678,6 @@ runnable from the repo root:
 | --- | --- |
 | `evaluate.py` | experiment 1 - the single-task ladder; `--attempts` and `--repair-at` select the arm |
 | `evaluate_multi.py` | experiments 2 and 3 - all seven arms in one process per shard |
-| `oracle_order.py` | the ordering ladder measured on reference subplans, with the language model taken out |
 | `merge_shards.py` | concatenates sharded results, and refuses to merge across benchmark stamps |
 | `exp_rsn_accuracy.py` | the RSN's per-guess accuracy behind the 47% quoted above |
 

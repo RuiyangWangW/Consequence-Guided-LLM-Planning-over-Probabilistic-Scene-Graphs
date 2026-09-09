@@ -57,3 +57,5 @@ BENCHMARK.md
 
 # development lab notebook and test suite - kept locally
 cached/
+__pycache__/
+*.pyc
