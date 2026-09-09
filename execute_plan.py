@@ -1,6 +1,6 @@
 """Execute a validated plan in OmniGibson and record a video of the run.
 
-Follows `solve_simple_task.py`: same `tiago_primitives.yaml` config, same
+Same `tiago_primitives.yaml` config, same
 `og.Environment` / settle / controller / `apply_ref` sequence. The controller comes from
 `primitive_patches.build`: all nine primitives working, with real CuRobo navigation and
 symbolic manipulation.
