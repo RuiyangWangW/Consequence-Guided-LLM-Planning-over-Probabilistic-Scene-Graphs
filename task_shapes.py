@@ -131,6 +131,32 @@ def _conferred(appliance, *items):
     return [[state, item, True] for item in items] if state else []
 
 
+def confer_in_place(item, source, appliance):
+    """Fetch one thing, run it through an appliance, and leave it there. Eight actions.
+
+    The short form of a conferred-state errand. `heat_and_serve` and `laundry_cycle` carry a
+    relocation after the cycle - which is the interesting part of them, because it forces
+    "cook, then place" - but that costs five to nine extra actions, and an instruction built
+    from four of those is longer than anything a person would say in one breath. This asks for
+    the state change alone: "put the plate in the dishwasher and run it", finishing with the
+    thing still inside, the door shut and the switch off.
+
+    The door is shut before the cycle and stays shut. `GraphMachine` does not require that -
+    `TOGGLE_ON` confers on whatever is inside whether the door is open or not - but running an
+    oven with its door open is not a plan anybody should be scored for writing, and shortening
+    these by exploiting a gap in the world model would make the benchmark less faithful rather
+    than more compact.
+    """
+    return {
+        "spawn": [{"name": item, "relation": ON_TOP, "target": source}],
+        "goal": [["object_inside", item, appliance]] + _conferred(appliance, item),
+        "plan": [["NAVIGATE_TO", item], ["GRASP", item],
+                 ["NAVIGATE_TO", appliance], ["OPEN", appliance],
+                 ["PLACE_INSIDE", appliance], ["CLOSE", appliance],
+                 ["TOGGLE_ON", appliance], ["TOGGLE_OFF", appliance]],
+    }
+
+
 def heat_and_serve(item, source, appliance, destination):
     """13 - put it in, run it, take it out again, and set it down somewhere else."""
     return {

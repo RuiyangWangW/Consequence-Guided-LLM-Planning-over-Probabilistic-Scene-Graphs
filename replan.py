@@ -58,6 +58,68 @@ FAULT_NOTES = {
 
 
 
+def compose_complaint(errand_goal, foreign, missing):
+    """What to tell the model about an errand whose plan undid another errand.
+
+    Each errand is planned and checked on its own, against the world as it stands when that
+    errand begins. Nothing in that check can see the errand *after* it, so a plan that picks
+    up somebody else's object and puts it somewhere of its own passes every test and still
+    ruins the instruction. `gavel.compose` is the only thing that looks at the concatenation,
+    and until now its verdict was recorded and thrown away.
+
+    The complaint names the objects this errand touched that were none of its business, and
+    the conditions that stopped holding as a result, and says what the errand is actually
+    for. It deliberately does not quote the *other* errand's plan: the model is being asked
+    to write this errand narrowly, not to reason about an ordering it was never shown.
+    """
+    wanted = ", ".join(f"{k}({s}, {d})" for k, s, d in errand_goal) or "the errand above"
+    undone = ", ".join(f"{k}({s}, {d})" for k, s, d in missing)
+    touched = ", ".join(sorted(foreign))
+    return (f"""
+Your plan for this errand moved objects it was not asked about: {touched}.
+
+Another part of the instruction depends on those staying where they were, and running your
+plan leaves these conditions no longer true: {undone}.
+
+This errand is only responsible for: {wanted}. Write it again, touching nothing else - do not
+pick up, open, or switch anything that is not needed for this errand alone.""")
+
+
+def syntax_prompt(task, graph, reply, goal=(), declare_goal=False):
+    """Ask again after a reply that parsed to no actions at all, saying so.
+
+    The old behaviour here was to rebuild the *same* prompt and ask again. Under greedy
+    decoding that is not a retry - the model is handed identical input and returns an
+    identical reply, so five attempts are one attempt counted five times, and an errand
+    whose only fault was its punctuation was recorded as five planning failures.
+
+    So the complaint has to say what went wrong, and it is a syntax complaint rather than a
+    planning one: the model is not being told its plan was wrong, because nothing here knows
+    that - only that nothing in the reply could be read as an action. It gets the required
+    form, the primitives it may use, and its own reply back to compare against.
+    """
+    from planner import PRIMITIVES, build_prompt
+
+    forms = "\n".join(f"  {name}({'object' if s['takes_object'] else ''})"
+                       for name, s in PRIMITIVES.items())
+    quoted = "\n".join(f"  | {line}" for line in (reply or "").strip().splitlines()[:12])
+    return (build_prompt(task, graph, with_goal=declare_goal, goal=goal)
+            + f"""
+
+Your previous reply could not be read. No line in it was a recognisable action:
+
+{quoted or "  | (empty reply)"}
+
+Write one action per line and nothing else, using exactly this form - the primitive's name,
+then the object in round brackets:
+
+{forms}
+
+For example: NAVIGATE_TO(breakfast_table) then GRASP(mug) then PLACE_ON_TOP(countertop).
+Do not use any other punctuation between the name and the object, and do not add prose.
+""")
+
+
 def repair_prompt(task, graph, steps, outcome, mended=()):
     """The planning prompt again, plus the plan that failed and the step that failed it.
 
@@ -189,7 +251,8 @@ def repair_prompt(task, graph, steps, outcome, mended=()):
 
 
 def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
-        max_new_tokens=512, verbose=True, declare_goal=False, mend="loop"):
+        max_new_tokens=512, verbose=True, declare_goal=False, mend="loop",
+        complaint=None):
     """Ask, mend, complain, ask again. The whole transcript.
 
     One attempt is: the model writes a plan, and the machine then validates and mends it
@@ -225,6 +288,12 @@ def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
     seed = WorldGraph.from_scene_graph(graph)
     history = []
     prompt = build_prompt(task, graph, with_goal=declare_goal, goal=goal)
+    if complaint:
+        # An objection raised before the first attempt rather than after it. The composition
+        # check is the only caller: it has already seen this errand's plan break another
+        # errand's work, which is not a fault any single-errand check can see, so the model is
+        # told about it up front instead of being asked the same question that produced it.
+        prompt += "\n" + complaint
 
     for attempt in range(1, attempts + 1):
         reply = generator(prompt, max_new_tokens)
@@ -239,8 +308,11 @@ def run(task, graph, goal=(), attempts=DEFAULT_ATTEMPTS, model_name=None,
                 goal = stated
 
         if not steps:
-            history.append({"attempt": attempt, "steps": [], "outcome": None})
-            prompt = build_prompt(task, graph, with_goal=declare_goal, goal=goal)   # ask again cleanly
+            # Say what was wrong instead of asking the identical question again. See
+            # `syntax_prompt`: re-issuing the same prompt to a greedy decoder is not a retry.
+            history.append({"attempt": attempt, "steps": [], "outcome": None,
+                            "unparsed": (reply or "")[:400]})
+            prompt = syntax_prompt(task, graph, reply, goal=goal, declare_goal=declare_goal)
             continue
 
         plan = [(s["action"], s.get("object")) for s in steps]

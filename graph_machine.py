@@ -612,6 +612,21 @@ And what each one does. "The stack" is the held object plus everything riding on
             # 2. something is in the hand
             if self.held is None:
                 return fail("nothing in the hand to place", ("empty_hand", None))
+            # 2b. the destination is not the thing being put down. `PLACE_INSIDE(x)` names
+            # where the held object goes, and a model that reads the argument as *what* to
+            # put down rather than *where* writes `PLACE_INSIDE(casserole)` while holding the
+            # casserole. Every other check passed it: `_require_here` counts the held object
+            # as nearby, the hand is full, and a casserole has no door to open - so the
+            # machine put the casserole inside itself, reported success, and the errand
+            # silently did nothing. The repair loop cannot mend a step that never complains.
+            # Nor can it go on top of something riding on it, which is the same impossibility
+            # one level up.
+            riders = set(self._carried_with(self.held)) if self.held else set()
+            if name == self.held or name in riders:
+                where = "inside" if action == "PLACE_INSIDE" else "on top of"
+                return fail(f"cannot put '{self.held}' {where} itself; "
+                            f"{action}(x) names where it goes, not what is put down",
+                            ("self_place", name))
             if action == "PLACE_INSIDE":
                 # 3. if it has a door, that door is open. Putting something into a shut
                 # oven is exactly as impossible as taking something out of one, which

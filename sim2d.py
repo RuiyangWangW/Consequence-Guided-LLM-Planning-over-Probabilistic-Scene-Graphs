@@ -210,6 +210,12 @@ class Sim2D:
         self._headings = []
         self.frames = []              # trace, for `sim2d_render.render`
         self.distance = 0.0           # metres driven, all told
+        # How many control steps the run took, for wall-clock reporting. One step is one
+        # waypoint the robot is placed at while driving, or one heading it turns to while
+        # looking - the two things that take the robot time. Distance alone cannot stand in
+        # for it: a stop-and-scan costs eight headings and moves the robot nowhere, and a
+        # search is mostly stopping and scanning.
+        self.steps = 0
         self.step_index = 0
 
         self.x, self.y, self.yaw = self._starting_pose(start, start_room)
@@ -315,10 +321,12 @@ class Sim2D:
         so the next frontier is the one just vacated and the search walks in place.
         """
         if not scan:
+            self.steps += 1
             return self.observe()
         yaw0 = self.yaw
         seen, headings = [], []
         for k in range(SCAN_HEADINGS):
+            self.steps += 1
             self.yaw = yaw0 + k * 2.0 * math.pi / SCAN_HEADINGS
             seen += self.observe()
             headings += self._headings
@@ -542,6 +550,7 @@ class Sim2D:
             leg = math.hypot(nx - self.x, ny - self.y)
             self.yaw = math.atan2(ny - self.y, nx - self.x)
             self.x, self.y = nx, ny
+            self.steps += 1
             driven += leg
             since_look += leg
             if since_look >= OBSERVE_EVERY:

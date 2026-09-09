@@ -25,6 +25,10 @@ from floor_world import FloorWorld
 from object_names import match
 from sim2d import Sim2D
 
+#: One simulator control step - one waypoint driven, or one heading turned to - in seconds.
+#: Wall-clock for a run is this times the number of steps, plus the algorithm's own compute.
+SIM_STEP_SECONDS = 0.1
+
 
 def categories_for(task, graph):
     """Every category this run could touch: what the task spawns, what the plan names, and
@@ -286,6 +290,12 @@ def run_plan(task, graph, steps, start_room=None, verbose=False):
     else:
         why = f"goal not met in the true world: {missing}"
     return {"ok": ok, "why": why, "driven": round(driven, 1),
+            # `steps_run` counts the plan's own actions; `sim_steps` counts the simulator's
+            # control steps, which is what wall-clock is charged against at SIM_STEP_SECONDS
+            # apiece. A plan of ten actions can cost hundreds of steps if most of them are
+            # searching.
+            "sim_steps": sim.steps,
+            "sim_seconds": round(sim.steps * SIM_STEP_SECONDS, 1),
             "steps_run": len(results), "goal_met": goal_met,
             "missing": [list(m) for m in missing], "unsafe": list(unsafe),
             "failed_at": failed}

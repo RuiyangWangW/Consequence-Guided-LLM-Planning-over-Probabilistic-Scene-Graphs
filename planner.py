@@ -299,9 +299,31 @@ def parse_plan(text):
         if m:
             line = f"{m.group(1)}({m.group(2)})"
         else:
-            m = re.match(r"^([A-Z_]+)\s*[:\s]\s*([A-Za-z0-9_]+)\s*$", line)
+            # `.` belongs in this class as much as `:` does. The line above already accepts
+            # `PLACE_ON_TOP.bed()`, so the dotted form was recognised when it happened to
+            # carry empty parens and dropped when it did not. That is not a distinction the
+            # model is making, and it cost six of eleven multi-task failures in one run: the
+            # model wrote `NAVIGATE_TO.armchair / GRASP.newspaper / NAVIGATE_TO.sofa /
+            # PLACE_ON_TOP.sofa`, a correct plan, and the parser returned nothing - so a
+            # solved errand was recorded as five failed planning attempts. Greedy decoding
+            # makes it deterministic, so the same sentence failed every time it appeared.
+            # Any punctuation, not a list of the ones seen so far. The model picks a
+            # delimiter and sticks to it for the whole reply, and which one it picks varies
+            # by sentence: `NAVIGATE_TO.armchair` on one errand, `NAVIGATE_TO/armchair/` on
+            # another, both correct plans, both parsed as nothing. Enumerating delimiters
+            # meant a solved errand was scored as five failed planning attempts whenever the
+            # model chose one that was not on the list - six of eleven multi-task failures in
+            # one run, and deterministic under greedy decoding, so the same sentence failed
+            # every time it appeared.
+            #
+            # The gate is `m.group(1) in PRIMITIVES`, not the delimiter: a line is a step
+            # only if it opens with a primitive's name and carries exactly one identifier.
+            # Prose fails on the first test and an unknown verb on it too, so this stays as
+            # unwilling as before to guess at a step the model did not write.
+            m = re.match(r"^([A-Z_]+)\s*[^A-Za-z0-9_\s]*\s*([A-Za-z0-9_]+)?"
+                         r"\s*[^A-Za-z0-9_\s]*\s*$", line)
             if m and m.group(1) in PRIMITIVES:
-                line = f"{m.group(1)}({m.group(2)})"
+                line = f"{m.group(1)}({m.group(2) or ''})"
 
         m = re.match(r"^([A-Z_]+)\s*\(\s*([^)]*?)\s*\)", line)
         if not m:
