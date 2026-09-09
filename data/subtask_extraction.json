@@ -1,0 +1,1985 @@
+{
+ "Beechwood_0_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "kitchen",
+   "countertop": "kitchen"
+  },
+  "uncertain": []
+ },
+ "Beechwood_0_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "armchair",
+   "sofa"
+  ]
+ },
+ "Beechwood_0_int-s03": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "desk"
+   }
+  ],
+  "stated": {
+   "bookcase": "private_office"
+  },
+  "uncertain": [
+   "desk"
+  ]
+ },
+ "Beechwood_0_int-s04": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen",
+   "furniture_sink": "bathroom"
+  },
+  "uncertain": []
+ },
+ "Beechwood_0_int-s05": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {
+   "bookcase": "kitchen"
+  },
+  "uncertain": [
+   "desk"
+  ]
+ },
+ "Beechwood_0_int-s06": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "kitchen",
+   "coffee_table": "dining_room"
+  },
+  "uncertain": []
+ },
+ "Beechwood_0_int-s07": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {
+   "bookcase": "private_office"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Beechwood_0_int-s08": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "INSIDE",
+    "target": "furniture_sink"
+   }
+  ],
+  "stated": {
+   "furniture_sink": "bathroom"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Beechwood_0_int-s09": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "kitchen",
+   "coffee_table": "dining_room"
+  },
+  "uncertain": []
+ },
+ "Beechwood_0_int-s10": {
+  "dependent": [
+   {
+    "object": "mail",
+    "relation": "ON_TOP",
+    "target": "desk"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "armchair",
+   "desk"
+  ]
+ },
+ "Beechwood_0_int-s11": {
+  "dependent": [],
+  "stated": {
+   "floor_lamp": "living_room"
+  },
+  "uncertain": []
+ },
+ "Beechwood_0_int-s12": {
+  "dependent": [
+   {
+    "object": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "kitchen",
+   "countertop": "kitchen"
+  },
+  "uncertain": []
+ },
+ "Beechwood_0_int-s13": {
+  "dependent": [
+   {
+    "object": "apple_pie",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "living_room",
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "oven"
+  ]
+ },
+ "Beechwood_0_int-s14": {
+  "dependent": [
+   {
+    "object": "bottle_of_soup",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "living_room"
+  },
+  "uncertain": [
+   "fridge",
+   "microwave"
+  ]
+ },
+ "Beechwood_0_int-s15": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "dishwasher"
+  ]
+ },
+ "Beechwood_1_int-s01": {
+  "dependent": [
+   {
+    "object": "board_game",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Beechwood_1_int-s02": {
+  "dependent": [
+   {
+    "object": "jigsaw_puzzle",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "bookcase": "playroom",
+   "breakfast_table": "playroom"
+  },
+  "uncertain": []
+ },
+ "Beechwood_1_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "bathroom"
+  },
+  "uncertain": [
+   "furniture_sink"
+  ]
+ },
+ "Beechwood_1_int-s04": {
+  "dependent": [
+   {
+    "object": "teddy_bear",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {
+   "bookcase": "childs_room"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Beechwood_1_int-s05": {
+  "dependent": [
+   {
+    "object": "pencil_case",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "breakfast_table": "childs_room"
+  },
+  "uncertain": []
+ },
+ "Beechwood_1_int-s06": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "bathroom"
+  },
+  "uncertain": [
+   "furniture_sink"
+  ]
+ },
+ "Beechwood_1_int-s07": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "armchair",
+   "sofa"
+  ]
+ },
+ "Beechwood_1_int-s08": {
+  "dependent": [
+   {
+    "object": "colored_pencil",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "childs_room",
+   "bookcase": "childs_room"
+  },
+  "uncertain": []
+ },
+ "Beechwood_1_int-s09": {
+  "dependent": [
+   {
+    "object": "dice",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {
+   "bookcase": "playroom",
+   "breakfast_table": "childs_room"
+  },
+  "uncertain": []
+ },
+ "Beechwood_1_int-s10": {
+  "dependent": [
+   {
+    "object": "sponge",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "countertop": "bathroom"
+  },
+  "uncertain": []
+ },
+ "Beechwood_1_int-s11": {
+  "dependent": [],
+  "stated": {},
+  "uncertain": [
+   "table_lamp"
+  ]
+ },
+ "Beechwood_1_int-s12": {
+  "dependent": [
+   {
+    "object": "toothbrush",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "bathroom",
+   "top_cabinet": "bathroom"
+  },
+  "uncertain": []
+ },
+ "Benevolence_1_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "dining_room"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Benevolence_1_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {
+   "bookcase": "corridor"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Benevolence_1_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "furniture_sink"
+  ]
+ },
+ "Benevolence_1_int-s04": {
+  "dependent": [
+   {
+    "object": "sponge",
+    "relation": "INSIDE",
+    "target": "furniture_sink"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "console_table",
+   "furniture_sink"
+  ]
+ },
+ "Benevolence_1_int-s05": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "dining_room"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Benevolence_1_int-s06": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "console_table"
+   }
+  ],
+  "stated": {
+   "bookcase": "living_room"
+  },
+  "uncertain": [
+   "console_table"
+  ]
+ },
+ "Benevolence_1_int-s07": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Benevolence_1_int-s08": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "console_table",
+   "sofa"
+  ]
+ },
+ "Benevolence_1_int-s09": {
+  "dependent": [
+   {
+    "object": "tupperware",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bookcase": "corridor",
+   "countertop": "kitchen"
+  },
+  "uncertain": []
+ },
+ "Benevolence_1_int-s10": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {
+   "bookcase": "living_room"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Benevolence_1_int-s11": {
+  "dependent": [],
+  "stated": {},
+  "uncertain": [
+   "floor_lamp"
+  ]
+ },
+ "Benevolence_1_int-s12": {
+  "dependent": [
+   {
+    "object": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "top_cabinet"
+  ]
+ },
+ "Benevolence_1_int-s13": {
+  "dependent": [
+   {
+    "object": "casserole",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "breakfast_table",
+   "oven"
+  ]
+ },
+ "Benevolence_1_int-s14": {
+  "dependent": [
+   {
+    "object": "casserole",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "fridge",
+   "microwave"
+  ]
+ },
+ "Benevolence_1_int-s15": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "dishwasher"
+  ]
+ },
+ "Ihlen_1_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "dining_room",
+   "countertop": "dining_room"
+  },
+  "uncertain": []
+ },
+ "Ihlen_1_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bookcase",
+   "sofa"
+  ]
+ },
+ "Ihlen_1_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "furniture_sink"
+  ]
+ },
+ "Ihlen_1_int-s04": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bookcase",
+   "coffee_table"
+  ]
+ },
+ "Ihlen_1_int-s05": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "dining_room"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Ihlen_1_int-s06": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "pedestal_sink"
+  ]
+ },
+ "Ihlen_1_int-s07": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "bedroom"
+  },
+  "uncertain": [
+   "coffee_table"
+  ]
+ },
+ "Ihlen_1_int-s08": {
+  "dependent": [
+   {
+    "object": "sponge",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "bathtub"
+  ]
+ },
+ "Ihlen_1_int-s09": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Ihlen_1_int-s10": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Ihlen_1_int-s11": {
+  "dependent": [],
+  "stated": {
+   "table_lamp": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Ihlen_1_int-s12": {
+  "dependent": [
+   {
+    "object": "hanger",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "bottom_cabinet": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Ihlen_1_int-s13": {
+  "dependent": [
+   {
+    "object": "pizza",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "bedroom",
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "oven"
+  ]
+ },
+ "Ihlen_1_int-s14": {
+  "dependent": [
+   {
+    "object": "casserole",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "bedroom"
+  },
+  "uncertain": [
+   "fridge",
+   "oven"
+  ]
+ },
+ "Ihlen_1_int-s15": {
+  "dependent": [
+   {
+    "object": "water_glass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "dishwasher"
+  ]
+ },
+ "Merom_1_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "armchair": "living_room"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Merom_1_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bookcase",
+   "sofa"
+  ]
+ },
+ "Merom_1_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {
+   "furniture_sink": "kitchen"
+  },
+  "uncertain": [
+   "coffee_table"
+  ]
+ },
+ "Merom_1_int-s04": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bookcase",
+   "breakfast_table"
+  ]
+ },
+ "Merom_1_int-s05": {
+  "dependent": [
+   {
+    "object": "board_game",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "childs_room"
+  },
+  "uncertain": [
+   "coffee_table"
+  ]
+ },
+ "Merom_1_int-s06": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "furniture_sink": "bathroom"
+  },
+  "uncertain": []
+ },
+ "Merom_1_int-s07": {
+  "dependent": [
+   {
+    "object": "carton",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "coffee_table",
+   "public_trash_can"
+  ]
+ },
+ "Merom_1_int-s08": {
+  "dependent": [
+   {
+    "object": "t_shirt",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "hamper"
+  ]
+ },
+ "Merom_1_int-s09": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "sofa"
+  ]
+ },
+ "Merom_1_int-s10": {
+  "dependent": [
+   {
+    "object": "teddy_bear",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {
+   "armchair": "childs_room",
+   "bed": "childs_room"
+  },
+  "uncertain": []
+ },
+ "Merom_1_int-s11": {
+  "dependent": [],
+  "stated": {
+   "table_lamp": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Merom_1_int-s12": {
+  "dependent": [
+   {
+    "object": "hanger",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "bottom_cabinet": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Merom_1_int-s13": {
+  "dependent": [
+   {
+    "object": "saucepan",
+    "relation": "ON_TOP",
+    "target": "stove"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "dishwasher",
+   "stove"
+  ]
+ },
+ "Pomaria_0_int-s01": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {
+   "bookcase": "living_room"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Pomaria_0_int-s02": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bookcase": "private_office",
+   "countertop": "private_office"
+  },
+  "uncertain": []
+ },
+ "Pomaria_0_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "furniture_sink"
+  ]
+ },
+ "Pomaria_0_int-s04": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {
+   "bookcase": "corridor"
+  },
+  "uncertain": [
+   "coffee_table"
+  ]
+ },
+ "Pomaria_0_int-s05": {
+  "dependent": [
+   {
+    "object": "keyboard",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "private_office",
+   "countertop": "private_office"
+  },
+  "uncertain": []
+ },
+ "Pomaria_0_int-s06": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "bathtub"
+  ]
+ },
+ "Pomaria_0_int-s07": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "bedroom"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Pomaria_0_int-s08": {
+  "dependent": [
+   {
+    "object": "mail",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bookcase": "bedroom",
+   "countertop": "private_office"
+  },
+  "uncertain": []
+ },
+ "Pomaria_0_int-s09": {
+  "dependent": [
+   {
+    "object": "pot_plant",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "coffee_table",
+   "sofa"
+  ]
+ },
+ "Pomaria_0_int-s10": {
+  "dependent": [
+   {
+    "object": "dress",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "bookcase": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Pomaria_0_int-s11": {
+  "dependent": [
+   {
+    "object": "legal_document",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "private_office",
+   "countertop": "private_office"
+  },
+  "uncertain": []
+ },
+ "Pomaria_1_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Pomaria_1_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {
+   "bookcase": "living_room"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Pomaria_1_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen",
+   "furniture_sink": "bathroom"
+  },
+  "uncertain": []
+ },
+ "Pomaria_1_int-s04": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {
+   "bookcase": "corridor",
+   "coffee_table": "living_room"
+  },
+  "uncertain": []
+ },
+ "Pomaria_1_int-s05": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "pantry_room"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Pomaria_1_int-s06": {
+  "dependent": [
+   {
+    "object": "detergent_bottle",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "pedestal_sink"
+  ]
+ },
+ "Pomaria_1_int-s07": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {
+   "coffee_table": "living_room"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Pomaria_1_int-s08": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "furniture_sink": "kitchen"
+  },
+  "uncertain": [
+   "breakfast_table"
+  ]
+ },
+ "Pomaria_1_int-s09": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {
+   "coffee_table": "corridor"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Pomaria_1_int-s10": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "pantry_room",
+   "furniture_sink": "bathroom"
+  },
+  "uncertain": []
+ },
+ "Pomaria_1_int-s11": {
+  "dependent": [
+   {
+    "object": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "kitchen",
+   "countertop": "kitchen"
+  },
+  "uncertain": []
+ },
+ "Pomaria_1_int-s12": {
+  "dependent": [
+   {
+    "object": "cinnamon_roll",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "countertop": "kitchen"
+  },
+  "uncertain": [
+   "breakfast_table",
+   "oven"
+  ]
+ },
+ "Pomaria_1_int-s13": {
+  "dependent": [
+   {
+    "object": "casserole",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "stated": {
+   "fridge": "kitchen"
+  },
+  "uncertain": [
+   "breakfast_table",
+   "microwave"
+  ]
+ },
+ "Pomaria_1_int-s14": {
+  "dependent": [
+   {
+    "object": "bath_towel",
+    "relation": "ON_TOP",
+    "target": "bottom_cabinet"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "utility_room"
+  },
+  "uncertain": [
+   "clothes_dryer"
+  ]
+ },
+ "Pomaria_1_int-s15": {
+  "dependent": [
+   {
+    "object": "frying_pan",
+    "relation": "ON_TOP",
+    "target": "burner"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "burner",
+   "dishwasher"
+  ]
+ },
+ "Rs_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "countertop"
+  ]
+ },
+ "Rs_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bookcase",
+   "sofa"
+  ]
+ },
+ "Rs_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "countertop",
+   "furniture_sink"
+  ]
+ },
+ "Rs_int-s04": {
+  "dependent": [
+   {
+    "object": "sponge",
+    "relation": "INSIDE",
+    "target": "pedestal_sink"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "coffee_table",
+   "pedestal_sink"
+  ]
+ },
+ "Rs_int-s05": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "coffee_table"
+  ]
+ },
+ "Rs_int-s06": {
+  "dependent": [
+   {
+    "object": "carton",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "coffee_table",
+   "public_trash_can"
+  ]
+ },
+ "Rs_int-s07": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bed",
+   "countertop"
+  ]
+ },
+ "Rs_int-s08": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bed",
+   "pedestal_sink"
+  ]
+ },
+ "Rs_int-s09": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "INSIDE",
+    "target": "furniture_sink"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "furniture_sink"
+  ]
+ },
+ "Rs_int-s10": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "bed",
+   "sofa"
+  ]
+ },
+ "Rs_int-s11": {
+  "dependent": [],
+  "stated": {},
+  "uncertain": [
+   "floor_lamp"
+  ]
+ },
+ "Rs_int-s12": {
+  "dependent": [
+   {
+    "object": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "bedroom"
+  },
+  "uncertain": [
+   "countertop"
+  ]
+ },
+ "Rs_int-s13": {
+  "dependent": [
+   {
+    "object": "sliced_roast_beef",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "countertop",
+   "oven"
+  ]
+ },
+ "Rs_int-s14": {
+  "dependent": [
+   {
+    "object": "club_sandwich",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "countertop",
+   "fridge",
+   "microwave"
+  ]
+ },
+ "Rs_int-s15": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "countertop",
+   "dishwasher"
+  ]
+ },
+ "Wainscott_0_int-s01": {
+  "dependent": [
+   {
+    "object": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "countertop"
+  ]
+ },
+ "Wainscott_0_int-s02": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {
+   "coffee_table": "living_room"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Wainscott_0_int-s03": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "countertop",
+   "furniture_sink"
+  ]
+ },
+ "Wainscott_0_int-s04": {
+  "dependent": [
+   {
+    "object": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "armchair",
+   "bookcase"
+  ]
+ },
+ "Wainscott_0_int-s05": {
+  "dependent": [
+   {
+    "object": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "console_table",
+   "countertop"
+  ]
+ },
+ "Wainscott_0_int-s06": {
+  "dependent": [
+   {
+    "object": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "breakfast_table",
+   "furniture_sink"
+  ]
+ },
+ "Wainscott_0_int-s07": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {
+   "coffee_table": "living_room"
+  },
+  "uncertain": [
+   "bookcase"
+  ]
+ },
+ "Wainscott_0_int-s08": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "living_room"
+  },
+  "uncertain": [
+   "sofa"
+  ]
+ },
+ "Wainscott_0_int-s09": {
+  "dependent": [
+   {
+    "object": "tupperware",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "coffee_table": "kitchen"
+  },
+  "uncertain": [
+   "countertop"
+  ]
+ },
+ "Wainscott_0_int-s10": {
+  "dependent": [
+   {
+    "object": "carving_knife",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "dining_room"
+  },
+  "uncertain": [
+   "furniture_sink"
+  ]
+ },
+ "Wainscott_0_int-s11": {
+  "dependent": [],
+  "stated": {},
+  "uncertain": [
+   "floor_lamp"
+  ]
+ },
+ "Wainscott_0_int-s12": {
+  "dependent": [
+   {
+    "object": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "dining_room",
+   "breakfast_table": "dining_room"
+  },
+  "uncertain": []
+ },
+ "Wainscott_0_int-s13": {
+  "dependent": [
+   {
+    "object": "casserole",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "living_room"
+  },
+  "uncertain": [
+   "countertop",
+   "oven"
+  ]
+ },
+ "Wainscott_0_int-s14": {
+  "dependent": [
+   {
+    "object": "swiss_cheese",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "living_room"
+  },
+  "uncertain": [
+   "fridge",
+   "microwave"
+  ]
+ },
+ "Wainscott_0_int-s15": {
+  "dependent": [
+   {
+    "object": "crock_pot",
+    "relation": "ON_TOP",
+    "target": "stove"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "dishwasher",
+   "stove"
+  ]
+ },
+ "Wainscott_1_int-s01": {
+  "dependent": [
+   {
+    "object": "newspaper",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "stated": {
+   "coffee_table": "playroom"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Wainscott_1_int-s02": {
+  "dependent": [
+   {
+    "object": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "countertop",
+   "furniture_sink"
+  ]
+ },
+ "Wainscott_1_int-s03": {
+  "dependent": [
+   {
+    "object": "sponge",
+    "relation": "INSIDE",
+    "target": "pedestal_sink"
+   }
+  ],
+  "stated": {
+   "pedestal_sink": "utility_room"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Wainscott_1_int-s04": {
+  "dependent": [
+   {
+    "object": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom"
+  },
+  "uncertain": [
+   "bathtub"
+  ]
+ },
+ "Wainscott_1_int-s05": {
+  "dependent": [
+   {
+    "object": "notebook",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "stated": {
+   "breakfast_table": "bedroom"
+  },
+  "uncertain": [
+   "pool_table"
+  ]
+ },
+ "Wainscott_1_int-s06": {
+  "dependent": [
+   {
+    "object": "magazine",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "stated": {
+   "coffee_table": "playroom"
+  },
+  "uncertain": [
+   "armchair"
+  ]
+ },
+ "Wainscott_1_int-s07": {
+  "dependent": [
+   {
+    "object": "t_shirt",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "breakfast_table": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Wainscott_1_int-s08": {
+  "dependent": [
+   {
+    "object": "carton",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {},
+  "uncertain": [
+   "countertop",
+   "public_trash_can"
+  ]
+ },
+ "Wainscott_1_int-s09": {
+  "dependent": [
+   {
+    "object": "detergent_bottle",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "pedestal_sink": "utility_room"
+  },
+  "uncertain": [
+   "countertop"
+  ]
+ },
+ "Wainscott_1_int-s10": {
+  "dependent": [
+   {
+    "object": "dress",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "stated": {
+   "bed": "bedroom",
+   "breakfast_table": "playroom"
+  },
+  "uncertain": []
+ },
+ "Wainscott_1_int-s11": {
+  "dependent": [],
+  "stated": {
+   "table_lamp": "bedroom"
+  },
+  "uncertain": []
+ },
+ "Wainscott_1_int-s12": {
+  "dependent": [
+   {
+    "object": "toothbrush",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "bathroom"
+  },
+  "uncertain": [
+   "countertop"
+  ]
+ },
+ "Wainscott_1_int-s13": {
+  "dependent": [
+   {
+    "object": "t_shirt",
+    "relation": "ON_TOP",
+    "target": "bottom_cabinet"
+   }
+  ],
+  "stated": {
+   "bottom_cabinet": "bedroom"
+  },
+  "uncertain": [
+   "clothes_dryer"
+  ]
+ },
+ "Wainscott_1_int-s14": {
+  "dependent": [
+   {
+    "object": "bath_towel",
+    "relation": "ON_TOP",
+    "target": "top_cabinet"
+   }
+  ],
+  "stated": {
+   "top_cabinet": "playroom"
+  },
+  "uncertain": [
+   "clothes_dryer"
+  ]
+ }
+}

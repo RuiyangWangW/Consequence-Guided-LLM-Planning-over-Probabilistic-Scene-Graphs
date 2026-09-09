@@ -1,0 +1,8447 @@
+[
+ {
+  "task": "put the wineglass from the kitchen countertop on the kitchen breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "breakfast_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s01",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "breakfast_table": "kitchen",
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the armchair on the sofa",
+  "rooms": {
+   "armchair": "living_room_0",
+   "sofa": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "newspaper",
+    "sofa"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "sofa"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "sofa"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s02",
+  "extraction": {
+   "uncertain": [
+    "armchair",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the desk in the office bookcase",
+  "rooms": {
+   "desk": "private_office_0",
+   "bookcase": "private_office_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "desk"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "magazine",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s03",
+  "extraction": {
+   "uncertain": [
+    "desk"
+   ],
+   "stated": {
+    "bookcase": "private_office"
+   },
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "desk"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the kitchen countertop in the bathroom furniture sink",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "furniture_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s04",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "countertop": "kitchen",
+    "furniture_sink": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the kitchen bookcase and put it on the desk",
+  "rooms": {
+   "bookcase": "kitchen_0",
+   "desk": "private_office_0"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "desk"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "desk"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "desk"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s05",
+  "extraction": {
+   "uncertain": [
+    "desk"
+   ],
+   "stated": {
+    "bookcase": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the dining room coffee table on the kitchen breakfast table",
+  "rooms": {
+   "coffee_table": "dining_room_0",
+   "breakfast_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s06",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "breakfast_table": "kitchen",
+    "coffee_table": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the sofa in the office bookcase",
+  "rooms": {
+   "sofa": "living_room_1",
+   "bookcase": "private_office_0"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "notebook",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s07",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "bookcase": "private_office"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the hand towel out of the bathroom furniture sink and put it on the armchair",
+  "rooms": {
+   "furniture_sink": "bathroom_0",
+   "armchair": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "INSIDE",
+    "target": "furniture_sink"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "hand_towel",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s08",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "furniture_sink": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "INSIDE",
+     "target": "furniture_sink"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the kitchen breakfast table on the dining room coffee table",
+  "rooms": {
+   "breakfast_table": "kitchen_0",
+   "coffee_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "bowl",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s09",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "breakfast_table": "kitchen",
+    "coffee_table": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the mail from the desk on the armchair",
+  "rooms": {
+   "desk": "private_office_0",
+   "armchair": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "mail",
+    "relation": "ON_TOP",
+    "target": "desk"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "mail",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "mail"
+   ],
+   [
+    "GRASP",
+    "mail"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s10",
+  "extraction": {
+   "uncertain": [
+    "armchair",
+    "desk"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "mail",
+     "relation": "ON_TOP",
+     "target": "desk"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the living room floor lamp",
+  "rooms": {
+   "floor_lamp": "living_room_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "floor_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "floor_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "floor_lamp"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s11",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "floor_lamp": "living_room"
+   },
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the tablespoon from the kitchen countertop away in the kitchen bottom cabinet",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "bottom_cabinet": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "tablespoon",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tablespoon"
+   ],
+   [
+    "GRASP",
+    "tablespoon"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s12",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bottom_cabinet": "kitchen",
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "tablespoon",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the apple pie from the kitchen countertop, heat it in the oven, and put it on the living room breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "apple_pie",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "apple_pie",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "apple_pie",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "apple_pie"
+   ],
+   [
+    "GRASP",
+    "apple_pie"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "apple_pie"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s13",
+  "extraction": {
+   "uncertain": [
+    "oven"
+   ],
+   "stated": {
+    "breakfast_table": "living_room",
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "apple_pie",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the bottle of soup out of the fridge, warm it in the microwave, and leave it on the living room breakfast table",
+  "rooms": {
+   "fridge": "kitchen_0",
+   "microwave": "kitchen_0",
+   "breakfast_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "bottle_of_soup",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "bottle_of_soup",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "bottle_of_soup",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "fridge"
+   ],
+   [
+    "OPEN",
+    "fridge"
+   ],
+   [
+    "GRASP",
+    "bottle_of_soup"
+   ],
+   [
+    "CLOSE",
+    "fridge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "PLACE_INSIDE",
+    "microwave"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "TOGGLE_ON",
+    "microwave"
+   ],
+   [
+    "TOGGLE_OFF",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "GRASP",
+    "bottle_of_soup"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s14",
+  "extraction": {
+   "uncertain": [
+    "fridge",
+    "microwave"
+   ],
+   "stated": {
+    "breakfast_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "bottle_of_soup",
+     "relation": "INSIDE",
+     "target": "fridge"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the kitchen countertop in the dishwasher and run it",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "plate",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "plate",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Beechwood_0_int",
+  "id": "Beechwood_0_int-s15",
+  "extraction": {
+   "uncertain": [
+    "dishwasher"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the wineglass from the dining room countertop on the breakfast table",
+  "rooms": {
+   "countertop": "dining_room_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s01",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "countertop": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa in the corridor bookcase",
+  "rooms": {
+   "sofa": "living_room_0",
+   "bookcase": "corridor_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "newspaper",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s02",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "bookcase": "corridor"
+   },
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the kitchen countertop in the furniture sink",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s03",
+  "extraction": {
+   "uncertain": [
+    "furniture_sink"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the sponge out of the furniture sink and put it on the console table",
+  "rooms": {
+   "furniture_sink": "kitchen_0",
+   "console_table": "corridor_0"
+  },
+  "spawn": [
+   {
+    "name": "sponge",
+    "relation": "INSIDE",
+    "target": "furniture_sink"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "sponge",
+    "console_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "sponge"
+   ],
+   [
+    "GRASP",
+    "sponge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "console_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "console_table"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s04",
+  "extraction": {
+   "uncertain": [
+    "console_table",
+    "furniture_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "sponge",
+     "relation": "INSIDE",
+     "target": "furniture_sink"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the dining room countertop on the sofa",
+  "rooms": {
+   "countertop": "dining_room_0",
+   "sofa": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "sofa"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "sofa"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "sofa"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s05",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "countertop": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the console table in the living room bookcase",
+  "rooms": {
+   "console_table": "corridor_0",
+   "bookcase": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "console_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "notebook",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s06",
+  "extraction": {
+   "uncertain": [
+    "console_table"
+   ],
+   "stated": {
+    "bookcase": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "console_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the breakfast table on the kitchen countertop",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "countertop": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "bowl",
+    "countertop"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "countertop"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "countertop"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s07",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the sofa on the console table",
+  "rooms": {
+   "sofa": "living_room_0",
+   "console_table": "corridor_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "magazine",
+    "console_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "console_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "console_table"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s08",
+  "extraction": {
+   "uncertain": [
+    "console_table",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the tupperware from the kitchen countertop in the corridor bookcase",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "bookcase": "corridor_0"
+  },
+  "spawn": [
+   {
+    "name": "tupperware",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "tupperware",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tupperware"
+   ],
+   [
+    "GRASP",
+    "tupperware"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s09",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bookcase": "corridor",
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "tupperware",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the living room bookcase and put it on the breakfast table",
+  "rooms": {
+   "bookcase": "living_room_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s10",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "bookcase": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the floor lamp",
+  "rooms": {
+   "floor_lamp": "living_room_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "floor_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "floor_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "floor_lamp"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s11",
+  "extraction": {
+   "uncertain": [
+    "floor_lamp"
+   ],
+   "stated": {},
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the tablespoon from the kitchen countertop away in the top cabinet",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "top_cabinet": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "tablespoon",
+    "top_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tablespoon"
+   ],
+   [
+    "GRASP",
+    "tablespoon"
+   ],
+   [
+    "NAVIGATE_TO",
+    "top_cabinet"
+   ],
+   [
+    "OPEN",
+    "top_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "top_cabinet"
+   ],
+   [
+    "CLOSE",
+    "top_cabinet"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s12",
+  "extraction": {
+   "uncertain": [
+    "top_cabinet"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "tablespoon",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the casserole from the kitchen countertop, heat it in the oven, and put it on the breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "casserole",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "casserole",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "casserole",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "casserole"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s13",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "oven"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "casserole",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the casserole out of the fridge, warm it in the microwave, and leave it on the breakfast table",
+  "rooms": {
+   "fridge": "kitchen_0",
+   "microwave": "kitchen_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "casserole",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "casserole",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "casserole",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "fridge"
+   ],
+   [
+    "OPEN",
+    "fridge"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "fridge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "PLACE_INSIDE",
+    "microwave"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "TOGGLE_ON",
+    "microwave"
+   ],
+   [
+    "TOGGLE_OFF",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s14",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "fridge",
+    "microwave"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "casserole",
+     "relation": "INSIDE",
+     "target": "fridge"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the kitchen countertop in the dishwasher and run it",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "bowl",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "bowl",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Benevolence_1_int",
+  "id": "Benevolence_1_int-s15",
+  "extraction": {
+   "uncertain": [
+    "dishwasher"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the wineglass from the countertop on the breakfast table",
+  "rooms": {
+   "countertop": "living_room_0",
+   "breakfast_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s01",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "countertop"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa in the bookcase",
+  "rooms": {
+   "sofa": "living_room_0",
+   "bookcase": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "newspaper",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s02",
+  "extraction": {
+   "uncertain": [
+    "bookcase",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the countertop in the furniture sink",
+  "rooms": {
+   "countertop": "living_room_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s03",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "furniture_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the sponge out of the pedestal sink and put it on the coffee table",
+  "rooms": {
+   "pedestal_sink": "bathroom_0",
+   "coffee_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "sponge",
+    "relation": "INSIDE",
+    "target": "pedestal_sink"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "sponge",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "sponge"
+   ],
+   [
+    "GRASP",
+    "sponge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s04",
+  "extraction": {
+   "uncertain": [
+    "coffee_table",
+    "pedestal_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "sponge",
+     "relation": "INSIDE",
+     "target": "pedestal_sink"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the breakfast table on the coffee table",
+  "rooms": {
+   "breakfast_table": "living_room_0",
+   "coffee_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s05",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "coffee_table"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the carton from the coffee table in the kitchen trash can",
+  "rooms": {
+   "coffee_table": "living_room_0",
+   "public_trash_can": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "carton",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "carton",
+    "public_trash_can"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "carton"
+   ],
+   [
+    "GRASP",
+    "carton"
+   ],
+   [
+    "NAVIGATE_TO",
+    "public_trash_can"
+   ],
+   [
+    "PLACE_INSIDE",
+    "public_trash_can"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s06",
+  "extraction": {
+   "uncertain": [
+    "coffee_table",
+    "public_trash_can"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "carton",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the bed on the countertop",
+  "rooms": {
+   "bed": "bedroom_0",
+   "countertop": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "notebook",
+    "countertop"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "countertop"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "countertop"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s07",
+  "extraction": {
+   "uncertain": [
+    "bed",
+    "countertop"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the bed in the pedestal sink",
+  "rooms": {
+   "bed": "bedroom_0",
+   "pedestal_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "pedestal_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "pedestal_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "pedestal_sink"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s08",
+  "extraction": {
+   "uncertain": [
+    "bed",
+    "pedestal_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the bowl out of the furniture sink and put it on the breakfast table",
+  "rooms": {
+   "furniture_sink": "kitchen_0",
+   "breakfast_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "INSIDE",
+    "target": "furniture_sink"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "bowl",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s09",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "furniture_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "INSIDE",
+     "target": "furniture_sink"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the sofa on the bed",
+  "rooms": {
+   "sofa": "living_room_0",
+   "bed": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "magazine",
+    "bed"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bed"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "bed"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s10",
+  "extraction": {
+   "uncertain": [
+    "bed",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the floor lamp",
+  "rooms": {
+   "floor_lamp": "living_room_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "floor_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "floor_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "floor_lamp"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s11",
+  "extraction": {
+   "uncertain": [
+    "floor_lamp"
+   ],
+   "stated": {},
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the tablespoon from the countertop away in the bedroom bottom cabinet",
+  "rooms": {
+   "countertop": "living_room_0",
+   "bottom_cabinet": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "tablespoon",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tablespoon"
+   ],
+   [
+    "GRASP",
+    "tablespoon"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s12",
+  "extraction": {
+   "uncertain": [
+    "countertop"
+   ],
+   "stated": {
+    "bottom_cabinet": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "tablespoon",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the sliced roast beef from the countertop, heat it in the oven, and put it on the breakfast table",
+  "rooms": {
+   "countertop": "living_room_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "sliced_roast_beef",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "sliced_roast_beef",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "sliced_roast_beef",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "sliced_roast_beef"
+   ],
+   [
+    "GRASP",
+    "sliced_roast_beef"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "sliced_roast_beef"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s13",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "countertop",
+    "oven"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "sliced_roast_beef",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the club sandwich out of the fridge, warm it in the microwave, and leave it on the countertop",
+  "rooms": {
+   "fridge": "kitchen_0",
+   "microwave": "kitchen_0",
+   "countertop": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "club_sandwich",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "club_sandwich",
+    "countertop"
+   ],
+   [
+    "cooked",
+    "club_sandwich",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "fridge"
+   ],
+   [
+    "OPEN",
+    "fridge"
+   ],
+   [
+    "GRASP",
+    "club_sandwich"
+   ],
+   [
+    "CLOSE",
+    "fridge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "PLACE_INSIDE",
+    "microwave"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "TOGGLE_ON",
+    "microwave"
+   ],
+   [
+    "TOGGLE_OFF",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "GRASP",
+    "club_sandwich"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "NAVIGATE_TO",
+    "countertop"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "countertop"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s14",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "fridge",
+    "microwave"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "club_sandwich",
+     "relation": "INSIDE",
+     "target": "fridge"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the countertop in the dishwasher and run it",
+  "rooms": {
+   "countertop": "living_room_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "bowl",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "bowl",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Rs_int",
+  "id": "Rs_int-s15",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "dishwasher"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the board game from the bedroom bed on the armchair",
+  "rooms": {
+   "bed": "bedroom_0",
+   "armchair": "playroom_0"
+  },
+  "spawn": [
+   {
+    "name": "board_game",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "board_game",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "board_game"
+   ],
+   [
+    "GRASP",
+    "board_game"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s01",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "board_game",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the jigsaw puzzle from the playroom breakfast table in the playroom bookcase",
+  "rooms": {
+   "breakfast_table": "playroom_0",
+   "bookcase": "playroom_0"
+  },
+  "spawn": [
+   {
+    "name": "jigsaw_puzzle",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "jigsaw_puzzle",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "jigsaw_puzzle"
+   ],
+   [
+    "GRASP",
+    "jigsaw_puzzle"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s02",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bookcase": "playroom",
+    "breakfast_table": "playroom"
+   },
+   "dependent": [
+    {
+     "object": "jigsaw_puzzle",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the bathroom countertop in the furniture sink",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "furniture_sink": "bathroom_1"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s03",
+  "extraction": {
+   "uncertain": [
+    "furniture_sink"
+   ],
+   "stated": {
+    "countertop": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the teddy bear out of the child's room bookcase and put it on the sofa",
+  "rooms": {
+   "bookcase": "childs_room_0",
+   "sofa": "television_room_0"
+  },
+  "spawn": [
+   {
+    "name": "teddy_bear",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "teddy_bear",
+    "sofa"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "teddy_bear"
+   ],
+   [
+    "GRASP",
+    "teddy_bear"
+   ],
+   [
+    "NAVIGATE_TO",
+    "sofa"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "sofa"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s04",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "bookcase": "childs_room"
+   },
+   "dependent": [
+    {
+     "object": "teddy_bear",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the pencil case from the child's room breakfast table on the bedroom bed",
+  "rooms": {
+   "breakfast_table": "childs_room_1",
+   "bed": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "pencil_case",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "pencil_case",
+    "bed"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "pencil_case"
+   ],
+   [
+    "GRASP",
+    "pencil_case"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bed"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "bed"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s05",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "breakfast_table": "childs_room"
+   },
+   "dependent": [
+    {
+     "object": "pencil_case",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the bathroom countertop in the furniture sink",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "furniture_sink": "bathroom_1"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s06",
+  "extraction": {
+   "uncertain": [
+    "furniture_sink"
+   ],
+   "stated": {
+    "countertop": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa on the armchair",
+  "rooms": {
+   "sofa": "television_room_0",
+   "armchair": "playroom_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "newspaper",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s07",
+  "extraction": {
+   "uncertain": [
+    "armchair",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the colored pencil from the child's room bed in the child's room bookcase",
+  "rooms": {
+   "bed": "childs_room_1",
+   "bookcase": "childs_room_0"
+  },
+  "spawn": [
+   {
+    "name": "colored_pencil",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "colored_pencil",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "colored_pencil"
+   ],
+   [
+    "GRASP",
+    "colored_pencil"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s08",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "childs_room",
+    "bookcase": "childs_room"
+   },
+   "dependent": [
+    {
+     "object": "colored_pencil",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the dice out of the playroom bookcase and put it on the child's room breakfast table",
+  "rooms": {
+   "bookcase": "playroom_0",
+   "breakfast_table": "childs_room_1"
+  },
+  "spawn": [
+   {
+    "name": "dice",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "dice",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "dice"
+   ],
+   [
+    "GRASP",
+    "dice"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s09",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bookcase": "playroom",
+    "breakfast_table": "childs_room"
+   },
+   "dependent": [
+    {
+     "object": "dice",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the sponge from the bathroom countertop on the bedroom bed",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "bed": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "sponge",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "sponge",
+    "bed"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "sponge"
+   ],
+   [
+    "GRASP",
+    "sponge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bed"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "bed"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s10",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "countertop": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "sponge",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the table lamp",
+  "rooms": {
+   "table_lamp": "playroom_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "table_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "table_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "table_lamp"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s11",
+  "extraction": {
+   "uncertain": [
+    "table_lamp"
+   ],
+   "stated": {},
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the toothbrush from the bathroom countertop away in the bathroom top cabinet",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "top_cabinet": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "toothbrush",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "toothbrush",
+    "top_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "toothbrush"
+   ],
+   [
+    "GRASP",
+    "toothbrush"
+   ],
+   [
+    "NAVIGATE_TO",
+    "top_cabinet"
+   ],
+   [
+    "OPEN",
+    "top_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "top_cabinet"
+   ],
+   [
+    "CLOSE",
+    "top_cabinet"
+   ]
+  ],
+  "scene": "Beechwood_1_int",
+  "id": "Beechwood_1_int-s12",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "countertop": "bathroom",
+    "top_cabinet": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "toothbrush",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the wineglass from the dining room countertop on the dining room breakfast table",
+  "rooms": {
+   "countertop": "dining_room_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s01",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "breakfast_table": "dining_room",
+    "countertop": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa in the bookcase",
+  "rooms": {
+   "sofa": "living_room_0",
+   "bookcase": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "newspaper",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s02",
+  "extraction": {
+   "uncertain": [
+    "bookcase",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the kitchen countertop in the furniture sink",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s03",
+  "extraction": {
+   "uncertain": [
+    "furniture_sink"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the bookcase and put it on the coffee table",
+  "rooms": {
+   "bookcase": "kitchen_0",
+   "coffee_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s04",
+  "extraction": {
+   "uncertain": [
+    "bookcase",
+    "coffee_table"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the dining room breakfast table on the armchair",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "armchair": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s05",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "breakfast_table": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the bedroom bed in the pedestal sink",
+  "rooms": {
+   "bed": "bedroom_0",
+   "pedestal_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "pedestal_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "pedestal_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "pedestal_sink"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s06",
+  "extraction": {
+   "uncertain": [
+    "pedestal_sink"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the coffee table on the bedroom breakfast table",
+  "rooms": {
+   "coffee_table": "living_room_0",
+   "breakfast_table": "bedroom_1"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "notebook",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s07",
+  "extraction": {
+   "uncertain": [
+    "coffee_table"
+   ],
+   "stated": {
+    "breakfast_table": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the sponge from the kitchen countertop in the bathtub",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "bathtub": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "sponge",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "sponge",
+    "bathtub"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "sponge"
+   ],
+   [
+    "GRASP",
+    "sponge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bathtub"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bathtub"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s08",
+  "extraction": {
+   "uncertain": [
+    "bathtub"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "sponge",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the kitchen countertop on the sofa",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "sofa": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "bowl",
+    "sofa"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "sofa"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "sofa"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s09",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the armchair on the bedroom bed",
+  "rooms": {
+   "armchair": "living_room_0",
+   "bed": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "magazine",
+    "bed"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bed"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "bed"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s10",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the bedroom table lamp",
+  "rooms": {
+   "table_lamp": "bedroom_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "table_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "table_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "table_lamp"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s11",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "table_lamp": "bedroom"
+   },
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the hanger from the bedroom bed away in the bedroom bottom cabinet",
+  "rooms": {
+   "bed": "bedroom_0",
+   "bottom_cabinet": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hanger",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hanger",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hanger"
+   ],
+   [
+    "GRASP",
+    "hanger"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s12",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "bottom_cabinet": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "hanger",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the pizza from the kitchen countertop, heat it in the oven, and put it on the bedroom breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "bedroom_1"
+  },
+  "spawn": [
+   {
+    "name": "pizza",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "pizza",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "pizza",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "pizza"
+   ],
+   [
+    "GRASP",
+    "pizza"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "pizza"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s13",
+  "extraction": {
+   "uncertain": [
+    "oven"
+   ],
+   "stated": {
+    "breakfast_table": "bedroom",
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "pizza",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the casserole out of the fridge, warm it in the oven, and leave it on the bedroom breakfast table",
+  "rooms": {
+   "fridge": "kitchen_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "bedroom_1"
+  },
+  "spawn": [
+   {
+    "name": "casserole",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "casserole",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "casserole",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "fridge"
+   ],
+   [
+    "OPEN",
+    "fridge"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "fridge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s14",
+  "extraction": {
+   "uncertain": [
+    "fridge",
+    "oven"
+   ],
+   "stated": {
+    "breakfast_table": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "casserole",
+     "relation": "INSIDE",
+     "target": "fridge"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the water glass from the kitchen countertop in the dishwasher and run it",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "water_glass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "water_glass",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "water_glass",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "water_glass"
+   ],
+   [
+    "GRASP",
+    "water_glass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Ihlen_1_int",
+  "id": "Ihlen_1_int-s15",
+  "extraction": {
+   "uncertain": [
+    "dishwasher"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "water_glass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the wineglass from the breakfast table on the living room armchair",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "armchair": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s01",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "armchair": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa in the bookcase",
+  "rooms": {
+   "sofa": "living_room_0",
+   "bookcase": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "newspaper",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s02",
+  "extraction": {
+   "uncertain": [
+    "bookcase",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the coffee table in the kitchen furniture sink",
+  "rooms": {
+   "coffee_table": "living_room_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s03",
+  "extraction": {
+   "uncertain": [
+    "coffee_table"
+   ],
+   "stated": {
+    "furniture_sink": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the bookcase and put it on the breakfast table",
+  "rooms": {
+   "bookcase": "kitchen_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s04",
+  "extraction": {
+   "uncertain": [
+    "bookcase",
+    "breakfast_table"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the board game from the child's room bed on the coffee table",
+  "rooms": {
+   "bed": "childs_room_0",
+   "coffee_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "board_game",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "board_game",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "board_game"
+   ],
+   [
+    "GRASP",
+    "board_game"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s05",
+  "extraction": {
+   "uncertain": [
+    "coffee_table"
+   ],
+   "stated": {
+    "bed": "childs_room"
+   },
+   "dependent": [
+    {
+     "object": "board_game",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the bedroom bed in the bathroom furniture sink",
+  "rooms": {
+   "bed": "bedroom_0",
+   "furniture_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s06",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "furniture_sink": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the carton from the coffee table in the kitchen trash can",
+  "rooms": {
+   "coffee_table": "living_room_0",
+   "public_trash_can": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "carton",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "carton",
+    "public_trash_can"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "carton"
+   ],
+   [
+    "GRASP",
+    "carton"
+   ],
+   [
+    "NAVIGATE_TO",
+    "public_trash_can"
+   ],
+   [
+    "PLACE_INSIDE",
+    "public_trash_can"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s07",
+  "extraction": {
+   "uncertain": [
+    "coffee_table",
+    "public_trash_can"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "carton",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the t-shirt from the bedroom bed in the hamper",
+  "rooms": {
+   "bed": "bedroom_0",
+   "hamper": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "t_shirt",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "t_shirt",
+    "hamper"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "t_shirt"
+   ],
+   [
+    "GRASP",
+    "t_shirt"
+   ],
+   [
+    "NAVIGATE_TO",
+    "hamper"
+   ],
+   [
+    "PLACE_INSIDE",
+    "hamper"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s08",
+  "extraction": {
+   "uncertain": [
+    "hamper"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "t_shirt",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the breakfast table on the sofa",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "sofa": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "sofa"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "sofa"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "sofa"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s09",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the teddy bear from the child's room armchair on the child's room bed",
+  "rooms": {
+   "armchair": "childs_room_0",
+   "bed": "childs_room_0"
+  },
+  "spawn": [
+   {
+    "name": "teddy_bear",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "teddy_bear",
+    "bed"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "teddy_bear"
+   ],
+   [
+    "GRASP",
+    "teddy_bear"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bed"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "bed"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s10",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "armchair": "childs_room",
+    "bed": "childs_room"
+   },
+   "dependent": [
+    {
+     "object": "teddy_bear",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the bedroom table lamp",
+  "rooms": {
+   "table_lamp": "bedroom_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "table_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "table_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "table_lamp"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s11",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "table_lamp": "bedroom"
+   },
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the hanger from the bedroom bed away in the bedroom bottom cabinet",
+  "rooms": {
+   "bed": "bedroom_0",
+   "bottom_cabinet": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hanger",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hanger",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hanger"
+   ],
+   [
+    "GRASP",
+    "hanger"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s12",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "bottom_cabinet": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "hanger",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the saucepan from the stove in the dishwasher and run it",
+  "rooms": {
+   "stove": "kitchen_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "saucepan",
+    "relation": "ON_TOP",
+    "target": "stove"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "saucepan",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "saucepan",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "saucepan"
+   ],
+   [
+    "GRASP",
+    "saucepan"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Merom_1_int",
+  "id": "Merom_1_int-s13",
+  "extraction": {
+   "uncertain": [
+    "dishwasher",
+    "stove"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "saucepan",
+     "relation": "ON_TOP",
+     "target": "stove"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa in the living room bookcase",
+  "rooms": {
+   "sofa": "living_room_0",
+   "bookcase": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "newspaper",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s01",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "bookcase": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the office countertop in the office bookcase",
+  "rooms": {
+   "countertop": "private_office_0",
+   "bookcase": "private_office_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "magazine",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s02",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bookcase": "private_office",
+    "countertop": "private_office"
+   },
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the bedroom bed in the furniture sink",
+  "rooms": {
+   "bed": "bedroom_0",
+   "furniture_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s03",
+  "extraction": {
+   "uncertain": [
+    "furniture_sink"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the corridor bookcase and put it on the coffee table",
+  "rooms": {
+   "bookcase": "corridor_0",
+   "coffee_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s04",
+  "extraction": {
+   "uncertain": [
+    "coffee_table"
+   ],
+   "stated": {
+    "bookcase": "corridor"
+   },
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the keyboard from the office breakfast table on the office countertop",
+  "rooms": {
+   "breakfast_table": "private_office_0",
+   "countertop": "private_office_0"
+  },
+  "spawn": [
+   {
+    "name": "keyboard",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "keyboard",
+    "countertop"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "keyboard"
+   ],
+   [
+    "GRASP",
+    "keyboard"
+   ],
+   [
+    "NAVIGATE_TO",
+    "countertop"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "countertop"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s05",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "breakfast_table": "private_office",
+    "countertop": "private_office"
+   },
+   "dependent": [
+    {
+     "object": "keyboard",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the bedroom bed in the bathtub",
+  "rooms": {
+   "bed": "bedroom_0",
+   "bathtub": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "bathtub"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bathtub"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bathtub"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s06",
+  "extraction": {
+   "uncertain": [
+    "bathtub"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the armchair on the bedroom breakfast table",
+  "rooms": {
+   "armchair": "living_room_0",
+   "breakfast_table": "bedroom_1"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "notebook",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s07",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "breakfast_table": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the mail from the office countertop in the bedroom bookcase",
+  "rooms": {
+   "countertop": "private_office_0",
+   "bookcase": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "mail",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "mail",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "mail"
+   ],
+   [
+    "GRASP",
+    "mail"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s08",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bookcase": "bedroom",
+    "countertop": "private_office"
+   },
+   "dependent": [
+    {
+     "object": "mail",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the pot plant from the coffee table on the sofa",
+  "rooms": {
+   "coffee_table": "living_room_0",
+   "sofa": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "pot_plant",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "pot_plant",
+    "sofa"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "pot_plant"
+   ],
+   [
+    "GRASP",
+    "pot_plant"
+   ],
+   [
+    "NAVIGATE_TO",
+    "sofa"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "sofa"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s09",
+  "extraction": {
+   "uncertain": [
+    "coffee_table",
+    "sofa"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "pot_plant",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the dress from the bedroom bed in the bedroom bookcase",
+  "rooms": {
+   "bed": "bedroom_1",
+   "bookcase": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "dress",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "dress",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "dress"
+   ],
+   [
+    "GRASP",
+    "dress"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s10",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "bookcase": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "dress",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the legal document from the office countertop away in the office bottom cabinet",
+  "rooms": {
+   "countertop": "private_office_0",
+   "bottom_cabinet": "private_office_0"
+  },
+  "spawn": [
+   {
+    "name": "legal_document",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "legal_document",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "legal_document"
+   ],
+   [
+    "GRASP",
+    "legal_document"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Pomaria_0_int",
+  "id": "Pomaria_0_int-s11",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bottom_cabinet": "private_office",
+    "countertop": "private_office"
+   },
+   "dependent": [
+    {
+     "object": "legal_document",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the wineglass from the kitchen countertop on the breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "breakfast_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s01",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the armchair in the living room bookcase",
+  "rooms": {
+   "armchair": "living_room_0",
+   "bookcase": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "newspaper",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s02",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "bookcase": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the kitchen countertop in the bathroom furniture sink",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "furniture_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s03",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "countertop": "kitchen",
+    "furniture_sink": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the corridor bookcase and put it on the living room coffee table",
+  "rooms": {
+   "bookcase": "corridor_0",
+   "coffee_table": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s04",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bookcase": "corridor",
+    "coffee_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the pantry countertop on the breakfast table",
+  "rooms": {
+   "countertop": "pantry_room_0",
+   "breakfast_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s05",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "countertop": "pantry_room"
+   },
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the detergent bottle from the kitchen countertop in the pedestal sink",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "pedestal_sink": "utility_room_0"
+  },
+  "spawn": [
+   {
+    "name": "detergent_bottle",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "detergent_bottle",
+    "pedestal_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "detergent_bottle"
+   ],
+   [
+    "GRASP",
+    "detergent_bottle"
+   ],
+   [
+    "NAVIGATE_TO",
+    "pedestal_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "pedestal_sink"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s06",
+  "extraction": {
+   "uncertain": [
+    "pedestal_sink"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "detergent_bottle",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the living room coffee table on the armchair",
+  "rooms": {
+   "coffee_table": "living_room_0",
+   "armchair": "living_room_0"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "notebook",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s07",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "coffee_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the breakfast table in the kitchen furniture sink",
+  "rooms": {
+   "breakfast_table": "kitchen_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "bowl",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s08",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table"
+   ],
+   "stated": {
+    "furniture_sink": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the armchair on the corridor coffee table",
+  "rooms": {
+   "armchair": "living_room_0",
+   "coffee_table": "corridor_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "magazine",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s09",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "coffee_table": "corridor"
+   },
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the pantry countertop in the bathroom furniture sink",
+  "rooms": {
+   "countertop": "pantry_room_0",
+   "furniture_sink": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s10",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "countertop": "pantry_room",
+    "furniture_sink": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the tablespoon from the kitchen countertop away in the kitchen bottom cabinet",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "bottom_cabinet": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "tablespoon",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tablespoon"
+   ],
+   [
+    "GRASP",
+    "tablespoon"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s11",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bottom_cabinet": "kitchen",
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "tablespoon",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the cinnamon roll from the kitchen countertop, heat it in the oven, and put it on the breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "cinnamon_roll",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "cinnamon_roll",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "cinnamon_roll",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "cinnamon_roll"
+   ],
+   [
+    "GRASP",
+    "cinnamon_roll"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "cinnamon_roll"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s12",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "oven"
+   ],
+   "stated": {
+    "countertop": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "cinnamon_roll",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the casserole out of the kitchen fridge, warm it in the microwave, and leave it on the breakfast table",
+  "rooms": {
+   "fridge": "kitchen_0",
+   "microwave": "kitchen_0",
+   "breakfast_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "casserole",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "casserole",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "casserole",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "fridge"
+   ],
+   [
+    "OPEN",
+    "fridge"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "fridge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "PLACE_INSIDE",
+    "microwave"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "TOGGLE_ON",
+    "microwave"
+   ],
+   [
+    "TOGGLE_OFF",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s13",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "microwave"
+   ],
+   "stated": {
+    "fridge": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "casserole",
+     "relation": "INSIDE",
+     "target": "fridge"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bath towel from the utility room bottom cabinet in the clothes dryer and run it",
+  "rooms": {
+   "bottom_cabinet": "utility_room_0",
+   "clothes_dryer": "utility_room_0"
+  },
+  "spawn": [
+   {
+    "name": "bath_towel",
+    "relation": "ON_TOP",
+    "target": "bottom_cabinet"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "bath_towel",
+    "clothes_dryer"
+   ],
+   [
+    "dried",
+    "bath_towel",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bath_towel"
+   ],
+   [
+    "GRASP",
+    "bath_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "clothes_dryer"
+   ],
+   [
+    "OPEN",
+    "clothes_dryer"
+   ],
+   [
+    "PLACE_INSIDE",
+    "clothes_dryer"
+   ],
+   [
+    "CLOSE",
+    "clothes_dryer"
+   ],
+   [
+    "TOGGLE_ON",
+    "clothes_dryer"
+   ],
+   [
+    "TOGGLE_OFF",
+    "clothes_dryer"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s14",
+  "extraction": {
+   "uncertain": [
+    "clothes_dryer"
+   ],
+   "stated": {
+    "bottom_cabinet": "utility_room"
+   },
+   "dependent": [
+    {
+     "object": "bath_towel",
+     "relation": "ON_TOP",
+     "target": "bottom_cabinet"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the frying pan from the burner in the dishwasher and run it",
+  "rooms": {
+   "burner": "kitchen_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "frying_pan",
+    "relation": "ON_TOP",
+    "target": "burner"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "frying_pan",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "frying_pan",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "frying_pan"
+   ],
+   [
+    "GRASP",
+    "frying_pan"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Pomaria_1_int",
+  "id": "Pomaria_1_int-s15",
+  "extraction": {
+   "uncertain": [
+    "burner",
+    "dishwasher"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "frying_pan",
+     "relation": "ON_TOP",
+     "target": "burner"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the wineglass from the countertop on the breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "breakfast_table": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "wineglass",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "wineglass",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "wineglass"
+   ],
+   [
+    "GRASP",
+    "wineglass"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s01",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "countertop"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "wineglass",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the sofa on the living room coffee table",
+  "rooms": {
+   "sofa": "living_room_1",
+   "coffee_table": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "newspaper",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s02",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "coffee_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the countertop in the furniture sink",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s03",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "furniture_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the textbook out of the bookcase and put it on the armchair",
+  "rooms": {
+   "bookcase": "kitchen_0",
+   "armchair": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "textbook",
+    "relation": "INSIDE",
+    "target": "bookcase"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "textbook",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "textbook"
+   ],
+   [
+    "GRASP",
+    "textbook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s04",
+  "extraction": {
+   "uncertain": [
+    "armchair",
+    "bookcase"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "textbook",
+     "relation": "INSIDE",
+     "target": "bookcase"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the plate from the countertop on the console table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "console_table": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "plate",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "plate",
+    "console_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "plate"
+   ],
+   [
+    "GRASP",
+    "plate"
+   ],
+   [
+    "NAVIGATE_TO",
+    "console_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "console_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s05",
+  "extraction": {
+   "uncertain": [
+    "console_table",
+    "countertop"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "plate",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bowl from the breakfast table in the furniture sink",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "bowl",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "bowl",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bowl"
+   ],
+   [
+    "GRASP",
+    "bowl"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s06",
+  "extraction": {
+   "uncertain": [
+    "breakfast_table",
+    "furniture_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "bowl",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the living room coffee table in the bookcase",
+  "rooms": {
+   "coffee_table": "living_room_1",
+   "bookcase": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "notebook",
+    "bookcase"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bookcase"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bookcase"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s07",
+  "extraction": {
+   "uncertain": [
+    "bookcase"
+   ],
+   "stated": {
+    "coffee_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the sofa on the living room breakfast table",
+  "rooms": {
+   "sofa": "living_room_1",
+   "breakfast_table": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "sofa"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "magazine",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s08",
+  "extraction": {
+   "uncertain": [
+    "sofa"
+   ],
+   "stated": {
+    "breakfast_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "sofa"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the tupperware from the countertop on the kitchen coffee table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "coffee_table": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "tupperware",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "tupperware",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tupperware"
+   ],
+   [
+    "GRASP",
+    "tupperware"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s09",
+  "extraction": {
+   "uncertain": [
+    "countertop"
+   ],
+   "stated": {
+    "coffee_table": "kitchen"
+   },
+   "dependent": [
+    {
+     "object": "tupperware",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the carving knife from the dining room breakfast table in the furniture sink",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "furniture_sink": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "carving_knife",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "carving_knife",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "carving_knife"
+   ],
+   [
+    "GRASP",
+    "carving_knife"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s10",
+  "extraction": {
+   "uncertain": [
+    "furniture_sink"
+   ],
+   "stated": {
+    "breakfast_table": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "carving_knife",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the floor lamp",
+  "rooms": {
+   "floor_lamp": "living_room_1"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "floor_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "floor_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "floor_lamp"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s11",
+  "extraction": {
+   "uncertain": [
+    "floor_lamp"
+   ],
+   "stated": {},
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the tablespoon from the dining room breakfast table away in the dining room bottom cabinet",
+  "rooms": {
+   "breakfast_table": "dining_room_0",
+   "bottom_cabinet": "dining_room_0"
+  },
+  "spawn": [
+   {
+    "name": "tablespoon",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "tablespoon",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "tablespoon"
+   ],
+   [
+    "GRASP",
+    "tablespoon"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s12",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bottom_cabinet": "dining_room",
+    "breakfast_table": "dining_room"
+   },
+   "dependent": [
+    {
+     "object": "tablespoon",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the casserole from the countertop, heat it in the oven, and put it on the living room breakfast table",
+  "rooms": {
+   "countertop": "kitchen_0",
+   "oven": "kitchen_0",
+   "breakfast_table": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "casserole",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "casserole",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "casserole",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "casserole"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "NAVIGATE_TO",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "PLACE_INSIDE",
+    "oven"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "TOGGLE_ON",
+    "oven"
+   ],
+   [
+    "TOGGLE_OFF",
+    "oven"
+   ],
+   [
+    "OPEN",
+    "oven"
+   ],
+   [
+    "GRASP",
+    "casserole"
+   ],
+   [
+    "CLOSE",
+    "oven"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s13",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "oven"
+   ],
+   "stated": {
+    "breakfast_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "casserole",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the swiss cheese out of the fridge, warm it in the microwave, and leave it on the living room breakfast table",
+  "rooms": {
+   "fridge": "kitchen_0",
+   "microwave": "kitchen_0",
+   "breakfast_table": "living_room_1"
+  },
+  "spawn": [
+   {
+    "name": "swiss_cheese",
+    "relation": "INSIDE",
+    "target": "fridge"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "swiss_cheese",
+    "breakfast_table"
+   ],
+   [
+    "cooked",
+    "swiss_cheese",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "fridge"
+   ],
+   [
+    "OPEN",
+    "fridge"
+   ],
+   [
+    "GRASP",
+    "swiss_cheese"
+   ],
+   [
+    "CLOSE",
+    "fridge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "PLACE_INSIDE",
+    "microwave"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "TOGGLE_ON",
+    "microwave"
+   ],
+   [
+    "TOGGLE_OFF",
+    "microwave"
+   ],
+   [
+    "OPEN",
+    "microwave"
+   ],
+   [
+    "GRASP",
+    "swiss_cheese"
+   ],
+   [
+    "CLOSE",
+    "microwave"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s14",
+  "extraction": {
+   "uncertain": [
+    "fridge",
+    "microwave"
+   ],
+   "stated": {
+    "breakfast_table": "living_room"
+   },
+   "dependent": [
+    {
+     "object": "swiss_cheese",
+     "relation": "INSIDE",
+     "target": "fridge"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the crock pot from the stove in the dishwasher and run it",
+  "rooms": {
+   "stove": "kitchen_0",
+   "dishwasher": "kitchen_0"
+  },
+  "spawn": [
+   {
+    "name": "crock_pot",
+    "relation": "ON_TOP",
+    "target": "stove"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "crock_pot",
+    "dishwasher"
+   ],
+   [
+    "washed",
+    "crock_pot",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "crock_pot"
+   ],
+   [
+    "GRASP",
+    "crock_pot"
+   ],
+   [
+    "NAVIGATE_TO",
+    "dishwasher"
+   ],
+   [
+    "OPEN",
+    "dishwasher"
+   ],
+   [
+    "PLACE_INSIDE",
+    "dishwasher"
+   ],
+   [
+    "CLOSE",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_ON",
+    "dishwasher"
+   ],
+   [
+    "TOGGLE_OFF",
+    "dishwasher"
+   ]
+  ],
+  "scene": "Wainscott_0_int",
+  "id": "Wainscott_0_int-s15",
+  "extraction": {
+   "uncertain": [
+    "dishwasher",
+    "stove"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "crock_pot",
+     "relation": "ON_TOP",
+     "target": "stove"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the newspaper from the armchair on the playroom coffee table",
+  "rooms": {
+   "armchair": "bedroom_0",
+   "coffee_table": "playroom_0"
+  },
+  "spawn": [
+   {
+    "name": "newspaper",
+    "relation": "ON_TOP",
+    "target": "armchair"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "newspaper",
+    "coffee_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "newspaper"
+   ],
+   [
+    "GRASP",
+    "newspaper"
+   ],
+   [
+    "NAVIGATE_TO",
+    "coffee_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "coffee_table"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s01",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "coffee_table": "playroom"
+   },
+   "dependent": [
+    {
+     "object": "newspaper",
+     "relation": "ON_TOP",
+     "target": "armchair"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the rag from the countertop in the furniture sink",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "furniture_sink": "bathroom_1"
+  },
+  "spawn": [
+   {
+    "name": "rag",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "rag",
+    "furniture_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "rag"
+   ],
+   [
+    "GRASP",
+    "rag"
+   ],
+   [
+    "NAVIGATE_TO",
+    "furniture_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "furniture_sink"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s02",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "furniture_sink"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "rag",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "take the sponge out of the utility room pedestal sink and put it on the armchair",
+  "rooms": {
+   "pedestal_sink": "utility_room_0",
+   "armchair": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "sponge",
+    "relation": "INSIDE",
+    "target": "pedestal_sink"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "sponge",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "sponge"
+   ],
+   [
+    "GRASP",
+    "sponge"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s03",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "pedestal_sink": "utility_room"
+   },
+   "dependent": [
+    {
+     "object": "sponge",
+     "relation": "INSIDE",
+     "target": "pedestal_sink"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the hand towel from the bedroom bed in the bathtub",
+  "rooms": {
+   "bed": "bedroom_0",
+   "bathtub": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "hand_towel",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "hand_towel",
+    "bathtub"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "hand_towel"
+   ],
+   [
+    "GRASP",
+    "hand_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bathtub"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bathtub"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s04",
+  "extraction": {
+   "uncertain": [
+    "bathtub"
+   ],
+   "stated": {
+    "bed": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "hand_towel",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the notebook from the bedroom breakfast table on the pool table",
+  "rooms": {
+   "breakfast_table": "bedroom_0",
+   "pool_table": "playroom_0"
+  },
+  "spawn": [
+   {
+    "name": "notebook",
+    "relation": "ON_TOP",
+    "target": "breakfast_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "notebook",
+    "pool_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "notebook"
+   ],
+   [
+    "GRASP",
+    "notebook"
+   ],
+   [
+    "NAVIGATE_TO",
+    "pool_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "pool_table"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s05",
+  "extraction": {
+   "uncertain": [
+    "pool_table"
+   ],
+   "stated": {
+    "breakfast_table": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "notebook",
+     "relation": "ON_TOP",
+     "target": "breakfast_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the magazine from the playroom coffee table on the armchair",
+  "rooms": {
+   "coffee_table": "playroom_0",
+   "armchair": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "magazine",
+    "relation": "ON_TOP",
+    "target": "coffee_table"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "magazine",
+    "armchair"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "magazine"
+   ],
+   [
+    "GRASP",
+    "magazine"
+   ],
+   [
+    "NAVIGATE_TO",
+    "armchair"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "armchair"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s06",
+  "extraction": {
+   "uncertain": [
+    "armchair"
+   ],
+   "stated": {
+    "coffee_table": "playroom"
+   },
+   "dependent": [
+    {
+     "object": "magazine",
+     "relation": "ON_TOP",
+     "target": "coffee_table"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the t-shirt from the bedroom bed on the bedroom breakfast table",
+  "rooms": {
+   "bed": "bedroom_1",
+   "breakfast_table": "bedroom_0"
+  },
+  "spawn": [
+   {
+    "name": "t_shirt",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "t_shirt",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "t_shirt"
+   ],
+   [
+    "GRASP",
+    "t_shirt"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s07",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "breakfast_table": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "t_shirt",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the carton from the countertop in the bathroom trash can",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "public_trash_can": "bathroom_1"
+  },
+  "spawn": [
+   {
+    "name": "carton",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "carton",
+    "public_trash_can"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "carton"
+   ],
+   [
+    "GRASP",
+    "carton"
+   ],
+   [
+    "NAVIGATE_TO",
+    "public_trash_can"
+   ],
+   [
+    "PLACE_INSIDE",
+    "public_trash_can"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s08",
+  "extraction": {
+   "uncertain": [
+    "countertop",
+    "public_trash_can"
+   ],
+   "stated": {},
+   "dependent": [
+    {
+     "object": "carton",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the detergent bottle from the countertop in the utility room pedestal sink",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "pedestal_sink": "utility_room_0"
+  },
+  "spawn": [
+   {
+    "name": "detergent_bottle",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "detergent_bottle",
+    "pedestal_sink"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "detergent_bottle"
+   ],
+   [
+    "GRASP",
+    "detergent_bottle"
+   ],
+   [
+    "NAVIGATE_TO",
+    "pedestal_sink"
+   ],
+   [
+    "PLACE_INSIDE",
+    "pedestal_sink"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s09",
+  "extraction": {
+   "uncertain": [
+    "countertop"
+   ],
+   "stated": {
+    "pedestal_sink": "utility_room"
+   },
+   "dependent": [
+    {
+     "object": "detergent_bottle",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the dress from the bedroom bed on the playroom breakfast table",
+  "rooms": {
+   "bed": "bedroom_2",
+   "breakfast_table": "playroom_0"
+  },
+  "spawn": [
+   {
+    "name": "dress",
+    "relation": "ON_TOP",
+    "target": "bed"
+   }
+  ],
+  "goal": [
+   [
+    "on_top",
+    "dress",
+    "breakfast_table"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "dress"
+   ],
+   [
+    "GRASP",
+    "dress"
+   ],
+   [
+    "NAVIGATE_TO",
+    "breakfast_table"
+   ],
+   [
+    "PLACE_ON_TOP",
+    "breakfast_table"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s10",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "bed": "bedroom",
+    "breakfast_table": "playroom"
+   },
+   "dependent": [
+    {
+     "object": "dress",
+     "relation": "ON_TOP",
+     "target": "bed"
+    }
+   ]
+  }
+ },
+ {
+  "task": "switch on the bedroom table lamp",
+  "rooms": {
+   "table_lamp": "bedroom_0"
+  },
+  "spawn": [],
+  "goal": [
+   [
+    "toggled",
+    "table_lamp",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "table_lamp"
+   ],
+   [
+    "TOGGLE_ON",
+    "table_lamp"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s11",
+  "extraction": {
+   "uncertain": [],
+   "stated": {
+    "table_lamp": "bedroom"
+   },
+   "dependent": []
+  }
+ },
+ {
+  "task": "put the toothbrush from the countertop away in the bathroom bottom cabinet",
+  "rooms": {
+   "countertop": "bathroom_0",
+   "bottom_cabinet": "bathroom_0"
+  },
+  "spawn": [
+   {
+    "name": "toothbrush",
+    "relation": "ON_TOP",
+    "target": "countertop"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "toothbrush",
+    "bottom_cabinet"
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "toothbrush"
+   ],
+   [
+    "GRASP",
+    "toothbrush"
+   ],
+   [
+    "NAVIGATE_TO",
+    "bottom_cabinet"
+   ],
+   [
+    "OPEN",
+    "bottom_cabinet"
+   ],
+   [
+    "PLACE_INSIDE",
+    "bottom_cabinet"
+   ],
+   [
+    "CLOSE",
+    "bottom_cabinet"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s12",
+  "extraction": {
+   "uncertain": [
+    "countertop"
+   ],
+   "stated": {
+    "bottom_cabinet": "bathroom"
+   },
+   "dependent": [
+    {
+     "object": "toothbrush",
+     "relation": "ON_TOP",
+     "target": "countertop"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the t shirt from the bedroom bottom cabinet in the clothes dryer and run it",
+  "rooms": {
+   "bottom_cabinet": "bedroom_0",
+   "clothes_dryer": "utility_room_0"
+  },
+  "spawn": [
+   {
+    "name": "t_shirt",
+    "relation": "ON_TOP",
+    "target": "bottom_cabinet"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "t_shirt",
+    "clothes_dryer"
+   ],
+   [
+    "dried",
+    "t_shirt",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "t_shirt"
+   ],
+   [
+    "GRASP",
+    "t_shirt"
+   ],
+   [
+    "NAVIGATE_TO",
+    "clothes_dryer"
+   ],
+   [
+    "OPEN",
+    "clothes_dryer"
+   ],
+   [
+    "PLACE_INSIDE",
+    "clothes_dryer"
+   ],
+   [
+    "CLOSE",
+    "clothes_dryer"
+   ],
+   [
+    "TOGGLE_ON",
+    "clothes_dryer"
+   ],
+   [
+    "TOGGLE_OFF",
+    "clothes_dryer"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s13",
+  "extraction": {
+   "uncertain": [
+    "clothes_dryer"
+   ],
+   "stated": {
+    "bottom_cabinet": "bedroom"
+   },
+   "dependent": [
+    {
+     "object": "t_shirt",
+     "relation": "ON_TOP",
+     "target": "bottom_cabinet"
+    }
+   ]
+  }
+ },
+ {
+  "task": "put the bath towel from the playroom top cabinet in the clothes dryer and run it",
+  "rooms": {
+   "top_cabinet": "playroom_0",
+   "clothes_dryer": "utility_room_0"
+  },
+  "spawn": [
+   {
+    "name": "bath_towel",
+    "relation": "ON_TOP",
+    "target": "top_cabinet"
+   }
+  ],
+  "goal": [
+   [
+    "object_inside",
+    "bath_towel",
+    "clothes_dryer"
+   ],
+   [
+    "dried",
+    "bath_towel",
+    true
+   ]
+  ],
+  "plan": [
+   [
+    "NAVIGATE_TO",
+    "bath_towel"
+   ],
+   [
+    "GRASP",
+    "bath_towel"
+   ],
+   [
+    "NAVIGATE_TO",
+    "clothes_dryer"
+   ],
+   [
+    "OPEN",
+    "clothes_dryer"
+   ],
+   [
+    "PLACE_INSIDE",
+    "clothes_dryer"
+   ],
+   [
+    "CLOSE",
+    "clothes_dryer"
+   ],
+   [
+    "TOGGLE_ON",
+    "clothes_dryer"
+   ],
+   [
+    "TOGGLE_OFF",
+    "clothes_dryer"
+   ]
+  ],
+  "scene": "Wainscott_1_int",
+  "id": "Wainscott_1_int-s14",
+  "extraction": {
+   "uncertain": [
+    "clothes_dryer"
+   ],
+   "stated": {
+    "top_cabinet": "playroom"
+   },
+   "dependent": [
+    {
+     "object": "bath_towel",
+     "relation": "ON_TOP",
+     "target": "top_cabinet"
+    }
+   ]
+  }
+ }
+]

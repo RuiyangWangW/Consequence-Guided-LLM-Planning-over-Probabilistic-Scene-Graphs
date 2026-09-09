@@ -591,6 +591,23 @@ to the others: they describe the handful of easiest instructions those arms happ
 The comparison that is sound is GAVEL to GAVEL - 93.8 m at 4B against 78.0 m at 8B - which says
 the smaller model still writes materially worse plans even when they are valid.
 
+### Where these numbers come from
+
+Every figure above is read off a file in `data/`, so a claim can be checked without re-running
+anything.
+
+| file | what it holds |
+| --- | --- |
+| `exp1-{4b,8b}-{llmonly,feedback,gavel}.json` | experiment 1 - six runs, 100 tasks each, per-task plan, verdict, attempts and per-stage timing |
+| `exp2.json` | experiment 2 - 500 instructions, seven arms, Qwen3-8B |
+| `exp3.json` | experiment 3 - 500 instructions, `llm-only` and `gavel`, Qwen3-4B |
+| `order-sweep.json` | the ordering ladder measured without a language model, on the benchmark's own reference subplans |
+| `rsn-accuracy.json` | the RSN's per-guess accuracy: believed room, true room, rank and confidence |
+| `multitask-stamp.json` | which generation of the benchmark all of the above ran against |
+
+Each result also carries a `-stamp.json` naming the benchmark it ran against; `merge_shards.py`
+refuses to combine shards whose stamps disagree.
+
 ### The timing column, and what is wrong with it
 
 **Planning time is compute only** - decomposition, extraction, grounding, the goal adapter, every
