@@ -45,6 +45,10 @@ Usage:
         --stride 1 --sim-stride 5 --out logs/decomposition.json
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import itertools
 import json

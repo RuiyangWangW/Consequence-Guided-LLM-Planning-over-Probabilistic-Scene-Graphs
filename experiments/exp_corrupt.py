@@ -21,6 +21,10 @@ right and something else is going on - which would be the more valuable result.
     python exp_corrupt.py --stride 5 --out data/exp-corrupt.json
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import copy
 import json

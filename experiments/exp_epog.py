@@ -26,6 +26,10 @@ The true goal is used rather than the pipeline's predicted one deliberately: a g
 error would show up as an EPoG failure and it is not one. This measures the planner.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import sys

@@ -28,6 +28,10 @@ Nothing in the repo is modified. Everything here is read-only against gavel/sim_
     python exp_ladder.py --aggregate-only          # re-print the report from the shards
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import itertools
 import json

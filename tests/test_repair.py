@@ -6,6 +6,10 @@ every plan the 4B actually had refused, which is the only way to see whether the
 compose on plans nobody wrote for them.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import json
 import sys
 

@@ -60,6 +60,10 @@ shard sees all ten scenes and a partial sweep is still a fair sample. Nothing is
 in place: every module is imported and used exactly as the pipeline uses it.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import os

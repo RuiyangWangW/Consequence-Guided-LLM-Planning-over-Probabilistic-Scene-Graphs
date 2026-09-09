@@ -9,6 +9,10 @@ in by hand. That keeps the two halves comparable: the same plan, the same object
 same rooms, checked here symbolically and there for real.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import sys
 
 from graph_machine import GraphMachine, check

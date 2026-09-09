@@ -22,6 +22,10 @@ Hypotheses under test (each reported CONFIRMED-BUG or REFUTED):
     python exp_adversarial.py --stride 5 --sim-stride 20
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import itertools
 import json

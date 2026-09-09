@@ -11,6 +11,10 @@ launches Isaac Sim and checks that each primitive actually moves the world.
     python test_pipeline.py
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 from planner import parse_plan, validate
 
 # Minimal two-room scene: a fridge and a mug in the kitchen, a towel one room away.

@@ -33,6 +33,10 @@ parallel collide on GPU 0 without `CUROBO_GPU_ID`. `--bev` records a bird's eye 
 follows the robot; `--robot-camera` records from the robot's own head camera instead.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import math
 import os

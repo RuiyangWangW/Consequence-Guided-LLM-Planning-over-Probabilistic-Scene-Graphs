@@ -23,6 +23,10 @@ them apart is the point:
     python ablate_plan.py --fuzz 400            # random plans: where do the two differ?
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import copy
 import json

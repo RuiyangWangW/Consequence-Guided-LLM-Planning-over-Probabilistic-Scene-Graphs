@@ -8,6 +8,10 @@ correct named objects the robot then searched the whole house for and never reco
     python test_object_names.py
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import sys
 
 from object_names import candidates, match, same

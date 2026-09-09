@@ -55,6 +55,10 @@ is monkey-patched over `sim_eval.ground` only inside `--verify`, only for the pr
     python exp_sweep_grounding.py --scene Wainscott_0_int --verify --verbose
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import collections
 import json

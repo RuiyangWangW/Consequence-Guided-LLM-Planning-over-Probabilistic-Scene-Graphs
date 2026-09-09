@@ -37,6 +37,10 @@ What it measures, per task:
 Usage:  HF_HUB_OFFLINE=1 CUDA_VISIBLE_DEVICES=3 python exp_infogain.py --stride 2
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import statistics

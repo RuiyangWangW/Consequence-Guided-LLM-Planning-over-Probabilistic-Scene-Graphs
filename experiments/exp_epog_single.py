@@ -26,6 +26,10 @@ All three are grounded against the same belief graph and judged by the 2-D simul
 action applied, the goal true in the real house, nothing left open or switched on.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import sys

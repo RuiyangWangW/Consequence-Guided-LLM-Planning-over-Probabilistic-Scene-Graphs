@@ -34,6 +34,10 @@ and asserting the walked distances match to 1e-9.
     python exp_params.py --stride 2 --out data/exp-params.json
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import functools
 import inspect

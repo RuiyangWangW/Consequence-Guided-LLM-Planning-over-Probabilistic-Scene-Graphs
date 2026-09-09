@@ -672,20 +672,22 @@ compare rows within experiment 2.**
 `extraction_data.py`, `build_dataset.py`, `embed_categories.py`, `train_rsn.py` build the
 vocabulary, the adapters' training data and the RSN.
 
-**Experiments.**
+**Experiments.** `experiments/` holds 17 scripts that nothing imports - a lab notebook. Each is
+runnable from the repo root (`python experiments/exp_ladder.py`) and inserts the root on
+`sys.path` itself, so `data/` paths resolve against the working directory as before.
 
-| module | what it runs |
+| script | what it runs |
 | --- | --- |
-| `evaluate.py` | the single-task experiment; `--attempts` and `--repair-at` select the arm |
-| `evaluate_multi.py` | the multi-task experiment, all seven arms in one process per shard |
-| `oracle_order.py` | the ordering stage alone, on reference subplans, with the language model taken out |
-| `merge_shards.py` | concatenates sharded results and refuses to merge across benchmark stamps |
 | `exp_rsn_accuracy.py` | how often the RSN's argmax room is right, and where the truth sits when it is not |
 | `exp_decompose_prompt.py` | scores candidate decomposition prompts against the benchmark's own errand boundaries |
 | `exp_epog.py`, `exp_epog_single.py` | what the symbolic baseline can and cannot express |
 | `exp_corrupt.py`, `exp_uncertainty.py`, `exp_infogain.py` | when ordering pays: confidently wrong beliefs, not merely unsure ones |
-| `exp_ladder.py`, `exp_spread.py`, `exp_params.py`, `exp_adversarial.py`, `exp_decomposition.py` | the ordering ladder, room spread, parameter sensitivity, and adversarial checks |
-| `exp_sweep_*.py`, `exp_fail_*.py` | benchmark defect sweeps and per-failure attribution |
+| `exp_ladder.py`, `exp_spread.py`, `exp_params.py`, `exp_adversarial.py`, `exp_decomposition.py` | the ordering ladder, room spread, parameter sensitivity, adversarial checks |
+| `exp_sweep_*.py` | benchmark defect sweeps - re-run these when the task sets change |
+| `ablate_plan.py` | where the graph checker and the simulator disagree |
 
-Tests: `test_graph_machine.py`, `test_repair.py`, `test_pipeline.py`, `test_sim2d.py`,
+**Tests.** `tests/` - `python tests/test_x.py` or `pytest tests/`. Six run offline in ~19 seconds
+and are the gate for any change: `test_object_names`, `test_pipeline`, `test_fallback`,
+`test_graph_machine`, `test_gavel`, `test_sim2d`. `test_repair` additionally loads the RSN;
+`test_primitives` and `test_stance_order` need Isaac and a free GPU.
 `test_fallback.py`, `test_object_names.py`, `test_stance_order.py`, `test_gavel.py`.

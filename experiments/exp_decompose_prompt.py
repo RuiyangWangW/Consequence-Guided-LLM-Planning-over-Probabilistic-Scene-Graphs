@@ -27,6 +27,10 @@ a decomposition that says "put the mail on the armchair" where the benchmark say
 from the desk on the armchair" still counts - the planner can do that errand.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import re

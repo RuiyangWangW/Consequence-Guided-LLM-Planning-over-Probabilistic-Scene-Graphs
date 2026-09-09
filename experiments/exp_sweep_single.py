@@ -37,6 +37,10 @@ under the belief and under the truth, whether that instance is reachable at all
     python exp_sweep_single.py --explain Wainscott_0_int-09
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import math

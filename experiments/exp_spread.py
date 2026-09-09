@@ -16,6 +16,10 @@ If headroom rises with spread, then building the benchmark to spread errands aro
 is the right fix and the current +0.6% is a property of the task mix rather than the method.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import itertools
 import json

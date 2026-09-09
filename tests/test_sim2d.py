@@ -17,6 +17,10 @@ a navigation failure in these tests is a bug rather than a house.
     python test_sim2d.py
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import math
 import sys
 

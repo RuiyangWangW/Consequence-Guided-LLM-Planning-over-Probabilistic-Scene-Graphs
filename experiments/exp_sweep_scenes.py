@@ -70,6 +70,10 @@ evaluation does - so "impossible" comes with the run that shows it.
     python exp_sweep_scenes.py --scene Pomaria_0_int --sim
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import time

@@ -32,6 +32,10 @@ the `uncertain` list, where the RSN must rank it over every room in the house.
     python exp_uncertainty.py --stride 4          # 125 tasks, four levels, three arms
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import argparse
 import json
 import math

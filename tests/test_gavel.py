@@ -15,6 +15,10 @@ silently wrong again:
 Everything here is built by hand - no scene, no RSN, no GPU - so it runs in a second.
 """
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+
+
 import itertools
 import sys
 
