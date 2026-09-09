@@ -607,8 +607,28 @@ anything.
 Each result also carries a `-stamp.json` naming the benchmark it ran against; `merge_shards.py`
 refuses to combine shards whose stamps disagree.
 
-**Reproducing them.** `ADAPT="--extractor models/h1-1.7b-v5 --goal-model models/state-1.7b-v5"`
-in each command below; the planner and decomposer are the base model named by `--model`.
+**Reproducing them.** Stages 1 and 2 run two LoRA adapters; the planner and decomposer are the
+base model named by `--model`.
+
+The two adapters are 78 MB each and are not in the repository. Both are LoRA fine-tunes of
+Qwen3-1.7B over data the builders generate, so they rebuild from source in one pass each:
+
+```bash
+# the training data: 8000 train and 500 val rows, on different seeds so the splits are disjoint
+python benchmark/extraction/extraction_data.py --n 8000 --seed 7 --out data/extraction-train.json
+python benchmark/extraction/extraction_data.py --n  500 --seed 9 --out data/extraction-val.json
+# each adapter is a LoRA over Qwen3-1.7B; the two differ only in what they are asked to emit
+python src/llm/finetune_extraction.py --target extraction --out models/h1-1.7b-v5
+python src/llm/finetune_extraction.py --target goal       --out models/state-1.7b-v5
+```
+
+The generator is seeded, so the training set is reproducible; a rebuilt adapter will not be
+bit-identical to ours, since fine-tuning is not.
+
+`models/rsn_cal.pt` — the RSN and its temperature calibration — is small enough to ship and is
+in the repository.
+
+With those built, `ADAPT="--extractor models/h1-1.7b-v5 --goal-model models/state-1.7b-v5"`:
 
 ```bash
 mkdir -p runs
