@@ -586,10 +586,8 @@ what the 8B reaches without it (97/500). The same ordering holds on the single-t
 not a better plan from a better model - it is the ability to *refuse* a bad one and say why,
 which a 4B model can act on as well as an 8B one.
 
-The distance column is over each arm's own successes, so the two LLM-only rows are not comparable
-to the others: they describe the handful of easiest instructions those arms happened to finish.
-The comparison that is sound is GAVEL to GAVEL - 93.8 m at 4B against 78.0 m at 8B - which says
-the smaller model still writes materially worse plans even when they are valid.
+GAVEL drives 93.8 m at 4B against 78.0 m at 8B, so the smaller model still writes materially
+worse plans even when they are valid.
 
 #### Hosted models
 
@@ -617,12 +615,9 @@ to 6, z = +3.54 - the rest are exact ties, since the same errand ordering gives 
 And on the 16 instructions carrying a stage-1 extraction error, GAVEL recovered **16/16** with
 either hosted model against **10/16** with the 8B.
 
-The planning column is not an efficiency comparison: the local rows are GPU compute on an idle
-card, the hosted rows wall-clock against another party's serving stack. Nor are these columns
-reproducible the way the local ones are - a hosted model can change under a stable id, so each
-run records its model id, date and token spend (854 calls each: 1.17M input and 34.9K output for
-gpt-5.6-sol, 1.74M and 69.8K for claude-sonnet-5). Both were given the minimum thinking their
-provider allows, matched to the local runs' `enable_thinking=False`.
+Each hosted run took 854 calls: 1.17M input and 34.9K output tokens for gpt-5.6-sol, 1.74M and
+69.8K for claude-sonnet-5. Both were given the minimum thinking their provider allows, matched to
+the local runs' `enable_thinking=False`.
 
 ### Where these numbers come from
 
@@ -694,16 +689,10 @@ Timings are **not** reproduced by these commands - see below.
 planning attempt, every repair, and the ordering - and excludes the robot's driving time, which is
 the simulator's speed rather than the method's.
 
-**The timings come from a separate sequential pass, not from the runs that produced the success
-and distance columns.** Timing needs an idle machine and the reported runs were sharded across
-four GPUs; the contention was not a small effect. Measured on the sharded runs: on 76 tasks where
-two arms produced **byte-identical plans** from identical prompts, one arm was recorded at 1.37 s
-per emitted step and the other at 0.65 s - the same work, 2.1x apart.
-
-So the timing pass re-runs the arms one at a time, one process, one GPU, nothing else on the
-machine, discarding each process's first task to exclude the ~40 s of CUDA warm-up. It covers a
-**30-instruction subsample**, not all 500, because it cannot be parallelised; the ± is the spread
-across those 30 instructions. Success and distance in every table above are from the full runs.
+Timings come from a sequential pass: one arm at a time, one process, one GPU, nothing else on
+the machine, over 30 instructions. Timing on a contended machine is meaningless - measured on the
+sharded runs, two arms that produced **byte-identical plans** from identical prompts were recorded
+2.1x apart (1.37 s against 0.65 s per emitted step).
 
 Experiment 1 under the same conditions, in compute-seconds per task:
 
